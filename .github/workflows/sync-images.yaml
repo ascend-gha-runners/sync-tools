@@ -29,5 +29,5 @@ jobs:
       - name: sync quay
         run: |
           skopeo sync --src docker --dest docker --dest-creds ${{ vars.QUAY_ASCEND_USER }}:${{ secrets.QUAY_ASCEND_PWD }} \
-            ${{ REGISTRY_HK }}/base_image/ascend-ci/sglang \
+            ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/sglang \
             quay.io/ascend/

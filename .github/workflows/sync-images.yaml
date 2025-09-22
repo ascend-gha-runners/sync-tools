@@ -1,0 +1,33 @@
+name: copy images to swr
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *" # at 00:00 every day
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/sync-images.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/sync-images.yml"
+
+concurrency:
+  group: copy-images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sync-images:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/skopeo/stable:latest
+
+    steps:
+      - name: sync quay
+        run: |
+          skopeo sync --src docker --dest docker --dest-creds ${{ vars.QUAY_ASCEND_USER }}:${{ secrets.QUAY_ASCEND_PWD }} \
+            ${{ REGISTRY_HK }}/base_image/ascend-ci/sglang \
+            quay.io/ascend/

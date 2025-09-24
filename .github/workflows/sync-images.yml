@@ -3,7 +3,7 @@ name: copy images to swr
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *" # at 00:00 every day
+    - cron: "0 * * * *" # at every hour
   pull_request:
     branches:
       - main

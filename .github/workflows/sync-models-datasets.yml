@@ -1,0 +1,34 @@
+name: sync datasets and models to our persistent storage
+on:
+  schedule:
+    - cron: '0 */6 * * *' # every 6 hours
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/pre-downloaded-datasets.ini"
+      - ".github/workflows/config/pre-downloaded-models.ini"
+      - ".github/workflows/sync-models-datasets.yml"
+
+concurrency:
+  group: sync-models-datasets-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync_dataset:
+    runs-on: linux-amd64-vllm-guiyang003
+    container:
+      image: swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:8.2.rc1-a3-ubuntu22.04-py3.11
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: download models
+        run: |
+          pip config set global.index-url https://mirrors.huaweicloud.com/repository/pypi/simple
+          pip install filelock modelscope datasets
+          for m in `cat .github/workflows/config/pre-downloaded-models.ini`;do modelscope download  --model $m;done
+
+      - name: download dataset
+        run: |
+          for m in `cat .github/workflows/pre-downloaded-datasets.ini`;do modelscope download  --dataset $m;done

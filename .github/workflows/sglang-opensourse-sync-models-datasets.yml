@@ -1,0 +1,55 @@
+name: sglang opensourse sync datasets and models
+on:
+  schedule:
+    - cron: '0 */6 * * *' # every 6 hours
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/sglang-downloaded-datasets.ini"
+      - ".github/workflows/config/sglang-downloaded-models.ini"
+      - ".github/workflows/sglang-opensourse-sync-models-datasets.yml"
+
+concurrency:
+  group: sync-models-datasets-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync_dataset:
+    runs-on: linux-amd64-sglang-guiyang004
+    container:
+      image: swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:8.2.rc1-a3-ubuntu22.04-py3.11
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y dos2unix
+
+      - name: Set up Python environment
+        run: |
+          pip config set global.index-url https://mirrors.huaweicloud.com/repository/pypi/simple
+          pip install --upgrade pip
+          pip install filelock modelscope datasets
+
+      - name: Download models (with proper handling)
+        run: |
+          dos2unix .github/workflows/config/sglang-downloaded-models.ini
+          while IFS= read -r m; do
+            m=$(echo "$m" | tr -d '\r' | xargs)
+            [[ -z "$m" || "$m" =~ ^# ]] && continue
+            echo "Downloading model: $m"
+            modelscope download --model "$m"
+          done < .github/workflows/config/sglang-downloaded-models.ini
+
+      - name: Download datasets (with proper handling)
+        run: |
+          dos2unix .github/workflows/config/sglang-downloaded-datasets.ini
+          while IFS= read -r m; do
+            m=$(echo "$m" | tr -d '\r' | xargs)
+            [[ -z "$m" || "$m" =~ ^# ]] && continue
+            echo "Downloading dataset: $m"
+            modelscope download --dataset "$m"
+          done < .github/workflows/config/sglang-downloaded-datasets.ini

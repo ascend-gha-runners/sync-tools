@@ -30,7 +30,6 @@ jobs:
         run: |
           skopeo sync --all \
             --src docker --dest docker \
-            --dest-creds ${{ vars.QUAY_ASCEND_USER }}:${{ secrets.QUAY_ASCEND_PWD }} \
             ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/sglang \
             quay.io/ascend/
 
@@ -47,7 +46,6 @@ jobs:
         run: |
           skopeo sync --all \
             --src docker --dest docker \
-            --src-creds ${{ vars.QUAY_ASCEND_USER }}:${{ secrets.QUAY_ASCEND_PWD }} \
             --dest-creds ${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
             quay.io/ascend/${{ matrix.repo }} \
             ${{ vars.REGISTRY_SW_2 }}/base_image/ascend-ci/${{ matrix.repo }}
@@ -62,7 +60,7 @@ jobs:
         run: |
           skopeo sync --all \
             --src docker --dest docker \
-            --src-creds ${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
-            --dest-creds ${{ vars.HWCLOUD_EAST_USER }}:${{ secrets.HWCLOUD_EAST_PWD }} \
+            --src-creds ${{ secrets.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
+            --dest-creds ${{ secrets.HWCLOUD_EAST_USER }}:${{ secrets.HWCLOUD_EAST_PWD }} \
             ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/sglang \
             ${{ vars.REGISTRY_EAST_4 }}/base_image/ascend-ci/sglang

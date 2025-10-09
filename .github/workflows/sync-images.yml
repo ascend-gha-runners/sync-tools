@@ -46,6 +46,8 @@ jobs:
       - name: Sync quay.io/ascend/${{ matrix.repo }} to SWR Southwest
         run: |
           skopeo sync --all \
+            --retry-times 3 \
+            --retry-delay 5s \
             --src docker --dest docker \
             --dest-creds ${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
             quay.io/ascend/${{ matrix.repo }} \

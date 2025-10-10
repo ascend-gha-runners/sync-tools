@@ -4,16 +4,16 @@ on:
   workflow_dispatch:
   #schedule:
   #  - cron: "0 * * * *" # at every hour
-  pull_request:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/sync-images.yml"
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/sync-images.yml"
+  #pull_request:
+  #  branches:
+  #    - main
+  #  paths:
+  #    - ".github/workflows/sync-images.yml"
+  #push:
+  #  branches:
+  #    - main
+  #  paths:
+  #    - ".github/workflows/sync-images.yml"
 
 concurrency:
   group: sync-images-${{ github.ref }}

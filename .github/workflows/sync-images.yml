@@ -2,8 +2,8 @@ name: Sync Images Between Registries
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 * * * *" # at every hour
+  #schedule:
+  #  - cron: "0 * * * *" # at every hour
   pull_request:
     branches:
       - main

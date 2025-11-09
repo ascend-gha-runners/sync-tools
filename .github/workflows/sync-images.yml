@@ -74,90 +74,120 @@ jobs:
     container:
       image: quay.io/skopeo/stable:latest
     steps:
-      - name: Install jq for JSON processing
+      - name: Install jq and curl using yum
         run: |
-          apk add --no-cache jq curl
-          echo "Debug: Installed packages:"
+          # 检查可用的包管理器
+          if command -v yum &> /dev/null; then
+            echo "Using yum package manager"
+            yum update -y
+            yum install -y jq curl
+          elif command -v dnf &> /dev/null; then
+            echo "Using dnf package manager"  
+            dnf update -y
+            dnf install -y jq curl
+          elif command -v microdnf &> /dev/null; then
+            echo "Using microdnf package manager"
+            microdnf update -y
+            microdnf install -y jq curl
+          else
+            echo "Error: No supported package manager found"
+            exit 1
+          fi
+          
+          # 验证安装
           jq --version
           curl --version
 
       - name: Debug environment variables
         run: |
-          echo "Debug: Available environment variables:"
-          env | sort
-          
           echo "Debug: Checking if registry variables are set:"
           echo "REGISTRY_SW_2: ${REGISTRY_SW_2:-Not set}"
-          echo "HWCLOUD_USER: ${HWCLOUD_USER:-Not set}"
-          echo "HWCLOUD_PWD: ${HWCLOUD_PWD:-Not set (secret)}"
+          echo "HWCLOUD_USER length: ${#HWCLOUD_USER} chars"
+          echo "HWCLOUD_PWD length: ${#HWCLOUD_PWD} chars (secret)"
 
       - name: Fetch all tags and filter CANN-related ones
         id: get-cann-tags
         run: |
           echo "Debug: Testing DockerHub API connection..."
           API_RESPONSE=$(curl -s -w "\nHTTP Status: %{http_code}" "https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/?page_size=1")
-          echo "$API_RESPONSE"
+          echo "API Response: $API_RESPONSE"
           
           echo "Debug: Fetching all tags..."
-          TAGS=$(curl -s "https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/?page_size=100" | \
-            jq -r '.results[] | select(.name | test("cann"; "i")) | .name')
+          # 获取所有分页的tags
+          TAGS=""
+          NEXT_URL="https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/?page_size=100"
+          PAGE=1
           
-          echo "Debug: Raw tags output:"
-          echo "$TAGS"
+          while [ "$NEXT_URL" != "null" ] && [ $PAGE -le 10 ]; do
+            echo "Fetching page $PAGE: $NEXT_URL"
+            RESPONSE=$(curl -s "$NEXT_URL")
+            PAGE_TAGS=$(echo "$RESPONSE" | jq -r '.results[] | select(.name | test("cann"; "i")) | .name' 2>/dev/null || echo "")
+            
+            if [ -n "$PAGE_TAGS" ]; then
+              TAGS="$TAGS"$'\n'"$PAGE_TAGS"
+            fi
+            
+            NEXT_URL=$(echo "$RESPONSE" | jq -r '.next // "null"')
+            PAGE=$((PAGE + 1))
+          done
           
-          echo "Debug: Number of tags found:"
-          echo "$TAGS" | wc -l
+          # 清理和格式化tags
+          TAGS=$(echo "$TAGS" | sed '/^$/d' | sort -u)
           
-          echo "Debug: First 5 tags (if any):"
-          echo "$TAGS" | head -5
-          
+          echo "Debug: Number of tags found: $(echo "$TAGS" | wc -l)"
           echo "Found CANN-related tags:"
           echo "$TAGS"
-          echo "tags=$(echo $TAGS | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          
+          # 安全输出到GITHUB_OUTPUT
+          if [ -n "$TAGS" ]; then
+            echo "tags=$(echo "$TAGS" | tr '\n' ' ' | xargs)" >> $GITHUB_OUTPUT
+          else
+            echo "tags=" >> $GITHUB_OUTPUT
+          fi
 
       - name: Debug tags output
         run: |
           echo "Debug: Output from get-cann-tags step:"
-          echo "${{ steps.get-cann-tags.outputs.tags }}"
+          echo "Tags variable: '${{ steps.get-cann-tags.outputs.tags }}'"
           
-          echo "Debug: Split tags for verification:"
-          for tag in ${{ steps.get-cann-tags.outputs.tags }}; do
-            echo "Tag: $tag"
-          done
+          if [ -n "${{ steps.get-cann-tags.outputs.tags }}" ]; then
+            echo "Debug: Split tags for verification:"
+            IFS=' ' read -ra TAG_ARRAY <<< "${{ steps.get-cann-tags.outputs.tags }}"
+            for tag in "${TAG_ARRAY[@]}"; do
+              echo "Tag: $tag"
+            done
+          else
+            echo "Debug: No tags found"
+          fi
 
-      - name: Test skopeo connection (dry-run)
+      - name: Test skopeo connection
         run: |
-          echo "Debug: Testing skopeo connection to destination registry..."
-          skopeo inspect --retry-times 3 \
-            --src-authfile /dev/null \
-            --dest-creds "${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }}" \
-            docker://docker.io/lmsysorg/sglang:latest || echo "Debug: Skopeo test failed"
+          echo "Debug: Testing skopeo connection to source registry..."
+          skopeo inspect --retry-times 1 docker://docker.io/lmsysorg/sglang:latest || echo "Debug: Skopeo inspect test completed"
 
-      - name: Sync each CANN-related tag (dry-run first)
+      - name: Sync each CANN-related tag
+        if: steps.get-cann-tags.outputs.tags != ''
         run: |
-          echo "Debug: Starting sync process (dry-run)..."
-          for tag in ${{ steps.get-cann-tags.outputs.tags }}; do
-            echo "Debug: Would sync tag: $tag"
-            echo "skopeo copy command would be executed for $tag"
-          done
+          echo "Debug: Starting sync process..."
+          TAGS="${{ steps.get-cann-tags.outputs.tags }}"
           
-          echo "Debug: Dry-run completed"
-
-      - name: Sync each CANN-related tag (actual)
-        if: success() && github.event_name != 'pull_request'  # Only run actual sync on non-PR events
-        run: |
-          echo "Debug: Starting actual sync process..."
-          for tag in ${{ steps.get-cann-tags.outputs.tags }}; do
+          for tag in $TAGS; do
             echo "Syncing tag: $tag"
-            if ! skopeo copy \
+            if skopeo copy \
               --retry-times 3 \
               --src-authfile /dev/null \
               --dest-creds "${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }}" \
               docker://docker.io/lmsysorg/sglang:$tag \
               docker://${{ vars.REGISTRY_SW_2 }}/base_image/dockerhub/lmsysorg/sglang:$tag; then
-              echo "Error: Failed to sync tag $tag"
+              echo "✅ Successfully synced tag: $tag"
+            else
+              echo "❌ Failed to sync tag: $tag"
               exit 1
             fi
-            echo "Successfully synced tag: $tag"
           done
-          echo "Debug: Sync process completed"
+          echo "🎉 All tags synced successfully"
+
+      - name: No tags found message
+        if: steps.get-cann-tags.outputs.tags == ''
+        run: |
+          echo "ℹ️ No CANN-related tags found to sync"

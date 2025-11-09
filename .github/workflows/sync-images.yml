@@ -20,50 +20,144 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  sync-hk-to-quay:
-    name: Sync from HK SWR to Quay
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/skopeo/stable:latest
-    steps:
-      - name: sync hk2quay
-        run: |
-          skopeo sync --all \
-            --src docker --dest docker \
-            --dest-creds ${{ vars.QUAY_ASCEND_USER }}:${{ secrets.QUAY_ASCEND_PWD }} \
-            ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/sglang \
-            quay.io/ascend/
+  # sync-hk-to-quay:
+  #   name: Sync from HK SWR to Quay
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: quay.io/skopeo/stable:latest
+  #   steps:
+  #     - name: sync hk2quay
+  #       run: |
+  #         skopeo sync --all \
+  #           --src docker --dest docker \
+  #           --dest-creds ${{ vars.QUAY_ASCEND_USER }}:${{ secrets.QUAY_ASCEND_PWD }} \
+  #           ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/sglang \
+  #           quay.io/ascend/
 
-  sync-quay-to-swr:
-    name: Sync from Quay to SWR Southwest
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/skopeo/stable:latest
-    strategy:
-      matrix:
-        repo: ["cann", "vllm-ascend", "manylinux", "llamafactory", "triton", "mindspore", "python", "pytorch"]
-    steps:
-      - name: Sync quay.io/ascend/${{ matrix.repo }} to SWR Southwest
-        run: |
-          skopeo sync --all \
-            --retry-times 3 \
-            --retry-delay 5s \
-            --src docker --dest docker \
-            --dest-creds ${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
-            quay.io/ascend/${{ matrix.repo }} \
-            ${{ vars.REGISTRY_SW_2 }}/base_image/ascend-ci/${{ matrix.repo }}
+  # sync-quay-to-swr:
+  #   name: Sync from Quay to SWR Southwest
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: quay.io/skopeo/stable:latest
+  #   strategy:
+  #     matrix:
+  #       repo: ["cann", "vllm-ascend", "manylinux", "llamafactory", "triton", "mindspore", "python", "pytorch"]
+  #   steps:
+  #     - name: Sync quay.io/ascend/${{ matrix.repo }} to SWR Southwest
+  #       run: |
+  #         skopeo sync --all \
+  #           --retry-times 3 \
+  #           --retry-delay 5s \
+  #           --src docker --dest docker \
+  #           --dest-creds ${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
+  #           quay.io/ascend/${{ matrix.repo }} \
+  #           ${{ vars.REGISTRY_SW_2 }}/base_image/ascend-ci/${{ matrix.repo }}
 
-  sync-swr-regions:
-    name: Sync between SWR regions (sglang)
+  # sync-swr-regions:
+  #   name: Sync between SWR regions (sglang)
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: quay.io/skopeo/stable:latest
+  #   steps:
+  #     - name: Sync SWR Southeast to East for sglang
+  #       run: |
+  #         skopeo sync --all \
+  #           --src docker --dest docker \
+  #           --src-creds ${{ secrets.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
+  #           --dest-creds ${{ secrets.HWCLOUD_EAST_USER }}:${{ secrets.HWCLOUD_EAST_PWD }} \
+  #           ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/sglang \
+  #           ${{ vars.REGISTRY_EAST_4 }}/base_image/ascend-ci/sglang
+
+  sync-sglang-cann-tags:
+    name: Sync lmsysorg/sglang CANN-related tags to SWR
     runs-on: ubuntu-latest
     container:
       image: quay.io/skopeo/stable:latest
     steps:
-      - name: Sync SWR Southeast to East for sglang
+      - name: Install jq for JSON processing
         run: |
-          skopeo sync --all \
-            --src docker --dest docker \
-            --src-creds ${{ secrets.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
-            --dest-creds ${{ secrets.HWCLOUD_EAST_USER }}:${{ secrets.HWCLOUD_EAST_PWD }} \
-            ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/sglang \
-            ${{ vars.REGISTRY_EAST_4 }}/base_image/ascend-ci/sglang
+          apk add --no-cache jq curl
+          echo "Debug: Installed packages:"
+          jq --version
+          curl --version
+
+      - name: Debug environment variables
+        run: |
+          echo "Debug: Available environment variables:"
+          env | sort
+          
+          echo "Debug: Checking if registry variables are set:"
+          echo "REGISTRY_SW_2: ${REGISTRY_SW_2:-Not set}"
+          echo "HWCLOUD_USER: ${HWCLOUD_USER:-Not set}"
+          echo "HWCLOUD_PWD: ${HWCLOUD_PWD:-Not set (secret)}"
+
+      - name: Fetch all tags and filter CANN-related ones
+        id: get-cann-tags
+        run: |
+          echo "Debug: Testing DockerHub API connection..."
+          API_RESPONSE=$(curl -s -w "\nHTTP Status: %{http_code}" "https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/?page_size=1")
+          echo "$API_RESPONSE"
+          
+          echo "Debug: Fetching all tags..."
+          TAGS=$(curl -s "https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/?page_size=100" | \
+            jq -r '.results[] | select(.name | test("cann"; "i")) | .name')
+          
+          echo "Debug: Raw tags output:"
+          echo "$TAGS"
+          
+          echo "Debug: Number of tags found:"
+          echo "$TAGS" | wc -l
+          
+          echo "Debug: First 5 tags (if any):"
+          echo "$TAGS" | head -5
+          
+          echo "Found CANN-related tags:"
+          echo "$TAGS"
+          echo "tags=$(echo $TAGS | tr '\n' ' ')" >> $GITHUB_OUTPUT
+
+      - name: Debug tags output
+        run: |
+          echo "Debug: Output from get-cann-tags step:"
+          echo "${{ steps.get-cann-tags.outputs.tags }}"
+          
+          echo "Debug: Split tags for verification:"
+          for tag in ${{ steps.get-cann-tags.outputs.tags }}; do
+            echo "Tag: $tag"
+          done
+
+      - name: Test skopeo connection (dry-run)
+        run: |
+          echo "Debug: Testing skopeo connection to destination registry..."
+          skopeo inspect --retry-times 3 \
+            --src-authfile /dev/null \
+            --dest-creds "${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }}" \
+            docker://docker.io/lmsysorg/sglang:latest || echo "Debug: Skopeo test failed"
+
+      - name: Sync each CANN-related tag (dry-run first)
+        run: |
+          echo "Debug: Starting sync process (dry-run)..."
+          for tag in ${{ steps.get-cann-tags.outputs.tags }}; do
+            echo "Debug: Would sync tag: $tag"
+            echo "skopeo copy command would be executed for $tag"
+          done
+          
+          echo "Debug: Dry-run completed"
+
+      - name: Sync each CANN-related tag (actual)
+        if: success() && github.event_name != 'pull_request'  # Only run actual sync on non-PR events
+        run: |
+          echo "Debug: Starting actual sync process..."
+          for tag in ${{ steps.get-cann-tags.outputs.tags }}; do
+            echo "Syncing tag: $tag"
+            if ! skopeo copy \
+              --retry-times 3 \
+              --src-authfile /dev/null \
+              --dest-creds "${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }}" \
+              docker://docker.io/lmsysorg/sglang:$tag \
+              docker://${{ vars.REGISTRY_SW_2 }}/base_image/dockerhub/lmsysorg/sglang:$tag; then
+              echo "Error: Failed to sync tag $tag"
+              exit 1
+            fi
+            echo "Successfully synced tag: $tag"
+          done
+          echo "Debug: Sync process completed"

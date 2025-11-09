@@ -175,7 +175,7 @@ jobs:
             echo "Syncing tag: $tag"
             if skopeo copy \
               --retry-times 3 \
-              --src-authfile /dev/null \
+              --src-no-creds \
               --dest-creds "${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }}" \
               docker://docker.io/lmsysorg/sglang:$tag \
               docker://${{ vars.REGISTRY_SW_2 }}/base_image/dockerhub/lmsysorg/sglang:$tag; then

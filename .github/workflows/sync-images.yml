@@ -20,53 +20,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # sync-hk-to-quay:
-  #   name: Sync from HK SWR to Quay
-  #   runs-on: ubuntu-latest
-  #   container:
-  #     image: quay.io/skopeo/stable:latest
-  #   steps:
-  #     - name: sync hk2quay
-  #       run: |
-  #         skopeo sync --all \
-  #           --src docker --dest docker \
-  #           --dest-creds ${{ vars.QUAY_ASCEND_USER }}:${{ secrets.QUAY_ASCEND_PWD }} \
-  #           ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/sglang \
-  #           quay.io/ascend/
+  sync-hk-to-quay:
+    name: Sync from HK SWR to Quay
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/skopeo/stable:latest
+    steps:
+      - name: sync hk2quay
+        run: |
+          skopeo sync --all \
+            --src docker --dest docker \
+            --dest-creds ${{ vars.QUAY_ASCEND_USER }}:${{ secrets.QUAY_ASCEND_PWD }} \
+            ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/sglang \
+            quay.io/ascend/
 
-  # sync-quay-to-swr:
-  #   name: Sync from Quay to SWR Southwest
-  #   runs-on: ubuntu-latest
-  #   container:
-  #     image: quay.io/skopeo/stable:latest
-  #   strategy:
-  #     matrix:
-  #       repo: ["cann", "vllm-ascend", "manylinux", "llamafactory", "triton", "mindspore", "python", "pytorch"]
-  #   steps:
-  #     - name: Sync quay.io/ascend/${{ matrix.repo }} to SWR Southwest
-  #       run: |
-  #         skopeo sync --all \
-  #           --retry-times 3 \
-  #           --retry-delay 5s \
-  #           --src docker --dest docker \
-  #           --dest-creds ${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
-  #           quay.io/ascend/${{ matrix.repo }} \
-  #           ${{ vars.REGISTRY_SW_2 }}/base_image/ascend-ci/${{ matrix.repo }}
+  sync-quay-to-swr:
+    name: Sync from Quay to SWR Southwest
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/skopeo/stable:latest
+    strategy:
+      matrix:
+        repo: ["cann", "manylinux", "llamafactory", "triton", "mindspore", "python", "pytorch"]
+    steps:
+      - name: Sync quay.io/ascend/${{ matrix.repo }} to SWR Southwest
+        run: |
+          skopeo sync --all \
+            --retry-times 3 \
+            --retry-delay 5s \
+            --src docker --dest docker \
+            --dest-creds ${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
+            quay.io/ascend/${{ matrix.repo }} \
+            ${{ vars.REGISTRY_SW_2 }}/base_image/ascend-ci/${{ matrix.repo }}
 
-  # sync-swr-regions:
-  #   name: Sync between SWR regions (sglang)
-  #   runs-on: ubuntu-latest
-  #   container:
-  #     image: quay.io/skopeo/stable:latest
-  #   steps:
-  #     - name: Sync SWR Southeast to East for sglang
-  #       run: |
-  #         skopeo sync --all \
-  #           --src docker --dest docker \
-  #           --src-creds ${{ secrets.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
-  #           --dest-creds ${{ secrets.HWCLOUD_EAST_USER }}:${{ secrets.HWCLOUD_EAST_PWD }} \
-  #           ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/sglang \
-  #           ${{ vars.REGISTRY_EAST_4 }}/base_image/ascend-ci/sglang
+  sync-swr-regions:
+    name: Sync between SWR regions (sglang)
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/skopeo/stable:latest
+    steps:
+      - name: Sync SWR Southeast to East for sglang
+        run: |
+          skopeo sync --all \
+            --src docker --dest docker \
+            --src-creds ${{ secrets.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
+            --dest-creds ${{ secrets.HWCLOUD_EAST_USER }}:${{ secrets.HWCLOUD_EAST_PWD }} \
+            ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/sglang \
+            ${{ vars.REGISTRY_EAST_4 }}/base_image/ascend-ci/sglang
 
   sync-sglang-cann-tags:
     name: Sync lmsysorg/sglang CANN-related tags to SWR

@@ -191,3 +191,63 @@ jobs:
         if: steps.get-cann-tags.outputs.tags == ''
         run: |
           echo "ℹ️ No CANN-related tags found to sync"
+
+     
+  sync-sglang-to-quay:
+    name: Sync lmsysorg/sglang CANN-related tags to Quay
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/skopeo/stable:latest
+    steps:
+      - name: Install jq and curl
+        run: |
+          microdnf update -y && microdnf install -y jq curl
+  
+      - name: Fetch all tags and filter CANN-related ones
+        id: get-cann-tags
+        run: |
+          TAGS=""
+          NEXT_URL="https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/?page_size=100"
+          PAGE=1
+          
+          while [ "$NEXT_URL" != "null" ] && [ $PAGE -le 5 ]; do
+            RESPONSE=$(curl -s "$NEXT_URL")
+            PAGE_TAGS=$(echo "$RESPONSE" | jq -r '.results[] | select(.name | test("cann"; "i")) | .name' 2>/dev/null || echo "")
+            
+            if [ -n "$PAGE_TAGS" ]; then
+              TAGS="$TAGS"$'\n'"$PAGE_TAGS"
+            fi
+            
+            NEXT_URL=$(echo "$RESPONSE" | jq -r '.next // "null"')
+            PAGE=$((PAGE + 1))
+          done
+          
+          TAGS=$(echo "$TAGS" | sed '/^$/d' | sort -u)
+          
+          if [ -n "$TAGS" ]; then
+            echo "tags=$(echo "$TAGS" | tr '\n' ' ' | xargs)" >> $GITHUB_OUTPUT
+          else
+            echo "tags=" >> $GITHUB_OUTPUT
+          fi
+  
+      - name: Sync each CANN-related tag to Quay
+        if: steps.get-cann-tags.outputs.tags != ''
+        run: |
+          for tag in ${{ steps.get-cann-tags.outputs.tags }}; do
+            if skopeo copy \
+              --retry-times 3 \
+              --src-no-creds \
+              --dest-creds "${{ vars.QUAY_ASCEND_USER }}:${{ secrets.QUAY_ASCEND_PWD }}" \
+              docker://docker.io/lmsysorg/sglang:$tag \
+              docker://quay.io/ascend/sglang:$tag; then
+              echo "✅ Synced: $tag"
+            else
+              echo "❌ Failed: $tag"
+            fi
+          done
+          echo "🎉 All tags synced successfully"
+
+      - name: No tags found message
+        if: steps.get-cann-tags.outputs.tags == ''
+        run: |
+          echo "ℹ️ No CANN-related tags found to sync"

@@ -1,4 +1,4 @@
-name: vllm sync datasets and models
+name: test
 on:
   workflow_dispatch:
   push:

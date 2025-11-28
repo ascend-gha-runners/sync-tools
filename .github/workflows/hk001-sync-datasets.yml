@@ -34,7 +34,6 @@ jobs:
 
       - name: Download datasets
         run: |
-          sleep 3600
           echo "Reading dataset configurations from .github/workflows/config/hk001-datasets.json"
           
           # Read and process each dataset configuration

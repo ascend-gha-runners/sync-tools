@@ -30,7 +30,7 @@ jobs:
       - name: Set up Python environment
         run: |
           pip install --upgrade pip
-          pip install filelock modelscope datasets huggingface_hub
+          pip install huggingface_hub modelscope
 
       - name: Download datasets
         run: |
@@ -53,8 +53,7 @@ jobs:
               download_path="/root/.cache/datasets/$organization/$dataset_name"
               mkdir -p "$download_path" || { echo "Failed to create directory $download_path"; exit 1; }
               
-              # Download using huggingface_hub Python API
-              python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='$organization/$dataset_name', local_dir='$download_path', local_dir_use_symlinks=False)" || echo "Failed to download $organization/$dataset_name from HuggingFace"
+              hf download "$organization/$dataset_name" --repo-type=dataset --local-dir="$download_path" || echo "Failed to download $organization/$dataset_name from HuggingFace"
               
             else
               echo "Unknown platform: $platform. Skipping $organization/$dataset_name"

@@ -1,29 +1,29 @@
-name: test
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
+# name: test
+# on:
+#   workflow_dispatch:
+#   push:
+#     branches:
+#       - main
 
-concurrency:
-  group: test
-  cancel-in-progress: true
+# concurrency:
+#   group: test
+#   cancel-in-progress: true
 
-jobs:
-  sync_dataset:
-    runs-on: linux-aarch64-a2b3-1
-    container:
-      image: swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:8.2.rc1-a3-ubuntu22.04-py3.11
-    steps:
-      - uses: actions/checkout@v4
+# jobs:
+#   sync_dataset:
+#     runs-on: linux-aarch64-a2b3-1
+#     container:
+#       image: swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:8.2.rc1-a3-ubuntu22.04-py3.11
+#     steps:
+#       - uses: actions/checkout@v4
 
-      - name: Install system dependencies
-        run: |
-          apt-get update
-          apt-get install -y dos2unix
+#       - name: Install system dependencies
+#         run: |
+#           apt-get update
+#           apt-get install -y dos2unix
 
-      - name: Set up Python environment
-        run: |
-          pip config set global.index-url https://mirrors.huaweicloud.com/repository/pypi/simple
-          pip install --upgrade pip
-          pip install filelock modelscope datasets
+#       - name: Set up Python environment
+#         run: |
+#           pip config set global.index-url https://mirrors.huaweicloud.com/repository/pypi/simple
+#           pip install --upgrade pip
+#           pip install filelock modelscope datasets

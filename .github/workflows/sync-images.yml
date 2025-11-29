@@ -264,7 +264,7 @@ jobs:
             --retry-times 3 \
             --retry-delay 5s \
             --src docker --dest docker \
-            --src-creds ${{ vars.QUAY_ASCEND_USER }}:${{ secrets.QUAY_ASCEND_PWD }} \
+            --src-no-creds \
             --dest-creds ${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
             quay.io/ascend/verl \
             ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/verl

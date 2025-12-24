@@ -14,4 +14,9 @@
     "organization": "Qwen",
     "model_name": "Qwen3-30B-A3B-Instruct-2507"
   }
+  {
+    "platform": "huggingface",
+    "organization": "Qwen",
+    "model_name": "Qwen2.5-1.5B-Instruct"
+  }
 ]

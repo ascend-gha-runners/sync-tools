@@ -18,5 +18,10 @@
     "platform": "huggingface",
     "organization": "Qwen",
     "model_name": "Qwen2.5-1.5B-Instruct"
+  },
+  {
+    "platform": "huggingface",
+    "organization": "Qwen",
+    "model_name": "Qwen2.5-0.5B"
   }
 ]

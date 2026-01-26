@@ -23,5 +23,10 @@
     "platform": "huggingface",
     "organization": "Qwen",
     "model_name": "Qwen2.5-0.5B"
+  },
+  {
+    "platform": "huggingface",
+    "organization": "Skywork",
+    "model_name": "Skywork-Reward-V2-Llana-3.2-1B"
   }
 ]

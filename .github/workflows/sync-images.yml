@@ -41,7 +41,7 @@ jobs:
       image: quay.io/skopeo/stable:latest
     strategy:
       matrix:
-        repo: ["cann", "manylinux", "llamafactory", "triton", "mindspore", "python", "pytorch"]
+        repo: ["cann", "manylinux", "llamafactory", "triton", "mindspore", "python", "pytorch", "veomni"]
     steps:
       - name: Sync quay.io/ascend/${{ matrix.repo }} to SWR Southwest
         run: |

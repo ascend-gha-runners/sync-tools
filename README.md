@@ -2,64 +2,23 @@
 
 ## 项目概述
 
-本项目是一个自动化同步工具集，用于在多个集群和镜像仓库之间同步模型、数据集和容器镜像。通过 GitHub Actions 实现定时和触发式同步，确保各环境数据的一致性。
+本项目通过[skopeo](https://github.com/containers/skopeo)将各种昇腾可用的镜像从主要的[发布 registry](https://quay.io/organization/ascend/)同步到各种[registry]，方便用户就近下载使用
 
-## 核心功能
 
-### 1. 模型和数据集同步
+## 包含的image
 
-#### VLLM 项目同步
-- **Runner**: `linux-amd64-vllm-guiyang003`
-- **特点**: 两个集群共用一个共享盘，只需一个 Runner 同步一次
-- **配置文件**: 
-  - `vllm-downloaded-models.ini`
-  - `vllm-downloaded-datasets.ini`
-
-#### SGLANG 项目同步
-- **Runner 分配策略**:
-  - `linux-amd64-sglang-sglang01`: 负责内源 **华东 001 集群** 同步
-  - `linux-amd64-sglang-guiyang004`: 负责开源 **贵阳 004 集群** 同步
-- **特点**: 两个 Runner 共用同一份配置文件
-- **配置文件**:
-  - `sglang-downloaded-models.ini`
-  - `sglang-downloaded-datasets.ini`
-
-#### HK001 项目同步
-- **Runner**: `linux-aarch64-sync-hk001`
-- **特点**: 针对香港集群的ci 项目，支持从 ModelScope 和 HuggingFace 同步模型和数据集
-- **配置文件**:
-  - `hk001-models.json` (JSON 格式，支持多平台)
-  - `hk001-datasets.json` (JSON 格式，支持多平台)
-
-### 2. 镜像同步
-
-#### 同步流向 1: 东南1 → Quay.io
-- **源仓库**: `swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/sglang`
-- **目标仓库**: `quay.io/ascend/`
-
-#### 同步流向 2: Quay.io → 西南2
-- **源仓库**: `quay.io/ascend/`
-- **目标仓库**: `swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/`
-- **同步镜像**: cann, vllm-ascend, manylinux, llamafactory, triton, mindspore, python, pytorch
-
-#### 同步流向 3: 东南1 → 华东4
-- **源仓库**: `swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/sglang`
-- **目标仓库**: `swr.cn-east-4.myhuaweicloud.com/base_image/ascend-ci/sglang`
-
-#### 同步流向 4: DockerHub → 西南2 (CANN 相关标签)
-- **源仓库**: `docker.io/lmsysorg/sglang`
-- **目标仓库**: `swr.cn-southwest-2.myhuaweicloud.com/base_image/dockerhub/lmsysorg/sglang`
-- **筛选条件**: 仅同步包含 "cann" 标签的镜像
-
-#### 同步流向 5: DockerHub → Quay.io (CANN 相关标签)
-- **源仓库**: `docker.io/lmsysorg/sglang`
-- **目标仓库**: `quay.io/ascend/sglang`
-- **筛选条件**: 仅同步包含 "cann" 标签的镜像
-
-#### 同步流向 6: Quay.io → 香港 SWR (verl)
-- **源仓库**: `quay.io/ascend/verl`
-- **目标仓库**: `swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/verl`
-
+|镜像|源地址|目标地址|下载命令|同步日志|
+|--|--|--|--|--|
+|[sglang](https://github.com/sgl-project/sglang)|`docker.io/lmsysorg/sglang`|国外： `quay.io/ascend/sglang`<br>国内： ` swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/sglang`||
+|[vllm-ascend](https://github.com/vllm-project/vllm-ascend)|`quay.io/ascend/vllm-ascend`|国内： `swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend`||
+|[verl](https://github.com/verl-project/verl)|`docker.io/verlai/verl`|国外： `quay.io/ascend/verl`<br>国内： `swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/verl/verl`||
+|[llamafactory](https://github.com/hiyouga/LlamaFactory)|`docker.io/hiyouga/llamafactory`|国外：`quay.io/ascend/llamafactory`<br>国内：TBD||
+|[veomni](https://github.com/ByteDance-Seed/VeOmni)|`quay.io/ascend/veomni`|国内：TBD|
+|[cann](https://gitcode.com/cann)|`quay.io/ascend/cann`|国内：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann`||
+|[pytorch-npu](https://gitcode.com/ascend/pytorch)|TBD|TBD||
+|[swift](https://github.com/modelscope/ms-swift)|TBD|TBD||
+|[triton-ascend](https://gitcode.com/ascend/triton-ascend)|`quay.io/ascend/triton`|国内：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/triton`||
+|[tilelang-ascend](https://github.com/tile-ai/tilelang-ascend)|TBD|TBD||
 ## 项目结构
 
 ```
@@ -81,25 +40,14 @@
     └── test.yml                          # 测试工作流
 ```
 
-## 工作流配置
-
-### 模型数据集同步
-- **触发方式**: 每 6 小时自动执行，手动触发，文件变更触发
-- **执行环境**: 
-  - VLLM/SGLANG: 使用华为云 SWR 中的 `cann:8.2.rc1-a3-ubuntu22.04-py3.11` 镜像
-  - HK001: 使用 `python:3.11-slim` 镜像 (ARM64 环境)
-- **依赖工具**: `modelscope`, `datasets`, `filelock`, `huggingface_hub`, `jq`
-
-### 镜像同步
-- **触发方式**: 每小时自动执行，手动触发，代码变更触发
-- **同步工具**: 使用 `skopeo` 工具进行镜像同步
-- **支持平台**: Docker Hub, Quay.io, 华为云 SWR
-
 ## 使用方法
 
-### 1. 配置模型和数据集
+### 镜像的同步列表
 
-#### 对于 VLLM/SGLANG 项目
+修改 [sync-images.yml](.github/workflows/sync-images.yml)
+
+### 修改同步的模型列表
+
 编辑对应的 `.ini` 配置文件，添加需要同步的模型和数据集名称：
 
 ```ini
@@ -108,7 +56,12 @@ model_name_1
 model_name_2
 ```
 
-#### 对于 HK001 集群项目
+[vllm-ascend模型下载列表](.github/workflows/config/vllm-downloaded-models.ini)
+[vllm-ascend数据集下载列表](.github/workflows/config/vllm-downloaded-datasets.ini)
+[sglang模型下载列表](.github/workflows/config/sglang-downloaded-models.ini)
+[sglang模型下载列表](.github/workflows/config/sglang-downloaded-datasets.ini)
+
+### 配置多平台下载
 编辑对应的 `.json` 配置文件，支持多平台 (ModelScope 或 HuggingFace)：
 
 ```json

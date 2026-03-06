@@ -241,3 +241,20 @@ jobs:
             --dest-creds ${{ vars.SWR_HK_USER }}:${{ secrets.SWR_HK_SECRET }} \
             quay.io/ascend/verl \
             ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/verl
+
+  sync-verl-to-swr-southwest:
+    name: Sync quay.io/ascend/verl to SWR Southwest
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/skopeo/stable:latest
+    steps:
+      - name: Sync verl from Quay to SWR Southwest
+        run: |
+          skopeo sync --all \
+            --retry-times 3 \
+            --retry-delay 5s \
+            --src docker --dest docker \
+            --src-no-creds \
+            --dest-creds ${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
+            quay.io/ascend/verl \
+            ${{ vars.REGISTRY_SW_2 }}/modelfoundry/ascend-ci/verl

@@ -1,7 +1,7 @@
 name: HK001 Sync Datasets
 on:
   schedule:
-    - cron: '0 */6 * * *' # every 6 hours
+    - cron: '0 */6 * * *'
   workflow_dispatch:
   push:
     branches:
@@ -16,49 +16,8 @@ concurrency:
 
 jobs:
   sync_datasets:
-    runs-on: linux-aarch64-sync-hk001
-    container:
-      image: python:3.11-slim
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install system dependencies
-        run: |
-          apt-get update
-          apt-get install -y jq
-
-      - name: Set up Python environment
-        run: |
-          pip install --upgrade pip
-          pip install huggingface_hub modelscope
-
-      - name: Download datasets
-        run: |
-          echo "Reading dataset configurations from .github/workflows/config/hk001-datasets.json"
-          
-          # Read and process each dataset configuration
-          jq -c '.[]' .github/workflows/config/hk001-datasets.json | while IFS= read -r dataset_config; do
-            platform=$(echo "$dataset_config" | jq -r '.platform')
-            organization=$(echo "$dataset_config" | jq -r '.organization')
-            dataset_name=$(echo "$dataset_config" | jq -r '.dataset_name')
-            
-            echo "Processing dataset: $organization/$dataset_name from $platform"
-            
-            if [ "$platform" = "modelscope" ]; then
-              echo "Downloading from ModelScope to default path..."
-              modelscope download --dataset "$organization/$dataset_name" || echo "Failed to download $organization/$dataset_name from ModelScope"
-              
-            elif [ "$platform" = "huggingface" ]; then
-              echo "Downloading from HuggingFace to /root/.cache/datasets/$organization/$dataset_name..."
-              download_path="/root/.cache/datasets/$organization/$dataset_name"
-              mkdir -p "$download_path" || { echo "Failed to create directory $download_path"; exit 1; }
-              
-              hf download "$organization/$dataset_name" --repo-type=dataset --local-dir="$download_path" || echo "Failed to download $organization/$dataset_name from HuggingFace"
-              
-            else
-              echo "Unknown platform: $platform. Skipping $organization/$dataset_name"
-            fi
-            
-            echo "Completed processing $organization/$dataset_name"
-            echo "---"
-          done
+    uses: ./.github/workflows/reusable-sync-models-datasets.yml
+    with:
+      runs_on: linux-aarch64-sync-hk001
+      container_image: python:3.11-slim
+      datasets_config: .github/workflows/config/hk001-datasets.json

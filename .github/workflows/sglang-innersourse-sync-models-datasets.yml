@@ -1,7 +1,7 @@
 name: sglang innersourse sync datasets and models
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 */6 * * *' # every 6 hours
   workflow_dispatch:
   push:
     branches:

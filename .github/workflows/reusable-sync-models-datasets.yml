@@ -20,9 +20,6 @@ name: Reusable Sync Models and Datasets
 # - runs_on (string, required): 
 #     The GitHub runner label where the job should execute.
 #     Example: 'linux-amd64-sglang-guiyang004'
-# - container_image (string, required): 
-#     The Docker image used as the execution container.
-#     Example: 'python:3.11-slim' or a specific CANN image.
 # - models_config (string, optional): 
 #     Relative path to the models configuration file (.ini or .json).
 #     If omitted or empty, model downloading is skipped.
@@ -38,10 +35,6 @@ on:
         description: 'Runner label (e.g. linux-amd64-sglang-guiyang004)'
         required: true
         type: string
-      container_image:
-        description: 'Container image to run the job in'
-        required: true
-        type: string
       models_config:
         description: 'Path to the models config file (.ini or .json)'
         required: false
@@ -55,7 +48,7 @@ jobs:
   sync:
     runs-on: ${{ inputs.runs_on }}
     container:
-      image: ${{ inputs.container_image }}
+      image: python:3.11-slim
     steps:
       - uses: actions/checkout@v4
 
@@ -78,7 +71,7 @@ jobs:
       - name: Set up Python environment
         run: |
           # Use Huawei Cloud mirror for faster downloads on domestic runners
-          pip config set global.index-url https://mirrors.huaweicloud.com/repository/pypi/simple || \
+          pip config set global.index-url https://repo.huaweicloud.com/repository/pypi/simple || \
           echo "::warning::Failed to set Huawei Cloud pip mirror, falling back to default"
           pip install --upgrade pip
           pip install filelock modelscope datasets huggingface_hub

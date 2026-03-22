@@ -19,5 +19,4 @@ jobs:
     uses: ./.github/workflows/reusable-sync-models-datasets.yml
     with:
       runs_on: linux-aarch64-sync-hk001
-      container_image: python:3.11-slim
       models_config: .github/workflows/config/hk001-models.json

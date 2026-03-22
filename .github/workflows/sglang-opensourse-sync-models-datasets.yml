@@ -17,39 +17,8 @@ concurrency:
 
 jobs:
   sync_dataset:
-    runs-on: linux-amd64-sglang-guiyang004
-    container:
-      image: swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:8.2.rc1-a3-ubuntu22.04-py3.11
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install system dependencies
-        run: |
-          apt-get update
-          apt-get install -y dos2unix
-
-      - name: Set up Python environment
-        run: |
-          pip config set global.index-url https://mirrors.huaweicloud.com/repository/pypi/simple
-          pip install --upgrade pip
-          pip install filelock modelscope datasets
-
-      - name: Download models (with proper handling)
-        run: |
-          dos2unix .github/workflows/config/sglang-downloaded-models.ini
-          while IFS= read -r m; do
-            m=$(echo "$m" | tr -d '\r' | xargs)
-            [[ -z "$m" || "$m" =~ ^# ]] && continue
-            echo "Downloading model: $m"
-            modelscope download --model "$m"
-          done < .github/workflows/config/sglang-downloaded-models.ini
-
-      - name: Download datasets (with proper handling)
-        run: |
-          dos2unix .github/workflows/config/sglang-downloaded-datasets.ini
-          while IFS= read -r m; do
-            m=$(echo "$m" | tr -d '\r' | xargs)
-            [[ -z "$m" || "$m" =~ ^# ]] && continue
-            echo "Downloading dataset: $m"
-            modelscope download --dataset "$m"
-          done < .github/workflows/config/sglang-downloaded-datasets.ini
+    uses: ./.github/workflows/reusable-sync-models-datasets.yml
+    with:
+      runs_on: linux-amd64-sglang-guiyang004
+      models_config: .github/workflows/config/sglang-downloaded-models.ini
+      datasets_config: .github/workflows/config/sglang-downloaded-datasets.ini

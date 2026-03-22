@@ -1,0 +1,181 @@
+name: Reusable Sync Models and Datasets
+
+# ==============================================================================
+# Reusable Workflow: Sync Models and Datasets
+# ==============================================================================
+# 
+# Purpose:
+# This workflow provides a unified pipeline for downloading AI models and datasets 
+# from multiple platforms (HuggingFace, ModelScope) into the runner's local cache.
+# It is designed to replace duplicate download scripts across the repository.
+#
+# Key Features:
+# - Supports both `.ini` (plain text lists) and `.json` (structured array) configs.
+# - Fault-tolerant execution: If a single model/dataset fails to download, 
+#   the workflow continues with the rest and fails at the very end.
+# - Automatically detects the requested platform (ModelScope or HuggingFace) 
+#   when using JSON config.
+#
+# Inputs:
+# - runs_on (string, required): 
+#     The GitHub runner label where the job should execute.
+#     Example: 'linux-amd64-sglang-guiyang004'
+# - models_config (string, optional): 
+#     Relative path to the models configuration file (.ini or .json).
+#     If omitted or empty, model downloading is skipped.
+# - datasets_config (string, optional): 
+#     Relative path to the datasets configuration file (.ini or .json).
+#     If omitted or empty, dataset downloading is skipped.
+# ==============================================================================
+
+on:
+  workflow_call:
+    inputs:
+      runs_on:
+        description: 'Runner label (e.g. linux-amd64-sglang-guiyang004)'
+        required: true
+        type: string
+      models_config:
+        description: 'Path to the models config file (.ini or .json)'
+        required: false
+        type: string
+      datasets_config:
+        description: 'Path to the datasets config file (.ini or .json)'
+        required: false
+        type: string
+
+jobs:
+  sync:
+    runs-on: ${{ inputs.runs_on }}
+    container:
+      image: python:3.11-slim
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          apt-get update && apt-get install -y dos2unix jq
+
+      - name: Set up Python environment
+        run: |
+          # Use Huawei Cloud mirror for faster downloads on domestic runners
+          pip config set global.index-url https://repo.huaweicloud.com/repository/pypi/simple || \
+          echo "::warning::Failed to set Huawei Cloud pip mirror, falling back to default"
+          pip install --upgrade pip
+          pip install filelock modelscope datasets huggingface_hub
+
+      - name: Download Models
+        if: ${{ inputs.models_config != '' }}
+        run: |
+          CONFIG_FILE="${{ inputs.models_config }}"
+          FAIL_COUNT=0
+          
+          echo "Reading models from $CONFIG_FILE"
+          
+          if [[ "$CONFIG_FILE" == *.ini ]]; then
+            dos2unix "$CONFIG_FILE"
+            while IFS= read -r m; do
+              m=$(echo "$m" | tr -d '\r' | xargs)
+              [[ -z "$m" || "$m" =~ ^# ]] && continue
+              
+              echo "⬇️ Downloading model: $m from ModelScope"
+              if ! modelscope download --model "$m"; then
+                echo "::error::Failed to download model $m"
+                ((FAIL_COUNT++))
+              fi
+            done < "$CONFIG_FILE"
+            
+          elif [[ "$CONFIG_FILE" == *.json ]]; then
+            while IFS= read -r item; do
+              platform=$(echo "$item" | jq -r '.platform')
+              organization=$(echo "$item" | jq -r '.organization')
+              # Support dataset_name // model_name for consistency
+              model_name=$(echo "$item" | jq -r '.model_name // .dataset_name')
+              repo_id="$organization/$model_name"
+              
+              if [ "$platform" = "modelscope" ]; then
+                echo "⬇️ Downloading model $repo_id from ModelScope..."
+                if ! modelscope download --model "$repo_id"; then
+                  echo "::error::Failed to download $repo_id from ModelScope"
+                  ((FAIL_COUNT++))
+                fi
+              elif [ "$platform" = "huggingface" ]; then
+                echo "⬇️ Downloading model $repo_id from HuggingFace..."
+                download_path="/root/.cache/models/$organization/$model_name"
+                mkdir -p "$download_path"
+                # Use environment variables for secure Python string handling
+                if ! REPO_ID="$repo_id" DOWNLOAD_PATH="$download_path" python3 -c "import os; from huggingface_hub import snapshot_download; snapshot_download(repo_id=os.getenv('REPO_ID'), local_dir=os.getenv('DOWNLOAD_PATH'), local_dir_use_symlinks=False)"; then
+                  echo "::error::Failed to download $repo_id from HuggingFace"
+                  ((FAIL_COUNT++))
+                fi
+              else
+                echo "::warning::Unknown platform: $platform for $repo_id"
+              fi
+            done < <(jq -c '.[]' "$CONFIG_FILE")
+          else
+            echo "::error::Unsupported config format: $CONFIG_FILE"
+            exit 1
+          fi
+          
+          if [ $FAIL_COUNT -gt 0 ]; then
+            echo "::error::$FAIL_COUNT model(s) failed to download. Check logs above."
+            exit 1
+          fi
+
+      - name: Download Datasets
+        if: ${{ inputs.datasets_config != '' }}
+        run: |
+          CONFIG_FILE="${{ inputs.datasets_config }}"
+          FAIL_COUNT=0
+          
+          echo "Reading datasets from $CONFIG_FILE"
+          
+          if [[ "$CONFIG_FILE" == *.ini ]]; then
+            dos2unix "$CONFIG_FILE"
+            while IFS= read -r d; do
+              d=$(echo "$d" | tr -d '\r' | xargs)
+              [[ -z "$d" || "$d" =~ ^# ]] && continue
+              
+              echo "⬇️ Downloading dataset: $d from ModelScope"
+              if ! modelscope download --dataset "$d"; then
+                echo "::error::Failed to download dataset $d"
+                ((FAIL_COUNT++))
+              fi
+            done < "$CONFIG_FILE"
+            
+          elif [[ "$CONFIG_FILE" == *.json ]]; then
+            while IFS= read -r item; do
+              platform=$(echo "$item" | jq -r '.platform')
+              organization=$(echo "$item" | jq -r '.organization')
+              # Support dataset_name // model_name
+              dataset_name=$(echo "$item" | jq -r '.dataset_name // .model_name')
+              repo_id="$organization/$dataset_name"
+              
+              if [ "$platform" = "modelscope" ]; then
+                echo "⬇️ Downloading dataset $repo_id from ModelScope..."
+                if ! modelscope download --dataset "$repo_id"; then
+                  echo "::error::Failed to download dataset $repo_id from ModelScope"
+                  ((FAIL_COUNT++))
+                fi
+              elif [ "$platform" = "huggingface" ]; then
+                echo "⬇️ Downloading dataset $repo_id from HuggingFace..."
+                download_path="/root/.cache/datasets/$organization/$dataset_name"
+                mkdir -p "$download_path"
+                # Use environment variables for secure Python string handling
+                if ! REPO_ID="$repo_id" DOWNLOAD_PATH="$download_path" python3 -c "import os; from huggingface_hub import snapshot_download; snapshot_download(repo_id=os.getenv('REPO_ID'), repo_type='dataset', local_dir=os.getenv('DOWNLOAD_PATH'), local_dir_use_symlinks=False)"; then
+                  echo "::error::Failed to download dataset $repo_id from HuggingFace"
+                  ((FAIL_COUNT++))
+                fi
+              else
+                echo "::warning::Unknown platform: $platform for $repo_id"
+              fi
+            done < <(jq -c '.[]' "$CONFIG_FILE")
+          else
+            echo "::error::Unsupported config format: $CONFIG_FILE"
+            exit 1
+          fi
+          
+          if [ $FAIL_COUNT -gt 0 ]; then
+            echo "::error::$FAIL_COUNT dataset(s) failed to download. Check logs above."
+            exit 1
+          fi

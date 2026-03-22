@@ -48,17 +48,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          # 检查可用的包管理器并安装所需依赖
-          if command -v yum &> /dev/null; then
-            yum update -y && yum install -y jq curl
-          elif command -v dnf &> /dev/null; then
-            dnf update -y && dnf install -y jq curl
-          elif command -v microdnf &> /dev/null; then
-            microdnf update -y && microdnf install -y jq curl
-          else
-            echo "Error: No supported package manager found"
-            exit 1
-          fi
+          microdnf update -y && microdnf install -y jq curl
 
       - name: Fetch all tags and filter CANN-related ones
         id: get-cann-tags

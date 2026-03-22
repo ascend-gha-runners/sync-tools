@@ -54,19 +54,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          # Detect available package manager and install dependencies
-          if command -v apt-get &> /dev/null; then
-            apt-get update && apt-get install -y dos2unix jq
-          elif command -v yum &> /dev/null; then
-            yum update -y && yum install -y dos2unix jq
-          elif command -v dnf &> /dev/null; then
-            dnf update -y && dnf install -y dos2unix jq
-          elif command -v microdnf &> /dev/null; then
-            microdnf update -y && microdnf install -y dos2unix jq
-          else
-            echo "::error::No supported package manager found (apt-get, yum, dnf, microdnf)"
-            exit 1
-          fi
+          apt-get update && apt-get install -y dos2unix jq
 
       - name: Set up Python environment
         run: |

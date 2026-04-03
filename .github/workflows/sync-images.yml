@@ -27,7 +27,7 @@ jobs:
       image: quay.io/skopeo/stable:latest
     strategy:
       matrix:
-        repo: ["cann", "vllm-ascend", "manylinux", "llamafactory", "triton", "mindspore", "python", "pytorch", "veomni", "verl"]
+        repo: ["cann", "vllm-ascend", "manylinux", "llamafactory", "triton", "mindspore", "python", "pytorch", "veomni", "verl", "vllm-omni", "mindie"]
     steps:
       - name: Sync quay.io/ascend/${{ matrix.repo }} to SWR Southwest
         run: |
@@ -38,6 +38,26 @@ jobs:
             --dest-creds ${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
             quay.io/ascend/${{ matrix.repo }} \
             ${{ vars.REGISTRY_SW_2 }}/base_image/ascend-ci/${{ matrix.repo }}
+
+
+  sync-quay-to-dockerhub:
+    name: Sync from Quay to Docker Hub
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/skopeo/stable:latest
+    strategy:
+      matrix:
+        repo: ["cann", "vllm-ascend", "manylinux", "llamafactory", "triton", "mindspore", "python", "pytorch", "veomni", "verl", "vllm-omni", "mindie"]
+    steps:
+      - name: Sync quay.io/ascend/${{ matrix.repo }} to Docker Hub
+        run: |
+          skopeo sync --all \
+            --retry-times 3 \
+            --retry-delay 5s \
+            --src docker --dest docker \
+            --dest-creds ${{ vars.DOCKERHUB_USER }}:${{ secrets.DOCKERHUB_PWD }} \
+            quay.io/ascend/${{ matrix.repo }} \
+            docker.io/ascendai
 
 
   sync-sglang-cann-tags:

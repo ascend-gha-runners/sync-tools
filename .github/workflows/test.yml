@@ -1,0 +1,65 @@
+name: Validate Sync Configuration
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/**"
+      - ".github/workflows/*.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/**"
+      - ".github/workflows/*.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate projects-clusters.json is valid JSON
+        run: |
+          jq empty .github/workflows/config/projects-clusters.json
+
+      - name: Validate all referenced config files exist
+        run: |
+          jq -r '.[].models_config, .[].datasets_config' .github/workflows/config/projects-clusters.json | while read -r f; do
+            if [ ! -f ".github/workflows/config/$f" ]; then
+              echo "ERROR: Referenced config not found: .github/workflows/config/$f"
+              exit 1
+            fi
+          done
+
+      - name: Validate all clusters are non-empty
+        run: |
+          jq -r '.[].clusters[]' .github/workflows/config/projects-clusters.json | while read -r c; do
+            if [ -z "$c" ]; then
+              echo "ERROR: Empty cluster name found in projects-clusters.json"
+              exit 1
+            fi
+          done
+
+      - name: Validate INI config files have no syntax issues
+        run: |
+          for f in .github/workflows/config/*.ini; do
+            dos2unix "$f" 2>/dev/null || true
+            while IFS= read -r line; do
+              line=$(echo "$line" | tr -d '\r' | xargs)
+              if [[ -n "$line" && ! "$line" =~ ^# ]]; then
+                if [[ ! "$line" =~ ^[a-zA-Z0-9_./-]+/[a-zA-Z0-9_./-]+$ ]]; then
+                  echo "WARNING: Unusual format in $f: $line"
+                fi
+              fi
+            done < "$f"
+          done
+
+      - name: Validate JSON config files are valid
+        run: |
+          for f in .github/workflows/config/*.json; do
+            if [ "$f" != ".github/workflows/config/projects-clusters.json" ]; then
+              jq empty "$f"
+            fi
+          done

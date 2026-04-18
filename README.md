@@ -2,14 +2,15 @@
 
 ## 项目概述
 
-本项目通过[skopeo](https://github.com/containers/skopeo)将各种昇腾可用的镜像从主要的[发布 registry](https://quay.io/organization/ascend/)同步到各种[registry]，方便用户就近下载使用
+本项目通过[skopeo](https://github.com/containers/skopeo)将各种昇腾可用的镜像从主要的[发布 registry](https://quay.io/organization/ascend/)同步到各种[registry]，方便用户就近下载使用。
 
+同时支持将模型和数据集按项目同步到多个 NPU 集群。
 
 ## 包含的image
 
 |镜像|源地址|目标地址|下载命令|同步日志|
 |--|--|--|--|--|
-|[sglang](https://github.com/sgl-project/sglang)|`docker.io/lmsysorg/sglang`|国外： `quay.io/ascend/sglang`<br>国内： ` swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/dockerhub/lmsysorg/sglang`||
+|[sglang](https://github.com/sgl-project/sglang)|`docker.io/lmsysorg/sglang`|国外： `quay.io/ascend/sglang`<br>国内： ` swr.cn-southwest-2.myhuaweicloud.com/base_image/dockerhub/lmsysorg/sglang`||
 |[vllm-ascend](https://github.com/vllm-project/vllm-ascend)|`quay.io/ascend/vllm-ascend`|国内： `swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend`||
 |[verl](https://github.com/verl-project/verl)|`docker.io/verlai/verl`|国外： `quay.io/ascend/verl`<br>国内： `swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/verl/verl`||
 |[llamafactory](https://github.com/hiyouga/LlamaFactory)|`docker.io/hiyouga/llamafactory`|国外：`quay.io/ascend/llamafactory`<br>国内：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/llamafactory/llamafactory`||
@@ -19,25 +20,25 @@
 |[swift](https://github.com/modelscope/ms-swift)|TBD|TBD||
 |[triton-ascend](https://gitcode.com/ascend/triton-ascend)|`quay.io/ascend/triton`|国内：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/triton/triton`||
 |[tilelang-ascend](https://github.com/tile-ai/tilelang-ascend)|TBD|TBD||
+
 ## 项目结构
 
 ```
 .github/
 └── workflows/
     ├── config/                           # 配置文件目录
+    │   ├── projects-clusters.json        # 项目与集群映射关系（核心配置）
     │   ├── vllm-downloaded-models.ini    # VLLM 模型同步配置
     │   ├── vllm-downloaded-datasets.ini  # VLLM 数据集同步配置
     │   ├── sglang-downloaded-models.ini  # SGLANG 模型同步配置
     │   ├── sglang-downloaded-datasets.ini # SGLANG 数据集同步配置
     │   ├── hk001-models.json             # HK001 模型同步配置 (JSON)
     │   └── hk001-datasets.json           # HK001 数据集同步配置 (JSON)
-    ├── vllm-sync-models-datasets.yml     # VLLM 同步工作流
-    ├── sglang-innersourse-sync-models-datasets.yml  # SGLANG 内源同步
-    ├── sglang-opensourse-sync-models-datasets.yml   # SGLANG 开源同步
-    ├── hk001-sync-models.yml             # HK001 模型同步工作流
-    ├── hk001-sync-datasets.yml           # HK001 数据集同步工作流
+    ├── vllm-sync.yml                     # VLLM 项目同步工作流
+    ├── sglang-sync.yml                   # SGLANG 项目同步工作流
+    ├── hk001-sync.yml                    # HK001 项目同步工作流
     ├── sync-images.yml                   # 镜像同步工作流
-    └── test.yml                          # 测试工作流
+    └── test.yml                          # 配置验证工作流
 ```
 
 ## 使用方法
@@ -68,12 +69,32 @@ workflow 根据域名自动匹配认证信息，目前支持的源/目标 regist
 
 同步每小时自动执行一次，每个 tag 在 push 前会比对源和目标的 manifest digest，内容未变则跳过，不会刷新目标 registry 的更新时间。
 
-### 修改同步的模型列表
+### 模型/数据集同步（按项目）
 
-编辑对应的 `.ini` 配置文件，添加需要同步的模型和数据集名称：
+同步逻辑已改为**项目绑定**模式：每个项目维护自己的模型/数据集列表，系统自动将资源同步到该项目关联的所有集群。
 
+#### 1. 项目与集群映射
+
+编辑 [projects-clusters.json](.github/workflows/config/projects-clusters.json)，定义每个项目关联的集群：
+
+```json
+{
+  "vllm": {
+    "clusters": ["linux-amd64-vllm-guiyang003", "linux-amd64-vllm-shenzhen001"],
+    "config_type": "ini",
+    "models_config": "vllm-downloaded-models.ini",
+    "datasets_config": "vllm-downloaded-datasets.ini",
+    "container_image": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:8.2.rc1-a3-ubuntu22.04-py3.11"
+  }
+}
+```
+
+#### 2. 修改同步的模型/数据集列表
+
+编辑对应的 `.ini` 或 `.json` 配置文件：
+
+**INI 格式**（简单列表，每行一个）：
 ```ini
-# 示例配置
 model_name_1
 model_name_2
 ```
@@ -81,11 +102,9 @@ model_name_2
 [vllm-ascend模型下载列表](.github/workflows/config/vllm-downloaded-models.ini)
 [vllm-ascend数据集下载列表](.github/workflows/config/vllm-downloaded-datasets.ini)
 [sglang模型下载列表](.github/workflows/config/sglang-downloaded-models.ini)
-[sglang模型下载列表](.github/workflows/config/sglang-downloaded-datasets.ini)
+[sglang数据集下载列表](.github/workflows/config/sglang-downloaded-datasets.ini)
 
-### 配置多平台下载
-编辑对应的 `.json` 配置文件，支持多平台 (ModelScope 或 HuggingFace)：
-
+**JSON 格式**（支持多平台 ModelScope / HuggingFace）：
 ```json
 [
   {
@@ -101,11 +120,26 @@ model_name_2
 ]
 ```
 
-### 2. 手动触发同步
+[hk001模型下载列表](.github/workflows/config/hk001-models.json)
+[hk001数据集下载列表](.github/workflows/config/hk001-datasets.json)
+
+#### 3. 新增项目
+
+1. 在 `projects-clusters.json` 中添加项目条目，指定集群列表和配置文件
+2. 创建对应的 `.ini` 或 `.json` 配置文件
+3. 复制已有的 `*-sync.yml` 工作流文件，修改项目名称和配置引用
+
+#### 4. 为项目添加新集群
+
+只需在 `projects-clusters.json` 中对应项目的 `clusters` 数组中添加新的集群名称即可，无需修改工作流文件。
+
+### 手动触发同步
+
 - 在 GitHub Actions 页面选择对应的工作流，点击 "Run workflow" 即可手动触发同步。
 - 也可以通过向 `main` 分支推送配置文件变更来触发同步。
 
-### 3. 查看同步日志
+### 查看同步日志
+
 - 在 GitHub Actions 页面查看各工作流的执行日志，确认同步是否成功。
 - 失败时会发送通知（如配置了通知）。
 
@@ -121,5 +155,7 @@ model_name_2
 
 ## 更新记录
 - 2026-04-20: 镜像同步改为配置驱动（image-sync.json），支持任意源/目标 registry，同步频率改为每小时一次，新增 digest 比对跳过机制。
+- 2026-04-18: 支持项目级多集群同步，新增 projects-clusters.json 配置，重构工作流使用 matrix 策略
+- 2026-03-01: 更新README，补充了image同步全景，增加同步veomni
 - 2025-12-08: 更新 README，新增 HK001 同步说明，补充镜像同步流向。
 - 2025-11-15: 初始版本，包含 VLLM 和 SGLANG 同步。

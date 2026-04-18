@@ -58,11 +58,10 @@
 ```json
 {
   "vllm": {
-    "clusters": ["linux-amd64-vllm-guiyang003", "linux-amd64-vllm-shenzhen001"],
+    "clusters": ["linux-amd64-vllm-guiyang003"],
     "config_type": "ini",
     "models_config": "vllm-downloaded-models.ini",
-    "datasets_config": "vllm-downloaded-datasets.ini",
-    "container_image": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:8.2.rc1-a3-ubuntu22.04-py3.11"
+    "datasets_config": "vllm-downloaded-datasets.ini"
   }
 }
 ```

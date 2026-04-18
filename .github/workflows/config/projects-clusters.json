@@ -3,21 +3,18 @@
     "clusters": ["linux-amd64-vllm-guiyang003"],
     "config_type": "ini",
     "models_config": "vllm-downloaded-models.ini",
-    "datasets_config": "vllm-downloaded-datasets.ini",
-    "container_image": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:8.2.rc1-a3-ubuntu22.04-py3.11"
+    "datasets_config": "vllm-downloaded-datasets.ini"
   },
   "sglang": {
     "clusters": ["linux-amd64-sglang-guiyang004", "linux-amd64-sglang-sglang01"],
     "config_type": "ini",
     "models_config": "sglang-downloaded-models.ini",
-    "datasets_config": "sglang-downloaded-datasets.ini",
-    "container_image": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:8.2.rc1-a3-ubuntu22.04-py3.11"
+    "datasets_config": "sglang-downloaded-datasets.ini"
   },
   "hk001": {
     "clusters": ["linux-aarch64-sync-hk001"],
     "config_type": "json",
     "models_config": "hk001-models.json",
-    "datasets_config": "hk001-datasets.json",
-    "container_image": "python:3.11-slim"
+    "datasets_config": "hk001-datasets.json"
   }
 }

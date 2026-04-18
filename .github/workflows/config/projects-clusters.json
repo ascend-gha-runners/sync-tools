@@ -1,19 +1,16 @@
 {
   "vllm": {
     "clusters": ["linux-amd64-vllm-guiyang003"],
-    "config_type": "ini",
-    "models_config": "vllm-downloaded-models.ini",
-    "datasets_config": "vllm-downloaded-datasets.ini"
+    "models_config": "vllm-models.json",
+    "datasets_config": "vllm-datasets.json"
   },
   "sglang": {
     "clusters": ["linux-amd64-sglang-guiyang004", "linux-amd64-sglang-sglang01"],
-    "config_type": "ini",
-    "models_config": "sglang-downloaded-models.ini",
-    "datasets_config": "sglang-downloaded-datasets.ini"
+    "models_config": "sglang-models.json",
+    "datasets_config": "sglang-datasets.json"
   },
   "hk001": {
     "clusters": ["linux-aarch64-sync-hk001"],
-    "config_type": "json",
     "models_config": "hk001-models.json",
     "datasets_config": "hk001-datasets.json"
   }

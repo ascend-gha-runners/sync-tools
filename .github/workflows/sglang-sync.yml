@@ -8,8 +8,8 @@ on:
     branches:
       - main
     paths:
-      - ".github/workflows/config/sglang-downloaded-datasets.ini"
-      - ".github/workflows/config/sglang-downloaded-models.ini"
+      - ".github/workflows/config/sglang-datasets.json"
+      - ".github/workflows/config/sglang-models.json"
       - ".github/workflows/config/projects-clusters.json"
       - ".github/workflows/sglang-sync.yml"
 
@@ -45,7 +45,7 @@ jobs:
       - name: Install system dependencies
         run: |
           apt-get update
-          apt-get install -y dos2unix
+          apt-get install -y jq
 
       - name: Set up Python environment
         run: |
@@ -55,8 +55,8 @@ jobs:
 
       - name: Download models
         run: |
-          bash .github/scripts/download-ini-models.sh .github/workflows/config/sglang-downloaded-models.ini model
+          bash .github/scripts/download-json-models.sh .github/workflows/config/sglang-models.json model
 
       - name: Download datasets
         run: |
-          bash .github/scripts/download-ini-models.sh .github/workflows/config/sglang-downloaded-datasets.ini dataset
+          bash .github/scripts/download-json-models.sh .github/workflows/config/sglang-datasets.json dataset

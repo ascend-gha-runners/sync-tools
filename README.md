@@ -28,12 +28,12 @@
 └── workflows/
     ├── config/                           # 配置文件目录
     │   ├── projects-clusters.json        # 项目与集群映射关系（核心配置）
-    │   ├── vllm-downloaded-models.ini    # VLLM 模型同步配置
-    │   ├── vllm-downloaded-datasets.ini  # VLLM 数据集同步配置
-    │   ├── sglang-downloaded-models.ini  # SGLANG 模型同步配置
-    │   ├── sglang-downloaded-datasets.ini # SGLANG 数据集同步配置
-    │   ├── hk001-models.json             # HK001 模型同步配置 (JSON)
-    │   └── hk001-datasets.json           # HK001 数据集同步配置 (JSON)
+    │   ├── vllm-models.json              # VLLM 模型同步配置
+    │   ├── vllm-datasets.json            # VLLM 数据集同步配置
+    │   ├── sglang-models.json            # SGLANG 模型同步配置
+    │   ├── sglang-datasets.json          # SGLANG 数据集同步配置
+    │   ├── hk001-models.json             # HK001 模型同步配置
+    │   └── hk001-datasets.json           # HK001 数据集同步配置
     ├── vllm-sync.yml                     # VLLM 项目同步工作流
     ├── sglang-sync.yml                   # SGLANG 项目同步工作流
     ├── hk001-sync.yml                    # HK001 项目同步工作流
@@ -59,29 +59,16 @@
 {
   "vllm": {
     "clusters": ["linux-amd64-vllm-guiyang003"],
-    "config_type": "ini",
-    "models_config": "vllm-downloaded-models.ini",
-    "datasets_config": "vllm-downloaded-datasets.ini"
+    "models_config": "vllm-models.json",
+    "datasets_config": "vllm-datasets.json"
   }
 }
 ```
 
 #### 2. 修改同步的模型/数据集列表
 
-编辑对应的 `.ini` 或 `.json` 配置文件：
+编辑对应的 JSON 配置文件（支持多平台 ModelScope / HuggingFace）：
 
-**INI 格式**（简单列表，每行一个）：
-```ini
-model_name_1
-model_name_2
-```
-
-[vllm-ascend模型下载列表](.github/workflows/config/vllm-downloaded-models.ini)
-[vllm-ascend数据集下载列表](.github/workflows/config/vllm-downloaded-datasets.ini)
-[sglang模型下载列表](.github/workflows/config/sglang-downloaded-models.ini)
-[sglang数据集下载列表](.github/workflows/config/sglang-downloaded-datasets.ini)
-
-**JSON 格式**（支持多平台 ModelScope / HuggingFace）：
 ```json
 [
   {
@@ -97,13 +84,17 @@ model_name_2
 ]
 ```
 
+[vllm模型下载列表](.github/workflows/config/vllm-models.json)
+[vllm数据集下载列表](.github/workflows/config/vllm-datasets.json)
+[sglang模型下载列表](.github/workflows/config/sglang-models.json)
+[sglang数据集下载列表](.github/workflows/config/sglang-datasets.json)
 [hk001模型下载列表](.github/workflows/config/hk001-models.json)
 [hk001数据集下载列表](.github/workflows/config/hk001-datasets.json)
 
 #### 3. 新增项目
 
 1. 在 `projects-clusters.json` 中添加项目条目，指定集群列表和配置文件
-2. 创建对应的 `.ini` 或 `.json` 配置文件
+2. 创建对应的 JSON 配置文件
 3. 复制已有的 `*-sync.yml` 工作流文件，修改项目名称和配置引用
 
 #### 4. 为项目添加新集群
@@ -131,6 +122,7 @@ model_name_2
 - [镜像地址指引（按项目分类）](IMAGE_SYNC_GUIDE.md) – 详细列出各项目镜像的存放地址，方便快速查找。
 
 ## 更新记录
+- 2026-04-18: 统一配置文件为 JSON 格式，移除 INI 格式支持
 - 2026-04-18: 支持项目级多集群同步，新增 projects-clusters.json 配置，重构工作流使用 matrix 策略
 - 2026-03-01: 更新README，补充了image同步全景，增加同步veomni
 - 2025-12-08: 更新 README，新增 HK001 同步说明，补充镜像同步流向。

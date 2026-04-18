@@ -58,20 +58,6 @@ jobs:
             exit 1
           fi
 
-      - name: Validate INI config files have no syntax issues
-        run: |
-          for f in .github/workflows/config/*.ini; do
-            dos2unix "$f" 2>/dev/null || true
-            while IFS= read -r line; do
-              line=$(echo "$line" | tr -d '\r' | xargs)
-              if [[ -n "$line" && ! "$line" =~ ^# ]]; then
-                if [[ ! "$line" =~ ^[a-zA-Z0-9_./-]+/[a-zA-Z0-9_./-]+$ ]]; then
-                  echo "WARNING: Unusual format in $f: $line"
-                fi
-              fi
-            done < "$f"
-          done
-
       - name: Validate JSON config files are valid
         run: |
           for f in .github/workflows/config/*.json; do

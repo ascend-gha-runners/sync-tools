@@ -1,0 +1,84 @@
+name: hk001 sync models and datasets
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/hk001-models.json"
+      - ".github/workflows/config/hk001-datasets.json"
+      - ".github/workflows/config/projects-clusters.json"
+      - ".github/workflows/hk001-sync.yml"
+
+concurrency:
+  group: hk001-sync-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      clusters: ${{ steps.set-clusters.outputs.clusters }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-clusters
+        run: |
+          CLUSTERS=$(jq -c '.hk001.clusters' .github/workflows/config/projects-clusters.json)
+          echo "clusters=$CLUSTERS" >> $GITHUB_OUTPUT
+
+  sync-models:
+    needs: prepare
+    name: sync models to ${{ matrix.cluster }}
+    runs-on: ${{ matrix.cluster }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: ${{ fromJson(needs.prepare.outputs.clusters) }}
+    container:
+      image: python:3.11-slim
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y jq
+
+      - name: Set up Python environment
+        run: |
+          pip install --upgrade pip
+          pip install filelock modelscope datasets huggingface_hub
+
+      - name: Download models
+        run: |
+          bash .github/scripts/download-json-models.sh .github/workflows/config/hk001-models.json model
+
+  sync-datasets:
+    needs: prepare
+    name: sync datasets to ${{ matrix.cluster }}
+    runs-on: ${{ matrix.cluster }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: ${{ fromJson(needs.prepare.outputs.clusters) }}
+    container:
+      image: python:3.11-slim
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y jq
+
+      - name: Set up Python environment
+        run: |
+          pip install --upgrade pip
+          pip install huggingface_hub modelscope
+
+      - name: Download datasets
+        run: |
+          bash .github/scripts/download-json-models.sh .github/workflows/config/hk001-datasets.json dataset

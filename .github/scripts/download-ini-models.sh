@@ -19,9 +19,9 @@ while IFS= read -r entry; do
 
   echo "Downloading $TYPE: $entry"
   if [ "$TYPE" = "model" ]; then
-    modelscope download --model "$entry" || echo "WARNING: Failed to download model $entry"
+    modelscope download --model "$entry"
   else
-    modelscope download --dataset "$entry" || echo "WARNING: Failed to download dataset $entry"
+    modelscope download --dataset "$entry"
   fi
 done < "$CONFIG_FILE"
 

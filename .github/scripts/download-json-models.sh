@@ -12,6 +12,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 
 NAME_KEY="${TYPE}_name"
+BASE_DIR="/data/${TYPE}s"
 
 jq -c '.[]' "$CONFIG_FILE" | while IFS= read -r entry; do
   platform=$(echo "$entry" | jq -r '.platform')
@@ -21,19 +22,19 @@ jq -c '.[]' "$CONFIG_FILE" | while IFS= read -r entry; do
   echo "Processing $TYPE: $organization/$name from $platform"
 
   if [ "$platform" = "modelscope" ]; then
+    download_path="$BASE_DIR/$organization/$name"
+    mkdir -p "$download_path"
     if [ "$TYPE" = "model" ]; then
-      modelscope download --model "$organization/$name" || echo "WARNING: Failed to download model $organization/$name from ModelScope"
+      modelscope download --model "$organization/$name" --local_dir "$download_path" || echo "WARNING: Failed to download model $organization/$name from ModelScope"
     else
-      modelscope download --dataset "$organization/$name" || echo "WARNING: Failed to download dataset $organization/$name from ModelScope"
+      modelscope download --dataset "$organization/$name" --local_dir "$download_path" || echo "WARNING: Failed to download dataset $organization/$name from ModelScope"
     fi
   elif [ "$platform" = "huggingface" ]; then
+    download_path="$BASE_DIR/$organization/$name"
+    mkdir -p "$download_path"
     if [ "$TYPE" = "model" ]; then
-      download_path="/root/.cache/models/$organization/$name"
-      mkdir -p "$download_path"
-      python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='$organization/$name', local_dir='$download_path', local_dir_use_symlinks=False)" || echo "WARNING: Failed to download model $organization/$name from HuggingFace"
+      python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='$organization/$name', local_dir='$download_path')" || echo "WARNING: Failed to download model $organization/$name from HuggingFace"
     else
-      download_path="/root/.cache/datasets/$organization/$name"
-      mkdir -p "$download_path"
       hf download "$organization/$name" --repo-type=dataset --local-dir="$download_path" || echo "WARNING: Failed to download dataset $organization/$name from HuggingFace"
     fi
   else

@@ -124,8 +124,7 @@ jobs:
             for tag in $TAGS; do
               SRC_IMG="docker://$SRC:$tag"
               DEST_IMG="docker://$DEST:$tag"
-
-              SRC_RAW=$(skopeo inspect "${SRC_INSPECT_ARGS[@]}" --raw "$SRC_IMG" 2>/dev/null)
+              echo "from=\"$SRC_IMG\" to=\"$DEST_IMG\""=$(skopeo inspect "${SRC_INSPECT_ARGS[@]}" --raw "$SRC_IMG" 2>/dev/null)
               DEST_RAW=$(skopeo inspect "${DEST_INSPECT_ARGS[@]}" --raw "$DEST_IMG" 2>/dev/null)
 
               if [ -n "$SRC_RAW" ] && [ -n "$DEST_RAW" ]; then

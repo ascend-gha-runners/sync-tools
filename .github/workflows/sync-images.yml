@@ -3,279 +3,148 @@ name: Sync Images Between Registries
 on:
   workflow_dispatch:
   schedule:
-      - cron: "0 3 * * *"
-      - cron: "0 8 * * *"
-  #pull_request:
-  #  branches:
-  #    - main
-  #  paths:
-  #    - ".github/workflows/sync-images.yml"
-  #push:
-  #  branches:
-  #    - main
-  #  paths:
-  #    - ".github/workflows/sync-images.yml"
+      - cron: "0 * * * *"
 
 concurrency:
   group: sync-images-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  sync-quay-to-swr:
-    name: Sync from Quay to SWR Southwest
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/skopeo/stable:latest
-    strategy:
-      matrix:
-        repo: ["cann", "vllm-ascend", "manylinux", "llamafactory", "triton", "mindspore", "python", "pytorch", "veomni", "verl", "vllm-omni", "mindie"]
-    steps:
-      - name: Sync quay.io/ascend/${{ matrix.repo }} to SWR Southwest
-        run: |
-          skopeo sync --all \
-            --retry-times 3 \
-            --retry-delay 5s \
-            --src docker --dest docker \
-            --dest-creds ${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
-            quay.io/ascend/${{ matrix.repo }} \
-            ${{ vars.REGISTRY_SW_2 }}/base_image/ascend-ci/${{ matrix.repo }}
-
-
-  # sync-quay-to-dockerhub:
-  #   name: Sync from Quay to Docker Hub
-  #   runs-on: ubuntu-latest
-  #   container:
-  #     image: quay.io/skopeo/stable:latest
-  #   strategy:
-  #     matrix:
-  #       repo: ["cann", "vllm-ascend", "manylinux", "llamafactory", "triton", "mindspore", "python", "pytorch", "veomni", "verl", "vllm-omni", "mindie"]
-  #   steps:
-  #     - name: Sync quay.io/ascend/${{ matrix.repo }} to Docker Hub
-  #       run: |
-  #         skopeo sync --all \
-  #           --retry-times 3 \
-  #           --retry-delay 5s \
-  #           --src docker --dest docker \
-  #           --dest-creds ${{ vars.DOCKERHUB_USER }}:${{ secrets.DOCKERHUB_PWD }} \
-  #           quay.io/ascend/${{ matrix.repo }} \
-  #           docker.io/ascendai
-
-
-  sync-sglang-cann-tags:
-    name: Sync lmsysorg/sglang CANN-related tags to SWR
+  sync-images:
+    name: Sync images from config
     runs-on: ubuntu-latest
     container:
       image: quay.io/skopeo/stable:latest
     steps:
-      - name: Install jq and curl using yum
-        run: |
-          # 检查可用的包管理器
-          if command -v yum &> /dev/null; then
-            echo "Using yum package manager"
-            yum update -y
-            yum install -y jq curl
-          elif command -v dnf &> /dev/null; then
-            echo "Using dnf package manager"  
-            dnf update -y
-            dnf install -y jq curl
-          elif command -v microdnf &> /dev/null; then
-            echo "Using microdnf package manager"
-            microdnf update -y
-            microdnf install -y jq curl
-          else
-            echo "Error: No supported package manager found"
-            exit 1
-          fi
-          
-          # 验证安装
-          jq --version
-          curl --version
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Debug environment variables
-        run: |
-          echo "Debug: Checking if registry variables are set:"
-          echo "REGISTRY_SW_2: ${REGISTRY_SW_2:-Not set}"
-          echo "HWCLOUD_USER length: ${#HWCLOUD_USER} chars"
-          echo "HWCLOUD_PWD length: ${#HWCLOUD_PWD} chars (secret)"
-
-      - name: Fetch all tags and filter CANN-related ones
-        id: get-cann-tags
-        run: |
-          echo "Debug: Testing DockerHub API connection..."
-          API_RESPONSE=$(curl -s -w "\nHTTP Status: %{http_code}" "https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/?page_size=1")
-          echo "API Response: $API_RESPONSE"
-          
-          echo "Debug: Fetching all tags..."
-          # 获取所有分页的tags
-          TAGS=""
-          NEXT_URL="https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/?page_size=100"
-          PAGE=1
-          
-          while [ "$NEXT_URL" != "null" ] && [ $PAGE -le 10 ]; do
-            echo "Fetching page $PAGE: $NEXT_URL"
-            RESPONSE=$(curl -s "$NEXT_URL")
-            PAGE_TAGS=$(echo "$RESPONSE" | jq -r '.results[] | select(.name | test("cann"; "i")) | .name' 2>/dev/null || echo "")
-            
-            if [ -n "$PAGE_TAGS" ]; then
-              TAGS="$TAGS"$'\n'"$PAGE_TAGS"
-            fi
-            
-            NEXT_URL=$(echo "$RESPONSE" | jq -r '.next // "null"')
-            PAGE=$((PAGE + 1))
-          done
-          
-          # 清理和格式化tags
-          TAGS=$(echo "$TAGS" | sed '/^$/d' | sort -u)
-          
-          echo "Debug: Number of tags found: $(echo "$TAGS" | wc -l)"
-          echo "Found CANN-related tags:"
-          echo "$TAGS"
-          
-          # 安全输出到GITHUB_OUTPUT
-          if [ -n "$TAGS" ]; then
-            echo "tags=$(echo "$TAGS" | tr '\n' ' ' | xargs)" >> $GITHUB_OUTPUT
-          else
-            echo "tags=" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Debug tags output
-        run: |
-          echo "Debug: Output from get-cann-tags step:"
-          echo "Tags variable: '${{ steps.get-cann-tags.outputs.tags }}'"
-          
-          if [ -n "${{ steps.get-cann-tags.outputs.tags }}" ]; then
-            echo "Debug: Split tags for verification:"
-            IFS=' ' read -ra TAG_ARRAY <<< "${{ steps.get-cann-tags.outputs.tags }}"
-            for tag in "${TAG_ARRAY[@]}"; do
-              echo "Tag: $tag"
-            done
-          else
-            echo "Debug: No tags found"
-          fi
-
-      - name: Test skopeo connection
-        run: |
-          echo "Debug: Testing skopeo connection to source registry..."
-          skopeo inspect --retry-times 1 docker://docker.io/lmsysorg/sglang:latest || echo "Debug: Skopeo inspect test completed"
-
-      - name: Sync each CANN-related tag
-        if: steps.get-cann-tags.outputs.tags != ''
-        run: |
-          echo "Debug: Starting sync process..."
-          TAGS="${{ steps.get-cann-tags.outputs.tags }}"
-          
-          for tag in $TAGS; do
-            echo "Syncing tag: $tag"
-            if skopeo copy --all \
-              --retry-times 3 \
-              --src-no-creds \
-              --dest-creds "${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }}" \
-              docker://docker.io/lmsysorg/sglang:$tag \
-              docker://${{ vars.REGISTRY_SW_2 }}/base_image/dockerhub/lmsysorg/sglang:$tag; then
-              echo "✅ Successfully synced tag: $tag"
-            else
-              echo "❌ Failed to sync tag: $tag"
-              exit 1
-            fi
-          done
-          echo "🎉 All tags synced successfully"
-
-      - name: No tags found message
-        if: steps.get-cann-tags.outputs.tags == ''
-        run: |
-          echo "ℹ️ No CANN-related tags found to sync"
-
-     
-  sync-sglang-to-quay:
-    name: Sync lmsysorg/sglang CANN-related tags to Quay
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/skopeo/stable:latest
-    steps:
       - name: Install jq and curl
+        run: microdnf install -y jq curl
+
+      - name: Sync all image mappings
+        env:
+          QUAY_ASCEND_USER: ${{ vars.QUAY_ASCEND_USER }}
+          QUAY_ASCEND_PWD: ${{ secrets.QUAY_ASCEND_PWD }}
+          DOCKERHUB_USER: ${{ vars.DOCKERHUB_USER }}
+          DOCKERHUB_PWD: ${{ secrets.DOCKERHUB_PWD }}
+          HWCLOUD_USER: ${{ vars.HWCLOUD_USER }}
+          HWCLOUD_PWD: ${{ secrets.HWCLOUD_PWD }}
+          SWR_HK_USER: ${{ vars.REGISTRY_HK_USER }}
+          SWR_HK_SECRET: ${{ secrets.SWR_HK_SECRET }}
         run: |
-          microdnf update -y && microdnf install -y jq curl
-  
-      - name: Fetch all tags and filter CANN-related ones
-        id: get-cann-tags
-        run: |
-          TAGS=""
-          NEXT_URL="https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/?page_size=100"
-          PAGE=1
-          
-          while [ "$NEXT_URL" != "null" ] && [ $PAGE -le 5 ]; do
-            RESPONSE=$(curl -s "$NEXT_URL")
-            PAGE_TAGS=$(echo "$RESPONSE" | jq -r '.results[] | select(.name | test("cann"; "i")) | .name' 2>/dev/null || echo "")
-            
-            if [ -n "$PAGE_TAGS" ]; then
-              TAGS="$TAGS"$'\n'"$PAGE_TAGS"
-            fi
-            
-            NEXT_URL=$(echo "$RESPONSE" | jq -r '.next // "null"')
-            PAGE=$((PAGE + 1))
-          done
-          
-          TAGS=$(echo "$TAGS" | sed '/^$/d' | sort -u)
-          
-          if [ -n "$TAGS" ]; then
-            echo "tags=$(echo "$TAGS" | tr '\n' ' ' | xargs)" >> $GITHUB_OUTPUT
-          else
-            echo "tags=" >> $GITHUB_OUTPUT
-          fi
-  
-      - name: Sync each CANN-related tag to Quay
-        if: steps.get-cann-tags.outputs.tags != ''
-        run: |
-          for tag in ${{ steps.get-cann-tags.outputs.tags }}; do
-            if skopeo copy --all \
-              --retry-times 3 \
-              --src-no-creds \
-              --dest-creds "${{ vars.QUAY_ASCEND_USER }}:${{ secrets.QUAY_ASCEND_PWD }}" \
-              docker://docker.io/lmsysorg/sglang:$tag \
-              docker://quay.io/ascend/sglang:$tag; then
-              echo "✅ Synced: $tag"
+          # 根据镜像域名返回对应 creds，格式为 "user:pwd"，无认证返回空
+          get_creds() {
+            local img="$1"
+            case "$img" in
+              quay.io/*)
+                echo "${QUAY_ASCEND_USER}:${QUAY_ASCEND_PWD}" ;;
+              docker.io/*)
+                echo "${DOCKERHUB_USER}:${DOCKERHUB_PWD}" ;;
+              swr.cn-southwest-2.*)
+                echo "${HWCLOUD_USER}:${HWCLOUD_PWD}" ;;
+              swr.ap-southeast-1.*)
+                echo "${SWR_HK_USER}:${SWR_HK_SECRET}" ;;
+              ascendhub.*)
+                echo "" ;;  # 待补充
+              *)
+                echo "" ;;
+            esac
+          }
+
+          # 根据 creds 字符串构造 skopeo inspect/copy 的认证参数数组
+          # 用法：eval "$(build_creds_args SRC "$SRC_CREDS")"  → 设置 SRC_ARGS 数组
+          build_skopeo_args() {
+            local var="$1" creds="$2"
+            if [ -n "$creds" ]; then
+              eval "${var}=(--creds \"$creds\")"
             else
-              echo "❌ Failed: $tag"
+              eval "${var}=(--no-creds)"
             fi
+          }
+
+          # 获取 tag 列表：tag_filter 非空时走 Docker Hub API 分页过滤，否则走 skopeo list-tags
+          get_tags() {
+            local src="$1" tag_filter="$2" src_creds="$3"
+
+            if [ -n "$tag_filter" ]; then
+              local repo tags="" next_url page=1
+              repo=$(echo "$src" | sed 's|docker\.io/||')
+              next_url="https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100"
+              while [ "$next_url" != "null" ] && [ "$page" -le 20 ]; do
+                local resp page_tags
+                resp=$(curl -s "$next_url")
+                page_tags=$(echo "$resp" | jq -r --arg f "$tag_filter" '.results[] | select(.name | test($f; "i")) | .name' 2>/dev/null || true)
+                [ -n "$page_tags" ] && tags="$tags"$'\n'"$page_tags"
+                next_url=$(echo "$resp" | jq -r '.next // "null"')
+                page=$((page + 1))
+              done
+              echo "$tags" | sed '/^$/d' | sort -u
+            else
+              build_skopeo_args SRC_ARGS "$src_creds"
+              skopeo list-tags "${SRC_ARGS[@]}" docker://"$src" 2>/dev/null | jq -r '.Tags[]'
+            fi
+          }
+
+          CONFIG=".github/workflows/config/image-sync.json"
+          TOTAL=$(jq length "$CONFIG")
+          echo "Total mappings: $TOTAL"
+
+          for i in $(seq 0 $((TOTAL - 1))); do
+            SRC=$(jq -r ".[$i].src" "$CONFIG")
+            DEST=$(jq -r ".[$i].dest" "$CONFIG")
+            TAG_FILTER=$(jq -r ".[$i].tag_filter // empty" "$CONFIG")
+
+            echo ""
+            echo "=== [$((i+1))/$TOTAL] $SRC → $DEST ==="
+
+            SRC_CREDS=$(get_creds "$SRC")
+            DEST_CREDS=$(get_creds "$DEST")
+            build_skopeo_args SRC_ARGS "$SRC_CREDS"
+            build_skopeo_args DEST_ARGS "$DEST_CREDS"
+
+            TAGS=$(get_tags "$SRC" "$TAG_FILTER" "$SRC_CREDS")
+            if [ -z "$TAGS" ]; then
+              echo "No tags found, skipping"
+              continue
+            fi
+
+            SYNCED=0; SKIPPED=0; FAILED=0
+
+            for tag in $TAGS; do
+              SRC_IMG="docker://$SRC:$tag"
+              DEST_IMG="docker://$DEST:$tag"
+
+              SRC_RAW=$(skopeo inspect "${SRC_ARGS[@]}" --raw "$SRC_IMG" 2>/dev/null)
+              DEST_RAW=$(skopeo inspect "${DEST_ARGS[@]}" --raw "$DEST_IMG" 2>/dev/null)
+
+              if [ -n "$SRC_RAW" ] && [ -n "$DEST_RAW" ]; then
+                SRC_DIGEST=$(echo "$SRC_RAW" | sha256sum | awk '{print $1}')
+                DEST_DIGEST=$(echo "$DEST_RAW" | sha256sum | awk '{print $1}')
+                if [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
+                  echo "⏭️  Skip $tag (digest unchanged)"
+                  SKIPPED=$((SKIPPED + 1))
+                  continue
+                fi
+              fi
+
+              echo "Syncing $tag..."
+              if skopeo copy --all \
+                --retry-times 3 \
+                --retry-delay 5s \
+                "${SRC_ARGS[@]}" \
+                "${DEST_ARGS[@]}" \
+                "$SRC_IMG" "$DEST_IMG"; then
+                echo "✅ Synced $tag"
+                SYNCED=$((SYNCED + 1))
+              else
+                echo "❌ Failed $tag"
+                FAILED=$((FAILED + 1))
+              fi
+            done
+
+            echo "Done: $SYNCED synced, $SKIPPED skipped, $FAILED failed"
           done
-          echo "🎉 All tags synced successfully"
 
-      - name: No tags found message
-        if: steps.get-cann-tags.outputs.tags == ''
-        run: |
-          echo "ℹ️ No CANN-related tags found to sync"
-
-
-  sync-verl-to-hk:
-    name: Sync quay.io/ascend/verl to SWR Hong Kong
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/skopeo/stable:latest
-    steps:
-      - name: Sync verl from Quay to SWR Hong Kong
-        run: |
-          skopeo sync --all \
-            --retry-times 3 \
-            --retry-delay 5s \
-            --src docker --dest docker \
-            --src-no-creds \
-            --dest-creds ${{ vars.SWR_HK_USER }}:${{ secrets.SWR_HK_SECRET }} \
-            quay.io/ascend/verl \
-            ${{ vars.REGISTRY_HK }}/base_image/ascend-ci/verl
-
-  sync-verl-to-swr-southwest:
-    name: Sync quay.io/ascend/verl to SWR Southwest
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/skopeo/stable:latest
-    steps:
-      - name: Sync verl from Quay to SWR Southwest
-        run: |
-          skopeo sync --all \
-            --retry-times 3 \
-            --retry-delay 5s \
-            --src docker --dest docker \
-            --src-no-creds \
-            --dest-creds ${{ vars.HWCLOUD_USER }}:${{ secrets.HWCLOUD_PWD }} \
-            quay.io/ascend/verl \
-            ${{ vars.REGISTRY_SW_2 }}/modelfoundry/ascend-ci/verl
+          echo ""
+          echo "All mappings processed"

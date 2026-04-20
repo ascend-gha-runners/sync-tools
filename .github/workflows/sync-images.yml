@@ -125,8 +125,8 @@ jobs:
               SRC_IMG="docker://$SRC:$tag"
               DEST_IMG="docker://$DEST:$tag"
               echo "from=\"$SRC_IMG\" to=\"$DEST_IMG\""
-              SRC_RAW=$(skopeo inspect "${SRC_INSPECT_ARGS[@]}" --raw "$SRC_IMG" 2>/dev/null)
-              DEST_RAW=$(skopeo inspect "${DEST_INSPECT_ARGS[@]}" --raw "$DEST_IMG" 2>/dev/null)
+              SRC_RAW=$(skopeo inspect "${SRC_INSPECT_ARGS[@]}" --raw "$SRC_IMG" 2>/dev/null || true)
+              DEST_RAW=$(skopeo inspect "${DEST_INSPECT_ARGS[@]}" --raw "$DEST_IMG" 2>/dev/null || true)
 
               if [ -n "$SRC_RAW" ] && [ -n "$DEST_RAW" ]; then
                 SRC_DIGEST=$(echo "$SRC_RAW" | sha256sum | awk '{print $1}')

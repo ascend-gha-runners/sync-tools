@@ -44,7 +44,29 @@
 
 ### 镜像的同步列表
 
-修改 [sync-images.yml](.github/workflows/sync-images.yml)
+编辑 [image-sync.json](.github/workflows/config/image-sync.json)，每条记录格式如下：
+
+```json
+{ "src": "quay.io/ascend/cann", "dest": "docker.io/ascendai/cann" }
+```
+
+支持可选的 `tag_filter` 字段，用于只同步名称匹配关键词的 tag（如 sglang 只同步含 `cann` 的 tag）：
+
+```json
+{ "src": "docker.io/lmsysorg/sglang", "dest": "quay.io/ascend/sglang", "tag_filter": "cann" }
+```
+
+workflow 根据域名自动匹配认证信息，目前支持的源/目标 registry：
+
+| 域名 | 说明 |
+|---|---|
+| `quay.io` | Quay.io（Ascend 主发布源） |
+| `docker.io` | Docker Hub |
+| `swr.cn-southwest-2.myhuaweicloud.com` | 华为云 SWR 西南 |
+| `swr.ap-southeast-1.myhuaweicloud.com` | 华为云 SWR 香港 |
+| `ascendhub.huawei.com` | AscendHub（认证待补充） |
+
+同步每小时自动执行一次，每个 tag 在 push 前会比对源和目标的 manifest digest，内容未变则跳过，不会刷新目标 registry 的更新时间。
 
 ### 修改同步的模型列表
 
@@ -98,6 +120,6 @@ model_name_2
 - [镜像地址指引（按项目分类）](IMAGE_SYNC_GUIDE.md) – 详细列出各项目镜像的存放地址，方便快速查找。
 
 ## 更新记录
-- 2026-03-01: 更新README，补充了image同步全景，增加同步veomni
+- 2026-04-20: 镜像同步改为配置驱动（image-sync.json），支持任意源/目标 registry，同步频率改为每小时一次，新增 digest 比对跳过机制。
 - 2025-12-08: 更新 README，新增 HK001 同步说明，补充镜像同步流向。
 - 2025-11-15: 初始版本，包含 VLLM 和 SGLANG 同步。

@@ -10,11 +10,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  sync-images:
-    name: Sync images from config
+  prepare:
+    name: Prepare sync matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          matrix=$(jq -c '[.[].src] | unique | map({src: .})' .github/workflows/config/image-sync.json)
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+        id: set-matrix
+
+  sync:
+    name: Sync ${{ matrix.src }}
+    needs: prepare
     runs-on: ubuntu-latest
     container:
       image: quay.io/skopeo/stable:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,7 +39,7 @@ jobs:
       - name: Install jq and curl
         run: microdnf install -y jq curl
 
-      - name: Sync all image mappings
+      - name: Sync ${{ matrix.src }} to all destinations
         env:
           QUAY_ASCEND_USER: ${{ vars.QUAY_ASCEND_USER }}
           QUAY_ASCEND_PWD: ${{ secrets.QUAY_ASCEND_PWD }}
@@ -32,82 +49,75 @@ jobs:
           HWCLOUD_PWD: ${{ secrets.HWCLOUD_PWD }}
           SWR_HK_USER: ${{ vars.REGISTRY_HK_USER }}
           SWR_HK_SECRET: ${{ secrets.SWR_HK_SECRET }}
+          CURRENT_SRC: ${{ matrix.src }}
         run: |
-          # 根据镜像域名返回对应 creds，格式为 "user:pwd"，无认证返回空
           get_creds() {
-            local img="$1"
-            case "$img" in
-              quay.io/*)
-                echo "${QUAY_ASCEND_USER}:${QUAY_ASCEND_PWD}" ;;
-              docker.io/*)
-                echo "${DOCKERHUB_USER}:${DOCKERHUB_PWD}" ;;
-              swr.cn-southwest-2.*)
-                echo "${HWCLOUD_USER}:${HWCLOUD_PWD}" ;;
-              swr.ap-southeast-1.*)
-                echo "${SWR_HK_USER}:${SWR_HK_SECRET}" ;;
-              ascendhub.*)
-                echo "" ;;  # 待补充
-              *)
-                echo "" ;;
+            case "$1" in
+              quay.io/*)              echo "${QUAY_ASCEND_USER}:${QUAY_ASCEND_PWD}" ;;
+              docker.io/*)            echo "${DOCKERHUB_USER}:${DOCKERHUB_PWD}" ;;
+              swr.cn-southwest-2.*)   echo "${HWCLOUD_USER}:${HWCLOUD_PWD}" ;;
+              swr.ap-southeast-1.*)   echo "${SWR_HK_USER}:${SWR_HK_SECRET}" ;;
+              *)                      echo "" ;;
             esac
           }
 
-          # 根据 creds 字符串构造 skopeo inspect/copy 的认证参数数组
-          # 用法：eval "$(build_creds_args SRC "$SRC_CREDS")"  → 设置 SRC_ARGS 数组
-          build_skopeo_args() {
+          build_inspect_args() {
             local var="$1" creds="$2"
-            if [ -n "$creds" ]; then
-              eval "${var}=(--creds \"$creds\")"
-            else
-              eval "${var}=(--no-creds)"
-            fi
+            [ -n "$creds" ] && eval "${var}=(--creds \"$creds\")" || eval "${var}=(--no-creds)"
           }
 
-          # 获取 tag 列表：tag_filter 非空时走 Docker Hub API 分页过滤，否则走 skopeo list-tags
-          get_tags() {
-            local src="$1" tag_filter="$2" src_creds="$3"
+          build_copy_src_args() {
+            local var="$1" creds="$2"
+            [ -n "$creds" ] && eval "${var}=(--src-creds \"$creds\")" || eval "${var}=(--src-no-creds)"
+          }
 
-            if [ -n "$tag_filter" ]; then
-              local repo tags="" next_url page=1
-              repo=$(echo "$src" | sed 's|docker\.io/||')
-              next_url="https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100"
-              while [ "$next_url" != "null" ] && [ "$page" -le 20 ]; do
-                local resp page_tags
-                resp=$(curl -s "$next_url")
-                page_tags=$(echo "$resp" | jq -r --arg f "$tag_filter" '.results[] | select(.name | test($f; "i")) | .name' 2>/dev/null || true)
-                [ -n "$page_tags" ] && tags="$tags"$'\n'"$page_tags"
-                next_url=$(echo "$resp" | jq -r '.next // "null"')
-                page=$((page + 1))
-              done
-              echo "$tags" | sed '/^$/d' | sort -u
-            else
-              build_skopeo_args SRC_ARGS "$src_creds"
-              skopeo list-tags "${SRC_ARGS[@]}" docker://"$src" 2>/dev/null | jq -r '.Tags[]'
-            fi
+          build_copy_dest_args() {
+            local var="$1" creds="$2"
+            [ -n "$creds" ] && eval "${var}=(--dest-creds \"$creds\")" || eval "${var}=(--dest-no-creds)"
           }
 
           CONFIG=".github/workflows/config/image-sync.json"
-          TOTAL=$(jq length "$CONFIG")
-          echo "Total mappings: $TOTAL"
+          SRC="$CURRENT_SRC"
 
-          for i in $(seq 0 $((TOTAL - 1))); do
-            SRC=$(jq -r ".[$i].src" "$CONFIG")
-            DEST=$(jq -r ".[$i].dest" "$CONFIG")
-            TAG_FILTER=$(jq -r ".[$i].tag_filter // empty" "$CONFIG")
+          # 获取该 src 的所有 dest 和 tag_filter（取第一个 tag_filter，同一 src 应一致）
+          DESTS=$(jq -r --arg src "$SRC" '.[] | select(.src == $src) | .dest' "$CONFIG")
+          TAG_FILTER=$(jq -r --arg src "$SRC" 'first(.[] | select(.src == $src) | .tag_filter // empty)' "$CONFIG")
 
+          SRC_CREDS=$(get_creds "$SRC")
+          build_inspect_args SRC_INSPECT_ARGS "$SRC_CREDS"
+          build_copy_src_args SRC_COPY_ARGS "$SRC_CREDS"
+
+          # 获取 tag 列表（只做一次）
+          if [ -n "$TAG_FILTER" ]; then
+            repo=$(echo "$SRC" | sed 's|docker\.io/||')
+            TAGS="" next_url="https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100" page=1
+            while [ "$next_url" != "null" ] && [ "$page" -le 20 ]; do
+              resp=$(curl -s "$next_url")
+              page_tags=$(echo "$resp" | jq -r --arg f "$TAG_FILTER" '.results[] | select(.name | test($f; "i")) | .name' 2>/dev/null || true)
+              [ -n "$page_tags" ] && TAGS="$TAGS"$'\n'"$page_tags"
+              next_url=$(echo "$resp" | jq -r '.next // "null"')
+              page=$((page + 1))
+            done
+            TAGS=$(echo "$TAGS" | sed '/^$/d' | sort -u)
+          else
+            TAGS=$(skopeo list-tags "${SRC_INSPECT_ARGS[@]}" docker://"$SRC" 2>/dev/null | jq -r '.Tags[]')
+          fi
+
+          if [ -z "$TAGS" ]; then
+            echo "No tags found for $SRC"
+            exit 0
+          fi
+
+          TAG_COUNT=$(echo "$TAGS" | wc -l)
+          echo "Found $TAG_COUNT tags for $SRC"
+
+          # 对每个 dest 逐 tag 同步，src inspect 结果复用
+          for DEST in $DESTS; do
             echo ""
-            echo "=== [$((i+1))/$TOTAL] $SRC → $DEST ==="
-
-            SRC_CREDS=$(get_creds "$SRC")
+            echo "--- $SRC → $DEST ---"
             DEST_CREDS=$(get_creds "$DEST")
-            build_skopeo_args SRC_ARGS "$SRC_CREDS"
-            build_skopeo_args DEST_ARGS "$DEST_CREDS"
-
-            TAGS=$(get_tags "$SRC" "$TAG_FILTER" "$SRC_CREDS")
-            if [ -z "$TAGS" ]; then
-              echo "No tags found, skipping"
-              continue
-            fi
+            build_inspect_args DEST_INSPECT_ARGS "$DEST_CREDS"
+            build_copy_dest_args DEST_COPY_ARGS "$DEST_CREDS"
 
             SYNCED=0; SKIPPED=0; FAILED=0
 
@@ -115,36 +125,38 @@ jobs:
               SRC_IMG="docker://$SRC:$tag"
               DEST_IMG="docker://$DEST:$tag"
 
-              SRC_RAW=$(skopeo inspect "${SRC_ARGS[@]}" --raw "$SRC_IMG" 2>/dev/null)
-              DEST_RAW=$(skopeo inspect "${DEST_ARGS[@]}" --raw "$DEST_IMG" 2>/dev/null)
+              SRC_RAW=$(skopeo inspect "${SRC_INSPECT_ARGS[@]}" --raw "$SRC_IMG" 2>/dev/null)
+              DEST_RAW=$(skopeo inspect "${DEST_INSPECT_ARGS[@]}" --raw "$DEST_IMG" 2>/dev/null)
 
               if [ -n "$SRC_RAW" ] && [ -n "$DEST_RAW" ]; then
                 SRC_DIGEST=$(echo "$SRC_RAW" | sha256sum | awk '{print $1}')
                 DEST_DIGEST=$(echo "$DEST_RAW" | sha256sum | awk '{print $1}')
                 if [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
-                  echo "⏭️  Skip $tag (digest unchanged)"
+                  echo "⏭️  Skip $tag"
                   SKIPPED=$((SKIPPED + 1))
                   continue
                 fi
               fi
 
               echo "Syncing $tag..."
-              if skopeo copy --all \
+              set +e
+              skopeo copy --all \
                 --retry-times 3 \
                 --retry-delay 5s \
-                "${SRC_ARGS[@]}" \
-                "${DEST_ARGS[@]}" \
-                "$SRC_IMG" "$DEST_IMG"; then
+                "${SRC_COPY_ARGS[@]}" \
+                "${DEST_COPY_ARGS[@]}" \
+                "$SRC_IMG" "$DEST_IMG"
+              copy_exit=$?
+              set -e
+              if [ $copy_exit -eq 0 ] || [ $copy_exit -eq 2 ]; then
                 echo "✅ Synced $tag"
                 SYNCED=$((SYNCED + 1))
               else
-                echo "❌ Failed $tag"
+                echo "❌ Failed $tag (exit $copy_exit)"
                 FAILED=$((FAILED + 1))
               fi
             done
 
-            echo "Done: $SYNCED synced, $SKIPPED skipped, $FAILED failed"
+            echo "Done [$SRC → $DEST]: $SYNCED synced, $SKIPPED skipped, $FAILED failed"
+            [ $FAILED -eq 0 ] || exit 1
           done
-
-          echo ""
-          echo "All mappings processed"

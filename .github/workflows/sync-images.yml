@@ -36,6 +36,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Restore sync state cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .github/cache/sync-state.txt
+          key: sync-state-${{ matrix.src }}-${{ github.run_id }}
+          restore-keys: sync-state-${{ matrix.src }}-
+
       - name: Install jq and curl
         run: microdnf install -y jq curl
 
@@ -76,8 +83,6 @@ jobs:
             [ -n "$creds" ] && eval "${var}=(--dest-creds \"$creds\")" || eval "${var}=(--dest-no-creds)"
           }
 
-          # 比较各平台子 manifest digest 列表（content-addressed，跨 registry 稳定）
-          # 避免 Docker Hub 重新序列化 manifest list 导致顶层 digest 不一致
           get_manifest_id() {
             local raw
             raw=$(skopeo inspect --raw "$@" 2>/dev/null || true)
@@ -91,10 +96,25 @@ jobs:
             ' 2>/dev/null || true
           }
 
+          CACHE_FILE=".github/cache/sync-state.txt"
+
+          get_cached_digest() {
+            grep "^${1}=" "$CACHE_FILE" 2>/dev/null | cut -d= -f2 || true
+          }
+
+          set_cached_digest() {
+            local key="$1" val="$2"
+            mkdir -p .github/cache
+            if grep -q "^${key}=" "$CACHE_FILE" 2>/dev/null; then
+              sed -i "s|^${key}=.*|${key}=${val}|" "$CACHE_FILE"
+            else
+              echo "${key}=${val}" >> "$CACHE_FILE"
+            fi
+          }
+
           CONFIG=".github/workflows/config/image-sync.json"
           SRC="$CURRENT_SRC"
 
-          # 获取该 src 的所有 dest 和 tag_filter（取第一个 tag_filter，同一 src 应一致）
           DESTS=$(jq -r --arg src "$SRC" '.[] | select(.src == $src) | .dest' "$CONFIG")
           TAG_FILTER=$(jq -r --arg src "$SRC" 'first(.[] | select(.src == $src) | .tag_filter // empty)' "$CONFIG")
 
@@ -102,7 +122,6 @@ jobs:
           build_inspect_args SRC_INSPECT_ARGS "$SRC_CREDS"
           build_copy_src_args SRC_COPY_ARGS "$SRC_CREDS"
 
-          # 获取 tag 列表（只做一次）
           if [ -n "$TAG_FILTER" ]; then
             repo=$(echo "$SRC" | sed 's|docker\.io/||')
             TAGS="" next_url="https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100" page=1
@@ -123,33 +142,29 @@ jobs:
             exit 0
           fi
 
-          TAG_COUNT=$(echo "$TAGS" | wc -l)
-          echo "Found $TAG_COUNT tags for $SRC"
+          echo "Found $(echo "$TAGS" | wc -l) tags for $SRC"
 
-          # 对每个 dest 逐 tag 同步，src inspect 结果复用
-          for DEST in $DESTS; do
-            echo ""
-            echo "--- $SRC → $DEST ---"
-            DEST_CREDS=$(get_creds "$DEST")
-            build_inspect_args DEST_INSPECT_ARGS "$DEST_CREDS"
-            build_copy_dest_args DEST_COPY_ARGS "$DEST_CREDS"
+          for tag in $TAGS; do
+            SRC_IMG="docker://$SRC:$tag"
+            SRC_DIGEST=$(get_manifest_id "${SRC_INSPECT_ARGS[@]}" "$SRC_IMG")
 
-            SYNCED=0; SKIPPED=0; FAILED=0
+            if [ -z "$SRC_DIGEST" ]; then
+              echo "⏭️  Skip $tag (src inspect failed)"
+              continue
+            fi
 
-            for tag in $TAGS; do
-              SRC_IMG="docker://$SRC:$tag"
+            CACHED=$(get_cached_digest "$SRC:$tag")
+            if [ -n "$CACHED" ] && [ "$SRC_DIGEST" = "$CACHED" ]; then
+              echo "⏭️  Skip $tag (unchanged)"
+              continue
+            fi
+
+            all_ok=true
+            for DEST in $DESTS; do
+              DEST_CREDS=$(get_creds "$DEST")
+              build_copy_dest_args DEST_COPY_ARGS "$DEST_CREDS"
               DEST_IMG="docker://$DEST:$tag"
-              echo "from=\"$SRC_IMG\" to=\"$DEST_IMG\""
-              SRC_DIGEST=$(get_manifest_id "${SRC_INSPECT_ARGS[@]}" "$SRC_IMG")
-              DEST_DIGEST=$(get_manifest_id "${DEST_INSPECT_ARGS[@]}" "$DEST_IMG")
-
-              if [ -n "$SRC_DIGEST" ] && [ -n "$DEST_DIGEST" ] && [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
-                echo "⏭️  Skip $tag"
-                SKIPPED=$((SKIPPED + 1))
-                continue
-              fi
-
-              echo "Syncing $tag..."
+              echo "Syncing $tag → $DEST..."
               set +e
               skopeo copy --all \
                 --retry-times 3 \
@@ -160,14 +175,19 @@ jobs:
               copy_exit=$?
               set -e
               if [ $copy_exit -eq 0 ] || [ $copy_exit -eq 2 ]; then
-                echo "✅ Synced $tag"
-                SYNCED=$((SYNCED + 1))
+                echo "✅ Synced $tag → $DEST"
               else
-                echo "❌ Failed $tag (exit $copy_exit)"
-                FAILED=$((FAILED + 1))
+                echo "❌ Failed $tag → $DEST (exit $copy_exit)"
+                all_ok=false
               fi
             done
 
-            echo "Done [$SRC → $DEST]: $SYNCED synced, $SKIPPED skipped, $FAILED failed"
-            [ $FAILED -eq 0 ] || exit 1
+            $all_ok && set_cached_digest "$SRC:$tag" "$SRC_DIGEST"
           done
+
+      - name: Save sync state cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .github/cache/sync-state.txt
+          key: sync-state-${{ matrix.src }}-${{ github.run_id }}

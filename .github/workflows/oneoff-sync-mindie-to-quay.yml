@@ -1,0 +1,30 @@
+name: One-off Sync mindie to quay.io
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/skopeo/stable:latest
+    steps:
+      - name: Sync mindie images to quay.io/ascend/mindie
+        env:
+          QUAY_USER: ${{ vars.QUAY_ASCEND_USER }}
+          QUAY_PWD: ${{ secrets.QUAY_ASCEND_PWD }}
+        run: |
+          for tag in \
+            "3.0.0b2-800I-A2-py311-openeuler24.03-lts" \
+            "3.0.0b2-300I-Duo-py311-openeuler24.03-lts"
+          do
+            echo "Syncing mindie:${tag}..."
+            skopeo copy --all \
+              --retry-times 3 \
+              --src-no-creds \
+              --dest-creds "${QUAY_USER}:${QUAY_PWD}" \
+              "docker://swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:${tag}" \
+              "docker://quay.io/ascend/mindie:${tag}" \
+              && echo "✅ Done: mindie:${tag}" \
+              || echo "❌ Failed: mindie:${tag}"
+          done

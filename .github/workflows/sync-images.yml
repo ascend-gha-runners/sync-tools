@@ -125,17 +125,13 @@ jobs:
               SRC_IMG="docker://$SRC:$tag"
               DEST_IMG="docker://$DEST:$tag"
               echo "from=\"$SRC_IMG\" to=\"$DEST_IMG\""
-              SRC_RAW=$(skopeo inspect "${SRC_INSPECT_ARGS[@]}" --raw "$SRC_IMG" 2>/dev/null || true)
-              DEST_RAW=$(skopeo inspect "${DEST_INSPECT_ARGS[@]}" --raw "$DEST_IMG" 2>/dev/null || true)
+              SRC_DIGEST=$(skopeo inspect "${SRC_INSPECT_ARGS[@]}" "$SRC_IMG" 2>/dev/null | jq -r '.Digest // empty' || true)
+              DEST_DIGEST=$(skopeo inspect "${DEST_INSPECT_ARGS[@]}" "$DEST_IMG" 2>/dev/null | jq -r '.Digest // empty' || true)
 
-              if [ -n "$SRC_RAW" ] && [ -n "$DEST_RAW" ]; then
-                SRC_DIGEST=$(echo "$SRC_RAW" | sha256sum | awk '{print $1}')
-                DEST_DIGEST=$(echo "$DEST_RAW" | sha256sum | awk '{print $1}')
-                if [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
-                  echo "⏭️  Skip $tag"
-                  SKIPPED=$((SKIPPED + 1))
-                  continue
-                fi
+              if [ -n "$SRC_DIGEST" ] && [ -n "$DEST_DIGEST" ] && [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
+                echo "⏭️  Skip $tag"
+                SKIPPED=$((SKIPPED + 1))
+                continue
               fi
 
               echo "Syncing $tag..."

@@ -76,6 +76,21 @@ jobs:
             [ -n "$creds" ] && eval "${var}=(--dest-creds \"$creds\")" || eval "${var}=(--dest-no-creds)"
           }
 
+          # 比较各平台子 manifest digest 列表（content-addressed，跨 registry 稳定）
+          # 避免 Docker Hub 重新序列化 manifest list 导致顶层 digest 不一致
+          get_manifest_id() {
+            local raw
+            raw=$(skopeo inspect --raw "$@" 2>/dev/null || true)
+            [ -z "$raw" ] && echo "" && return
+            echo "$raw" | jq -r '
+              if .manifests then
+                [.manifests[].digest] | sort | join(",")
+              else
+                .config.digest // empty
+              end
+            ' 2>/dev/null || true
+          }
+
           CONFIG=".github/workflows/config/image-sync.json"
           SRC="$CURRENT_SRC"
 
@@ -125,8 +140,8 @@ jobs:
               SRC_IMG="docker://$SRC:$tag"
               DEST_IMG="docker://$DEST:$tag"
               echo "from=\"$SRC_IMG\" to=\"$DEST_IMG\""
-              SRC_DIGEST=$(skopeo inspect "${SRC_INSPECT_ARGS[@]}" "$SRC_IMG" 2>/dev/null | jq -r '.Digest // empty' || true)
-              DEST_DIGEST=$(skopeo inspect "${DEST_INSPECT_ARGS[@]}" "$DEST_IMG" 2>/dev/null | jq -r '.Digest // empty' || true)
+              SRC_DIGEST=$(get_manifest_id "${SRC_INSPECT_ARGS[@]}" "$SRC_IMG")
+              DEST_DIGEST=$(get_manifest_id "${DEST_INSPECT_ARGS[@]}" "$DEST_IMG")
 
               if [ -n "$SRC_DIGEST" ] && [ -n "$DEST_DIGEST" ] && [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
                 echo "⏭️  Skip $tag"

@@ -1,4 +1,19 @@
 [
+  { "src": "quay.io/ascend/cann",        "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann/cann" },
+  { "src": "quay.io/ascend/vllm-ascend", "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend" },
+  { "src": "quay.io/ascend/manylinux",   "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/manylinux/manylinux" },
   { "src": "quay.io/ascend/llamafactory", "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/llamafactory/llamafactory" },
-  { "src": "quay.io/ascend/llamafactory", "dest": "docker.io/ascendai/llamafactory" }
+  { "src": "quay.io/ascend/triton",      "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/triton/triton" },
+  { "src": "quay.io/ascend/mindspore",   "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/mindspore/mindspore" },
+  { "src": "quay.io/ascend/python",      "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/python/python" },
+  { "src": "quay.io/ascend/pytorch",     "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/pytorch/pytorch" },
+  { "src": "quay.io/ascend/veomni",      "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/veomni/veomni" },
+  { "src": "quay.io/ascend/verl",        "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/verl/verl" },
+  { "src": "quay.io/ascend/vllm-omni",   "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-omni/vllm-omni" },
+  { "src": "quay.io/ascend/mindie",      "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/mindie/mindie" },
+  { "src": "quay.io/ascend/verl",        "dest": "swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/verl/verl" },
+  { "src": "quay.io/ascend/verl",        "dest": "swr.cn-southwest-2.myhuaweicloud.com/modelfoundry/ascend-ci/verl/verl" },
+
+  { "src": "docker.io/lmsysorg/sglang",  "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/dockerhub/lmsysorg/sglang", "tag_filter": "cann" },
+  { "src": "docker.io/lmsysorg/sglang",  "dest": "quay.io/ascend/sglang", "tag_filter": "cann" }
 ]

@@ -1,0 +1,67 @@
+name: Validate Sync Configuration
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/**"
+      - ".github/workflows/*.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/**"
+      - ".github/workflows/*.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate projects-clusters.json is valid JSON
+        run: |
+          jq empty .github/workflows/config/projects-clusters.json
+
+      - name: Validate all referenced config files exist
+        run: |
+          jq -r '.[].models_config, .[].datasets_config' .github/workflows/config/projects-clusters.json | while read -r f; do
+            if [ ! -f ".github/workflows/config/$f" ]; then
+              echo "ERROR: Referenced config not found: .github/workflows/config/$f"
+              exit 1
+            fi
+          done
+
+      - name: Validate all clusters are non-empty
+        run: |
+          jq -r '.[].clusters[]' .github/workflows/config/projects-clusters.json | while read -r c; do
+            if [ -z "$c" ]; then
+              echo "ERROR: Empty cluster name found in projects-clusters.json"
+              exit 1
+            fi
+          done
+
+      - name: Validate no project has empty clusters array
+        run: |
+          EMPTY=$(jq -r 'to_entries[] | select(.value.clusters | length == 0) | .key' .github/workflows/config/projects-clusters.json)
+          if [ -n "$EMPTY" ]; then
+            echo "ERROR: Projects with empty clusters array: $EMPTY"
+            exit 1
+          fi
+
+      - name: Validate required fields in each project
+        run: |
+          MISSING=$(jq -r 'to_entries[] | select(.value | has("clusters", "models_config", "datasets_config") | not) | .key' .github/workflows/config/projects-clusters.json)
+          if [ -n "$MISSING" ]; then
+            echo "ERROR: Projects missing required fields: $MISSING"
+            exit 1
+          fi
+
+      - name: Validate JSON config files are valid
+        run: |
+          for f in .github/workflows/config/*.json; do
+            if [ "$f" != ".github/workflows/config/projects-clusters.json" ]; then
+              jq empty "$f"
+            fi
+          done

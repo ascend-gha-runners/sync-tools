@@ -1,0 +1,7 @@
+[
+  {
+    "platform": "modelscope",
+    "organization": "Qwen",
+    "model_name": "Qwen2.5-7B-Instruct"
+  }
+]

@@ -1,0 +1,62 @@
+name: vllm sync models and datasets
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/vllm-datasets.json"
+      - ".github/workflows/config/vllm-models.json"
+      - ".github/workflows/config/projects-clusters.json"
+      - ".github/workflows/vllm-sync.yml"
+
+concurrency:
+  group: vllm-sync-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      clusters: ${{ steps.set-clusters.outputs.clusters }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-clusters
+        run: |
+          CLUSTERS=$(jq -c '.vllm.clusters' .github/workflows/config/projects-clusters.json)
+          echo "clusters=$CLUSTERS" >> $GITHUB_OUTPUT
+
+  sync:
+    needs: prepare
+    name: sync to ${{ matrix.cluster }}
+    runs-on: ${{ matrix.cluster }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: ${{ fromJson(needs.prepare.outputs.clusters) }}
+    container:
+      image: swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:8.2.rc1-a3-ubuntu22.04-py3.11
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y jq
+
+      - name: Set up Python environment
+        run: |
+          pip config set global.index-url https://mirrors.huaweicloud.com/repository/pypi/simple
+          pip install --upgrade pip
+          pip install filelock modelscope datasets
+
+      - name: Download models
+        run: |
+          bash .github/scripts/download-json-models.sh .github/workflows/config/vllm-models.json model
+
+      - name: Download datasets
+        run: |
+          bash .github/scripts/download-json-models.sh .github/workflows/config/vllm-datasets.json dataset

@@ -61,10 +61,34 @@ jobs:
           dest_repo="${DEST_IMAGE#docker.io/}"
           token=$(curl -sf "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${dest_repo}:pull" \
             -u "${DEST_CREDS}" | jq -r '.token // empty')
+
+          # 查询前配额
+          rate_token=$(curl -sf "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" \
+            -u "${DEST_CREDS}" | jq -r '.token // empty')
+          RATE_BEFORE=$(curl -sf -I -H "Authorization: Bearer ${rate_token}" \
+            "https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest" 2>/dev/null \
+            | grep -i ratelimit-remaining | tr -d '\r' || echo "unknown")
+          echo "配额查询前: $RATE_BEFORE"
+
           DEST_RAW_API=$(curl -sf \
             -H "Authorization: Bearer ${token}" \
             -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json" \
             "https://registry-1.docker.io/v2/${dest_repo}/manifests/${TAG}" 2>/dev/null || echo "NOT FOUND")
+
+          # 查询后配额
+          rate_token2=$(curl -sf "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" \
+            -u "${DEST_CREDS}" | jq -r '.token // empty')
+          RATE_AFTER=$(curl -sf -I -H "Authorization: Bearer ${rate_token2}" \
+            "https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest" 2>/dev/null \
+            | grep -i ratelimit-remaining | tr -d '\r' || echo "unknown")
+          echo "配额查询后: $RATE_AFTER"
+
+          if [ "$RATE_BEFORE" = "$RATE_AFTER" ]; then
+            echo "✅ manifest 查询未消耗配额"
+          else
+            echo "⚠️  manifest 查询消耗了配额（before: $RATE_BEFORE, after: $RATE_AFTER）"
+          fi
+
           echo "$DEST_RAW_API" | jq . 2>/dev/null || echo "$DEST_RAW_API"
           DEST_DIGEST_API=$(echo "$DEST_RAW_API" | jq -r '
             if .manifests then [.manifests[].digest] | sort | join(",")

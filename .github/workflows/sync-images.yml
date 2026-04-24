@@ -39,6 +39,12 @@ jobs:
       - name: Install jq and curl
         run: microdnf install -y jq curl
 
+      - name: Restore digest cache
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/digest-cache
+          key: digest-cache-${{ matrix.src }}
+
       - name: Sync ${{ matrix.src }} to all destinations
         env:
           QUAY_ASCEND_USER: ${{ vars.QUAY_ASCEND_USER }}
@@ -93,6 +99,9 @@ jobs:
 
           CONFIG=".github/workflows/config/image-sync.json"
           SRC="$CURRENT_SRC"
+          CACHE_FILE="/tmp/digest-cache/$(echo "$SRC" | tr '/:' '__').json"
+          mkdir -p /tmp/digest-cache
+          [ -f "$CACHE_FILE" ] || echo '{}' > "$CACHE_FILE"
 
           # 获取该 src 的所有 dest 和 tag_filter（取第一个 tag_filter，同一 src 应一致）
           DESTS=$(jq -r --arg src "$SRC" '.[] | select(.src == $src) | .dest' "$CONFIG")
@@ -141,12 +150,21 @@ jobs:
               DEST_IMG="docker://$DEST:$tag"
               echo "from=\"$SRC_IMG\" to=\"$DEST_IMG\""
               SRC_DIGEST=$(get_manifest_id "${SRC_INSPECT_ARGS[@]}" "$SRC_IMG")
-              DEST_DIGEST=$(get_manifest_id "${DEST_INSPECT_ARGS[@]}" "$DEST_IMG")
 
-              if [ -n "$SRC_DIGEST" ] && [ -n "$DEST_DIGEST" ] && [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
-                echo "⏭️  Skip $tag"
-                SKIPPED=$((SKIPPED + 1))
-                continue
+              if [[ "$DEST" == docker.io/* ]]; then
+                CACHED_DIGEST=$(jq -r --arg key "$DEST:$tag" '.[$key] // empty' "$CACHE_FILE")
+                if [ -n "$SRC_DIGEST" ] && [ -n "$CACHED_DIGEST" ] && [ "$SRC_DIGEST" = "$CACHED_DIGEST" ]; then
+                  echo "⏭️  Skip $tag (cache)"
+                  SKIPPED=$((SKIPPED + 1))
+                  continue
+                fi
+              else
+                DEST_DIGEST=$(get_manifest_id "${DEST_INSPECT_ARGS[@]}" "$DEST_IMG")
+                if [ -n "$SRC_DIGEST" ] && [ -n "$DEST_DIGEST" ] && [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
+                  echo "⏭️  Skip $tag"
+                  SKIPPED=$((SKIPPED + 1))
+                  continue
+                fi
               fi
 
               echo "Syncing $tag..."
@@ -162,6 +180,10 @@ jobs:
               if [ $copy_exit -eq 0 ] || [ $copy_exit -eq 2 ]; then
                 echo "✅ Synced $tag"
                 SYNCED=$((SYNCED + 1))
+                if [[ "$DEST" == docker.io/* ]] && [ -n "$SRC_DIGEST" ]; then
+                  tmp=$(mktemp)
+                  jq --arg key "$DEST:$tag" --arg val "$SRC_DIGEST" '.[$key] = $val' "$CACHE_FILE" > "$tmp" && mv "$tmp" "$CACHE_FILE"
+                fi
               else
                 echo "❌ Failed $tag (exit $copy_exit)"
                 FAILED=$((FAILED + 1))
@@ -181,3 +203,10 @@ jobs:
 
             [ $FAILED -eq 0 ] || exit 1
           done
+
+      - name: Save digest cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/digest-cache
+          key: digest-cache-${{ matrix.src }}-${{ github.run_id }}

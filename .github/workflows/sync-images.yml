@@ -169,5 +169,15 @@ jobs:
             done
 
             echo "Done [$SRC → $DEST]: $SYNCED synced, $SKIPPED skipped, $FAILED failed"
+
+            if [[ "$DEST" == docker.io/* ]]; then
+              rate_token=$(curl -sf "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" \
+                -u "${DOCKERHUB_USER}:${DOCKERHUB_PWD}" | jq -r '.token // empty')
+              rate=$(curl -sf -I -H "Authorization: Bearer ${rate_token}" \
+                "https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest" 2>/dev/null \
+                | grep -i ratelimit-remaining | tr -d '\r' || echo "unknown")
+              echo "Docker Hub rate limit remaining: $rate"
+            fi
+
             [ $FAILED -eq 0 ] || exit 1
           done

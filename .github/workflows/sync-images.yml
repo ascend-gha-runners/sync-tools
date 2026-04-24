@@ -156,6 +156,9 @@ jobs:
                 if [ -n "$SRC_DIGEST" ] && [ -n "$CACHED_DIGEST" ] && [ "$SRC_DIGEST" = "$CACHED_DIGEST" ]; then
                   echo "⏭️  Skip $tag (cache)"
                   SKIPPED=$((SKIPPED + 1))
+                  # skip 时也刷新 cache，确保本次 run 的 cache 文件是完整的
+                  tmp=$(mktemp)
+                  jq --arg key "$DEST:$tag" --arg val "$SRC_DIGEST" '.[$key] = $val' "$CACHE_FILE" > "$tmp" && mv "$tmp" "$CACHE_FILE"
                   continue
                 fi
               else

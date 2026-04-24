@@ -1,0 +1,90 @@
+name: Verify Digest Comparison
+
+on:
+  workflow_dispatch:
+    inputs:
+      src_image:
+        description: 'Source image (quay.io)'
+        required: true
+        default: 'quay.io/ascend/cann'
+      dest_image:
+        description: 'Dest image (docker.io)'
+        required: true
+        default: 'docker.io/ascendai/cann'
+      tag:
+        description: 'Tag to verify'
+        required: true
+        default: 'latest'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/skopeo/stable:latest
+    steps:
+      - name: Install jq and curl
+        run: microdnf install -y jq curl
+
+      - name: Compare digest methods
+        env:
+          QUAY_ASCEND_USER: ${{ vars.QUAY_ASCEND_USER }}
+          QUAY_ASCEND_PWD: ${{ secrets.QUAY_ASCEND_PWD }}
+          DOCKERHUB_USER: ${{ vars.DOCKERHUB_USER }}
+          DOCKERHUB_PWD: ${{ secrets.DOCKERHUB_PWD }}
+          SRC_IMAGE: ${{ inputs.src_image }}
+          DEST_IMAGE: ${{ inputs.dest_image }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          SRC_CREDS="${QUAY_ASCEND_USER}:${QUAY_ASCEND_PWD}"
+          DEST_CREDS="${DOCKERHUB_USER}:${DOCKERHUB_PWD}"
+
+          echo "=== 方法1: skopeo inspect --raw (当前生产逻辑) ==="
+          echo "--- 源 (quay.io) ---"
+          SRC_RAW=$(skopeo inspect --raw --creds "$SRC_CREDS" "docker://${SRC_IMAGE}:${TAG}" 2>/dev/null)
+          echo "$SRC_RAW" | jq .
+          SRC_DIGEST_SKOPEO=$(echo "$SRC_RAW" | jq -r '
+            if .manifests then [.manifests[].digest] | sort | join(",")
+            else .config.digest // empty end')
+          echo "=> skopeo manifest_id: $SRC_DIGEST_SKOPEO"
+
+          echo ""
+          echo "--- 目标 (docker.io via skopeo) ---"
+          DEST_RAW_SKOPEO=$(skopeo inspect --raw --creds "$DEST_CREDS" "docker://${DEST_IMAGE}:${TAG}" 2>/dev/null || echo "NOT FOUND")
+          echo "$DEST_RAW_SKOPEO" | jq . 2>/dev/null || echo "$DEST_RAW_SKOPEO"
+          DEST_DIGEST_SKOPEO=$(echo "$DEST_RAW_SKOPEO" | jq -r '
+            if .manifests then [.manifests[].digest] | sort | join(",")
+            else .config.digest // empty end' 2>/dev/null || echo "")
+          echo "=> skopeo manifest_id: $DEST_DIGEST_SKOPEO"
+
+          echo ""
+          echo "=== 方法2: curl Docker Hub Registry API ==="
+          dest_repo="${DEST_IMAGE#docker.io/}"
+          token=$(curl -sf "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${dest_repo}:pull" \
+            -u "${DEST_CREDS}" | jq -r '.token // empty')
+          DEST_RAW_API=$(curl -sf \
+            -H "Authorization: Bearer ${token}" \
+            -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json" \
+            "https://registry-1.docker.io/v2/${dest_repo}/manifests/${TAG}" 2>/dev/null || echo "NOT FOUND")
+          echo "$DEST_RAW_API" | jq . 2>/dev/null || echo "$DEST_RAW_API"
+          DEST_DIGEST_API=$(echo "$DEST_RAW_API" | jq -r '
+            if .manifests then [.manifests[].digest] | sort | join(",")
+            else .config.digest // empty end' 2>/dev/null || echo "")
+          echo "=> curl manifest_id: $DEST_DIGEST_API"
+
+          echo ""
+          echo "=== 结论 ==="
+          echo "src  (skopeo): $SRC_DIGEST_SKOPEO"
+          echo "dest (skopeo): $DEST_DIGEST_SKOPEO"
+          echo "dest (curl):   $DEST_DIGEST_API"
+          echo ""
+          if [ "$DEST_DIGEST_SKOPEO" = "$DEST_DIGEST_API" ]; then
+            echo "✅ skopeo 和 curl 取到的目标 digest 一致"
+          else
+            echo "❌ skopeo 和 curl 取到的目标 digest 不一致！"
+          fi
+          echo ""
+          if [ "$SRC_DIGEST_SKOPEO" = "$DEST_DIGEST_API" ]; then
+            echo "✅ 源和目标 digest 一致 → 跨 registry 子 manifest 比对可行"
+          else
+            echo "⚠️  源和目标 digest 不一致（可能未同步，或跨 registry 子 digest 确实不同）"
+          fi

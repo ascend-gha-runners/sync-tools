@@ -1,0 +1,17 @@
+{
+  "vllm": {
+    "clusters": ["linux-amd64-vllm-guiyang003"],
+    "models_config": "vllm-models.json",
+    "datasets_config": "vllm-datasets.json"
+  },
+  "sglang": {
+    "clusters": ["linux-amd64-sglang-guiyang004", "linux-amd64-sglang-sglang01"],
+    "models_config": "sglang-models.json",
+    "datasets_config": "sglang-datasets.json"
+  },
+  "hk001": {
+    "clusters": ["linux-aarch64-sync-hk001"],
+    "models_config": "hk001-models.json",
+    "datasets_config": "hk001-datasets.json"
+  }
+}

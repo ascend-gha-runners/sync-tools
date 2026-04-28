@@ -1,0 +1,22 @@
+[
+  {
+    "platform": "modelscope",
+    "organization": "Qwen",
+    "model_name": "Qwen2.5-7B-Instruct"
+  },
+  {
+    "platform": "modelscope",
+    "organization": "Qwen",
+    "model_name": "Qwen2.5-14B-Instruct"
+  },
+  {
+    "platform": "modelscope",
+    "organization": "deepseek-ai",
+    "model_name": "DeepSeek-V2"
+  },
+  {
+    "platform": "modelscope",
+    "organization": "baichuan-inc",
+    "model_name": "Baichuan2-7B-Chat"
+  }
+]

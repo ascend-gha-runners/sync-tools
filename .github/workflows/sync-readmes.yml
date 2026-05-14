@@ -72,9 +72,9 @@ jobs:
               local owner="${BASH_REMATCH[1]}" repo="${BASH_REMATCH[2]}"
               local branch="${BASH_REMATCH[3]}" path="${BASH_REMATCH[4]}"
               local tmp; tmp=$(mktemp -d)
-              if git clone --quiet --depth=1 --filter=blob:none --sparse \
+              if git clone --quiet --depth=1 --filter=blob:none --no-checkout \
                    --branch "$branch" "https://gitcode.com/${owner}/${repo}.git" "$tmp" \
-                 && git -C "$tmp" sparse-checkout set "$path" >/dev/null \
+                 && git -C "$tmp" checkout HEAD -- "$path" \
                  && [ -f "$tmp/$path" ]; then
                 cp "$tmp/$path" "$out"
                 rm -rf "$tmp"

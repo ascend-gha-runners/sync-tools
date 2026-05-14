@@ -60,5 +60,9 @@
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspeed-mm",  "dest": "quay.io/ascend/mindspeed-mm" },
   
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/drivingsdk",  "dest": "docker.io/ascendai/drivingsdk" },
-  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/drivingsdk",  "dest": "quay.io/ascend/drivingsdk" }
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/drivingsdk",  "dest": "quay.io/ascend/drivingsdk" },
+
+  { "src": "quay.io/ascend/roll",  "dest": "docker.io/ascendai/roll" },
+
+  { "src": "quay.io/ascend/slime-ascend",  "dest": "docker.io/ascendai/slime-ascend" }
 ]

@@ -1,6 +1,16 @@
 [
-  {
-    "src": "https://raw.gitcode.com/Ascend/RAGSDK/raw/master/docker/OVERVIEW.md",
-    "dest": "quay.io/ascend/ragsdk"
-  }
+  { "src": "https://raw.gitcode.com/Ascend/RAGSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/ragsdk" },
+  { "src": "https://raw.gitcode.com/Ascend/RAGSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/ragsdk" },
+
+  { "src": "https://raw.gitcode.com/Ascend/pytorch/raw/master/Docker/OVERVIEW.md", "dest": "quay.io/ascend/pytorch" },
+  { "src": "https://raw.gitcode.com/Ascend/pytorch/raw/master/Docker/OVERVIEW.md", "dest": "docker.io/ascendai/pytorch" },
+
+  { "src": "https://raw.gitcode.com/Ascend/MindSpeed-LLM/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/mindspeed-llm" },
+  { "src": "https://raw.gitcode.com/Ascend/MindSpeed-LLM/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/mindspeed-llm" },
+
+  { "src": "https://raw.gitcode.com/Ascend/DrivingSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/drivingsdk" },
+  { "src": "https://raw.gitcode.com/Ascend/DrivingSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/drivingsdk" },
+
+  { "src": "https://raw.gitcode.com/Ascend/RAGSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/" },
+  { "src": "https://raw.gitcode.com/Ascend/RAGSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/ragsdk" }
 ]

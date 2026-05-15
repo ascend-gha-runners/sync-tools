@@ -11,6 +11,6 @@
   { "src": "https://raw.gitcode.com/Ascend/DrivingSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/drivingsdk" },
   { "src": "https://raw.gitcode.com/Ascend/DrivingSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/drivingsdk" },
 
-  { "src": "https://raw.gitcode.com/Ascend/RAGSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/" },
+  { "src": "https://raw.gitcode.com/Ascend/RAGSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/ragsdk" },
   { "src": "https://raw.gitcode.com/Ascend/RAGSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/ragsdk" }
 ]

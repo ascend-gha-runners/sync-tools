@@ -25,18 +25,22 @@
 
 ```
 .github/
+├── docker/
+│   └── sync-tools/Dockerfile             # 同步任务专用镜像（含 jq / huggingface_hub / modelscope）
+├── scripts/
+│   ├── build-sync-matrix.sh              # 根据触发事件展开 project×cluster 矩阵
+│   └── download-json-models.sh           # 实际下载逻辑（HuggingFace / ModelScope）
 └── workflows/
     ├── config/                           # 配置文件目录
-    │   ├── projects-clusters.json        # 项目与集群映射关系（核心配置）
-    │   ├── vllm-models.json              # VLLM 模型同步配置
-    │   ├── vllm-datasets.json            # VLLM 数据集同步配置
-    │   ├── sglang-models.json            # SGLANG 模型同步配置
-    │   ├── sglang-datasets.json          # SGLANG 数据集同步配置
-    │   ├── hk001-models.json             # HK001 模型同步配置
-    │   └── hk001-datasets.json           # HK001 数据集同步配置
-    ├── vllm-sync.yml                     # VLLM 项目同步工作流
-    ├── sglang-sync.yml                   # SGLANG 项目同步工作流
-    ├── hk001-sync.yml                    # HK001 项目同步工作流
+    │   ├── projects-clusters.json        # 项目 → 集群映射（唯一总表）
+    │   ├── image-sync.json               # 镜像同步列表
+    │   └── projects/                     # 每个项目一份合并配置
+    │       ├── vllm.json
+    │       ├── sglang.json
+    │       ├── ms-swift.json
+    │       └── llamafactory.json
+    ├── sync-models-datasets.yml          # 通用的模型/数据集同步工作流
+    ├── build-sync-tools-image.yml        # 构建/推送 sync-tools 同步镜像（手动触发）
     ├── sync-images.yml                   # 镜像同步工作流
     └── test.yml                          # 配置验证工作流
 ```
@@ -71,57 +75,82 @@ workflow 根据域名自动匹配认证信息，目前支持的源/目标 regist
 
 ### 模型/数据集同步（按项目）
 
-同步逻辑已改为**项目绑定**模式：每个项目维护自己的模型/数据集列表，系统自动将资源同步到该项目关联的所有集群。
+每个项目维护一份合并配置（`models` + `datasets`），系统自动将资源同步到该项目关联的所有集群。
 
 #### 1. 项目与集群映射
 
-编辑 [projects-clusters.json](.github/workflows/config/projects-clusters.json)，定义每个项目关联的集群：
+编辑 [projects-clusters.json](.github/workflows/config/projects-clusters.json)：
 
 ```json
 {
-  "vllm": {
-    "clusters": ["linux-amd64-vllm-guiyang003"],
-    "models_config": "vllm-models.json",
-    "datasets_config": "vllm-datasets.json"
-  }
+  "vllm":         { "clusters": ["linux-amd64-vllm-guiyang003"] },
+  "sglang":       { "clusters": ["linux-amd64-sglang-guiyang004", "linux-amd64-sglang-sglang01"] },
+  "ms-swift":     { "clusters": ["linux-aarch64-sync-hk001"] },
+  "llamafactory": { "clusters": ["linux-aarch64-sync-hk001"] }
 }
 ```
 
 #### 2. 修改同步的模型/数据集列表
 
-编辑对应的 JSON 配置文件（支持多平台 ModelScope / HuggingFace）：
+编辑 `.github/workflows/config/projects/<project>.json`：
 
 ```json
-[
-  {
-    "platform": "modelscope",
-    "organization": "organization_name",
-    "model_name": "model_name"
-  },
-  {
-    "platform": "huggingface",
-    "organization": "organization_name",
-    "dataset_name": "dataset_name"
-  }
-]
+{
+  "models": [
+    { "platform": "modelscope",  "organization": "Qwen",   "model_name": "Qwen2.5-7B-Instruct" },
+    { "platform": "huggingface", "organization": "Qwen",   "model_name": "Qwen2.5-0.5B-Instruct", "local_dir": "/root/.cache/custom-path" }
+  ],
+  "datasets": [
+    { "platform": "huggingface", "organization": "openai", "dataset_name": "gsm8k" }
+  ]
+}
 ```
 
-[vllm模型下载列表](.github/workflows/config/vllm-models.json)
-[vllm数据集下载列表](.github/workflows/config/vllm-datasets.json)
-[sglang模型下载列表](.github/workflows/config/sglang-models.json)
-[sglang数据集下载列表](.github/workflows/config/sglang-datasets.json)
-[hk001模型下载列表](.github/workflows/config/hk001-models.json)
-[hk001数据集下载列表](.github/workflows/config/hk001-datasets.json)
+字段说明：
 
-#### 3. 新增项目
+- `platform`：`modelscope` 或 `huggingface`
+- `organization` + `model_name` / `dataset_name`：仓库名
+- `local_dir`（可选）：自定义下载路径；为空或缺失时由 SDK 走自身默认 cache（`huggingface_hub` → `~/.cache/huggingface`，`modelscope` → `~/.cache/modelscope`）
 
-1. 在 `projects-clusters.json` 中添加项目条目，指定集群列表和配置文件
-2. 创建对应的 JSON 配置文件
-3. 复制已有的 `*-sync.yml` 工作流文件，修改项目名称和配置引用
+`models` 或 `datasets` 任一为空数组都可以，对应类型会被跳过。
+
+> **持久化**：ARC runner pod 在 `/root/.cache` 挂载了持久化卷，所以 SDK 默认 cache 路径下的内容会跨任务保留，相同 revision 不会重复下载。
+
+[vllm](.github/workflows/config/projects/vllm.json) ·
+[sglang](.github/workflows/config/projects/sglang.json) ·
+[ms-swift](.github/workflows/config/projects/ms-swift.json) ·
+[llamafactory](.github/workflows/config/projects/llamafactory.json)
+
+#### 3. 新增项目（自助下载）
+
+只需两步：
+
+1. 在 [projects-clusters.json](.github/workflows/config/projects-clusters.json) 加一条记录，指定该项目对应的 runner（集群）
+2. 在 `.github/workflows/config/projects/` 下新建 `<project>.json`，填入要下载的模型和数据集
+
+push 到 `main` 后会自动触发同步。无需新建任何 workflow 文件。
 
 #### 4. 为项目添加新集群
 
-只需在 `projects-clusters.json` 中对应项目的 `clusters` 数组中添加新的集群名称即可，无需修改工作流文件。
+只需在 `projects-clusters.json` 中对应项目的 `clusters` 数组中追加新的集群名称即可。
+
+#### 5. 触发逻辑
+
+通用工作流 [sync-models-datasets.yml](.github/workflows/sync-models-datasets.yml) 监听三种事件，由 [build-sync-matrix.sh](.github/scripts/build-sync-matrix.sh) 决定要跑哪些项目：
+
+- **定时（每 6 小时）**：全量同步所有项目
+- **手动 `workflow_dispatch`**：可选 `project` 输入，留空则全量
+- **push 到 main**：只跑发生变更的项目（diff `config/projects/<name>.json` 或 `projects-clusters.json` 中 `clusters` 列表变化的项目）；如果改的是 workflow 自身或 matrix 脚本，则全量跑作为保险
+
+#### 6. 同步镜像
+
+所有 sync job 跑在专用的 `sync-tools` 镜像里（预装 jq、huggingface_hub、modelscope、datasets、filelock），双架构（amd64 + arm64）。
+
+- 镜像地址：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/sync-tools:latest`
+- Dockerfile：[.github/docker/sync-tools/Dockerfile](.github/docker/sync-tools/Dockerfile)
+- 构建：手动触发 [build-sync-tools-image.yml](.github/workflows/build-sync-tools-image.yml)（buildx 多架构构建并推送到 SWR）
+
+Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 
 ### 手动触发同步
 
@@ -144,6 +173,7 @@ workflow 根据域名自动匹配认证信息，目前支持的源/目标 regist
 - [镜像地址指引（按项目分类）](IMAGE_SYNC_GUIDE.md) – 详细列出各项目镜像的存放地址，方便快速查找。
 
 ## 更新记录
+- 2026-05-15: 模型/数据集同步合并为单一通用工作流 `sync-models-datasets.yml`，每个项目一份合并配置 `config/projects/<name>.json`（含 `models` / `datasets`，可选 `local_dir` 覆盖路径，留空走 SDK 默认 cache）；新增双架构同步镜像 `sync-tools` 与构建 workflow；删除 hk001，新增 ms-swift / llamafactory（共用 `linux-aarch64-sync-hk001` runner）。
 - 2026-04-20: 镜像同步改为配置驱动（image-sync.json），支持任意源/目标 registry，同步频率改为每小时一次，新增 digest 比对跳过机制。
 - 2026-04-18: 统一配置文件为 JSON 格式，移除 INI 格式支持
 - 2026-04-18: 支持项目级多集群同步，新增 projects-clusters.json 配置，重构工作流使用 matrix 策略

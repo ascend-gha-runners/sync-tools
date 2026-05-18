@@ -1,0 +1,16 @@
+{
+  "models": [
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-7B-Instruct"
+    }
+  ],
+  "datasets": [
+    {
+      "platform": "modelscope",
+      "organization": "mlfoundations-dev",
+      "dataset_name": "cogito-v1-preview-llama-3B_eval_2e29"
+    }
+  ]
+}

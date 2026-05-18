@@ -1,0 +1,26 @@
+{
+  "models": [
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-0.5B-Instruct"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-0.5B-Instruct"
+    }
+  ],
+  "datasets": [
+    {
+      "platform": "modelscope",
+      "organization": "AI-ModelScope",
+      "dataset_name": "gsm8k"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "openai",
+      "dataset_name": "gsm8k"
+    }
+  ]
+}

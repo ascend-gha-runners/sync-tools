@@ -1,0 +1,77 @@
+name: sync models and datasets
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "只同步指定项目（留空=全部）"
+        required: false
+        default: ""
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/projects-clusters.json"
+      - ".github/workflows/config/projects/**"
+      - ".github/workflows/sync-models-datasets.yml"
+      - ".github/scripts/build-sync-matrix.sh"
+      - ".github/scripts/download-json-models.sh"
+
+concurrency:
+  group: sync-models-datasets-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Build matrix
+        id: gen
+        env:
+          INPUT_PROJECT: ${{ inputs.project }}
+        run: bash .github/scripts/build-sync-matrix.sh
+
+  sync:
+    needs: prepare
+    if: ${{ needs.prepare.outputs.matrix != '[]' }}
+    name: sync ${{ matrix.project }} to ${{ matrix.cluster }}
+    runs-on: ${{ matrix.cluster }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    container:
+      image: swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/sync-tools:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Split project config into models/datasets
+        run: |
+          CFG=".github/workflows/config/projects/${{ matrix.project }}.json"
+          jq '.models   // []' "$CFG" > /tmp/models.json
+          jq '.datasets // []' "$CFG" > /tmp/datasets.json
+          echo "models count: $(jq 'length' /tmp/models.json)"
+          echo "datasets count: $(jq 'length' /tmp/datasets.json)"
+
+      - name: Download models
+        run: |
+          if [ "$(jq 'length' /tmp/models.json)" -gt 0 ]; then
+            bash .github/scripts/download-json-models.sh /tmp/models.json model
+          else
+            echo "No models for ${{ matrix.project }}, skip"
+          fi
+
+      - name: Download datasets
+        run: |
+          if [ "$(jq 'length' /tmp/datasets.json)" -gt 0 ]; then
+            bash .github/scripts/download-json-models.sh /tmp/datasets.json dataset
+          else
+            echo "No datasets for ${{ matrix.project }}, skip"
+          fi

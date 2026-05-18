@@ -1,0 +1,14 @@
+{
+  "vllm": {
+    "clusters": ["linux-amd64-vllm-guiyang003"]
+  },
+  "sglang": {
+    "clusters": ["linux-amd64-sglang-guiyang004", "linux-amd64-sglang-sglang01"]
+  },
+  "ms-swift": {
+    "clusters": ["linux-aarch64-sync-hk001"]
+  },
+  "llamafactory": {
+    "clusters": ["linux-aarch64-sync-hk001"]
+  }
+}

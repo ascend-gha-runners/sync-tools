@@ -12,5 +12,32 @@
   { "src": "https://raw.gitcode.com/Ascend/DrivingSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/drivingsdk" },
 
   { "src": "https://raw.gitcode.com/Ascend/RAGSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/" },
-  { "src": "https://raw.gitcode.com/Ascend/RAGSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/ragsdk" }
+  { "src": "https://raw.gitcode.com/Ascend/RAGSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/ragsdk" },
+
+  { "src": "https://raw.gitcode.com/mindspore/mindspore/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/mindspore" },
+  { "src": "https://raw.gitcode.com/mindspore/mindspore/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/mindspore" },
+
+  { "src": "https://raw.githubusercontent.com/Ascend/cann-container-image/refs/heads/main/OVERVIEW.md", "dest": "quay.io/ascend/cann" },
+  { "src": "https://raw.githubusercontent.com/Ascend/cann-container-image/refs/heads/main/OVERVIEW.md", "dest": "docker.io/ascendai/cann" },
+
+  { "src": "https://raw.gitcode.com/Ascend/MindSpeed-LLM/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/mindspeed-llm" },
+  { "src": "https://raw.gitcode.com/Ascend/MindSpeed-LLM/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/mindspeed-llm" },
+
+  { "src": "https://raw.gitcode.com/Ascend/MindSpeed-MM/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/mindspeed-mm" },
+  { "src": "https://raw.gitcode.com/Ascend/MindSpeed-MM/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/mindspeed-mm" },
+
+  { "src": "https://raw.gitcode.com/Ascend/MindSpeed/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/mindspeed-core" },
+  { "src": "https://raw.gitcode.com/Ascend/MindSpeed/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/mindspeed-core" },
+
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-device-plugin/OVERVIEW.md", "dest": "quay.io/ascend/ascend-k8sdeviceplugin" },
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-device-plugin/OVERVIEW.md", "dest": "docker.io/ascendai/ascend-k8sdeviceplugin" },
+
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/noded/OVERVIEW.md", "dest": "quay.io/ascend/noded" },
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/noded/OVERVIEW.md", "dest": "docker.io/ascendai/noded" },
+
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/npu-exporter/OVERVIEW.md", "dest": "quay.io/ascend/npu-exporter" },
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/npu-exporter/OVERVIEW.md", "dest": "docker.io/ascendai/npu-exporter" },
+
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-operator/OVERVIEW.md", "dest": "quay.io/ascend/ascend-operator" },
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-operator/OVERVIEW.md", "dest": "docker.io/ascendai/ascend-operator" }
 ]

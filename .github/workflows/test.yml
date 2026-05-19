@@ -1,0 +1,87 @@
+name: Validate Sync Configuration
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/**"
+      - ".github/workflows/*.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/**"
+      - ".github/workflows/*.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate all JSON files are valid
+        run: |
+          for f in $(find .github/workflows/config -name "*.json"); do
+            jq empty "$f"
+          done
+
+      - name: Validate projects-clusters.json schema
+        run: |
+          MISSING=$(jq -r 'to_entries[] | select(.value | has("clusters") | not) | .key' .github/workflows/config/projects-clusters.json)
+          if [ -n "$MISSING" ]; then
+            echo "ERROR: Projects missing required field 'clusters': $MISSING"
+            exit 1
+          fi
+
+          EMPTY=$(jq -r 'to_entries[] | select(.value.clusters | length == 0) | .key' .github/workflows/config/projects-clusters.json)
+          if [ -n "$EMPTY" ]; then
+            echo "ERROR: Projects with empty clusters array: $EMPTY"
+            exit 1
+          fi
+
+          jq -r '.[].clusters[]' .github/workflows/config/projects-clusters.json | while read -r c; do
+            if [ -z "$c" ]; then
+              echo "ERROR: Empty cluster name found in projects-clusters.json"
+              exit 1
+            fi
+          done
+
+      - name: Validate every project has a matching config file
+        run: |
+          jq -r 'keys[]' .github/workflows/config/projects-clusters.json | while read -r p; do
+            f=".github/workflows/config/projects/$p.json"
+            if [ ! -f "$f" ]; then
+              echo "ERROR: Missing config file for project '$p': $f"
+              exit 1
+            fi
+            if ! jq -e 'has("models") and has("datasets")' "$f" >/dev/null; then
+              echo "ERROR: $f must define both 'models' and 'datasets' arrays"
+              exit 1
+            fi
+            if ! jq -e '(.models | type == "array") and (.datasets | type == "array")' "$f" >/dev/null; then
+              echo "ERROR: $f: 'models' and 'datasets' must be arrays"
+              exit 1
+            fi
+          done
+
+      - name: Validate per-entry fields in project configs
+        run: |
+          for f in .github/workflows/config/projects/*.json; do
+            jq -c '.models[]?' "$f" | while read -r e; do
+              for k in platform organization model_name; do
+                if [ "$(echo "$e" | jq -r --arg k "$k" '.[$k] // empty')" = "" ]; then
+                  echo "ERROR: $f models entry missing '$k': $e"
+                  exit 1
+                fi
+              done
+            done
+            jq -c '.datasets[]?' "$f" | while read -r e; do
+              for k in platform organization dataset_name; do
+                if [ "$(echo "$e" | jq -r --arg k "$k" '.[$k] // empty')" = "" ]; then
+                  echo "ERROR: $f datasets entry missing '$k': $e"
+                  exit 1
+                fi
+              done
+            done
+          done

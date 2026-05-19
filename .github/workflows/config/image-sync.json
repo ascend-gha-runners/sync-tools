@@ -37,6 +37,9 @@
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie",      "dest": "docker.io/ascendai/mindie" },
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie",      "dest": "quay.io/ascend/mindie" },
 
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie-motor",      "dest": "docker.io/ascendai/mindie-motor" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie-motor",      "dest": "quay.io/ascend/mindie-motor" },
+
   { "src": "docker.io/lmsysorg/sglang",  "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/dockerhub/lmsysorg/sglang", "tag_filter": "cann" },
   { "src": "docker.io/lmsysorg/sglang",  "dest": "quay.io/ascend/sglang", "tag_filter": "cann" },
 
@@ -58,7 +61,31 @@
   
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspeed-mm",  "dest": "docker.io/ascendai/mindspeed-mm" },
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspeed-mm",  "dest": "quay.io/ascend/mindspeed-mm" },
+
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspeed-core",  "dest": "docker.io/ascendai/mindspeed-core" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspeed-core",  "dest": "quay.io/ascend/mindspeed-core" },
   
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/drivingsdk",  "dest": "docker.io/ascendai/drivingsdk" },
-  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/drivingsdk",  "dest": "quay.io/ascend/drivingsdk" }
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/drivingsdk",  "dest": "quay.io/ascend/drivingsdk" },
+
+  { "src": "quay.io/ascend/roll",  "dest": "docker.io/ascendai/roll" },
+
+  { "src": "quay.io/ascend/slime-ascend",  "dest": "docker.io/ascendai/slime-ascend" },
+  
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/ascend-k8sdeviceplugin",  "dest": "docker.io/ascendai/ascend-k8sdeviceplugin" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/ascend-k8sdeviceplugin",  "dest": "quay.io/ascend/ascend-k8sdeviceplugin" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/npu-exporter",  "dest": "docker.io/ascendai/npu-exporter" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/npu-exporter",  "dest": "quay.io/ascend/npu-exporter" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/noded",  "dest": "docker.io/ascendai/noded" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/noded",  "dest": "quay.io/ascend/noded" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/ascend-operator",  "dest": "docker.io/ascendai/ascend-operator" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/ascend-operator",  "dest": "quay.io/ascend/ascend-operator" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/resilience-controller",  "dest": "docker.io/ascendai/resilience-controller" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/resilience-controller",  "dest": "quay.io/ascend/resilience-controller" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/clusterd",  "dest": "docker.io/ascendai/clusterd" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/clusterd",  "dest": "quay.io/ascend/clusterd" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/vc-scheduler",  "dest": "docker.io/ascendai/vc-scheduler" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/vc-scheduler",  "dest": "quay.io/ascend/vc-scheduler" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/vc-controller-manager",  "dest": "docker.io/ascendai/vc-controller-manager" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/vc-controller-manager",  "dest": "quay.io/ascend/vc-controller-manager" }
 ]

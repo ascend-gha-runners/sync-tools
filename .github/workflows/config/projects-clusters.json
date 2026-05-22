@@ -1,9 +1,12 @@
 {
   "vllm": {
-    "clusters": ["linux-amd64-vllm-guiyang003"]
+    "clusters": ["linux-amd64-vllm-a2", "linux-amd64-vllm-a3"]
   },
   "sglang": {
-    "clusters": ["linux-amd64-sglang-guiyang004", "linux-amd64-sglang-sglang01"]
+    "clusters": ["linux-amd64-sglang-a2", "linux-amd64-sglang-a3"]
+  },
+  "verl": {
+    "clusters": ["linux-amd64-verl-a3"]
   },
   "ms-swift": {
     "clusters": ["linux-aarch64-sync-hk001"]

@@ -39,5 +39,20 @@
   { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/npu-exporter/OVERVIEW.md", "dest": "docker.io/ascendai/npu-exporter" },
 
   { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-operator/OVERVIEW.md", "dest": "quay.io/ascend/ascend-operator" },
-  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-operator/OVERVIEW.md", "dest": "docker.io/ascendai/ascend-operator" }
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-operator/OVERVIEW.md", "dest": "docker.io/ascendai/ascend-operator" },
+
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/infer-operator/OVERVIEW.md", "dest": "quay.io/ascend/infer-operator" },
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/infer-operator/OVERVIEW.md", "dest": "docker.io/ascendai/infer-operator" },
+
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/clusterd/OVERVIEW.md", "dest": "quay.io/ascend/clusterd" },
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/clusterd/OVERVIEW.md", "dest": "docker.io/ascendai/clusterd" },
+
+  { "src": "https://raw.gitcode.com/Ascend/IndexSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/indexsdk" },
+  { "src": "https://raw.gitcode.com/Ascend/IndexSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/indexsdk" },
+
+  { "src": "https://raw.gitcode.com/Ascend/MultiModalSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/multimodalsdk" },
+  { "src": "https://raw.gitcode.com/Ascend/MultiModalSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/multimodalsdk" },
+
+  { "src": "https://raw.gitcode.com/Ascend/VisionSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/visionsdk" },
+  { "src": "https://raw.gitcode.com/Ascend/VisionSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/visionsdk" }
 ]

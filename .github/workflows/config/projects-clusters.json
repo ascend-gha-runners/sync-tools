@@ -13,5 +13,8 @@
   },
   "llamafactory": {
     "clusters": ["linux-aarch64-sync-hk001"]
+  },
+  "vllm-omni": {
+    "clusters": ["linux-amd64-hb003-omni"]
   }
 }

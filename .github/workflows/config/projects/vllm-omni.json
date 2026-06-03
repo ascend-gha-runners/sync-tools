@@ -1,0 +1,1571 @@
+{
+  "models": [
+    {
+      "platform": "modelscope",
+      "organization": "AngelSlim",
+      "model_name": "Qwen3-32B_eagle3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "AngelSlim",
+      "model_name": "Qwen3-a3B_eagle3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Anionex",
+      "model_name": "Qwen3-1.7B-W4A8-V1"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "ArthurZ",
+      "model_name": "ilama-3.2-1B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "BAAI",
+      "model_name": "bge-base-en-v1.5"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "BAAI",
+      "model_name": "bge-large-zh-v1.5"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "BAAI",
+      "model_name": "bge-m3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "BAAI",
+      "model_name": "bge-multilingual-gemma2"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "BAAI",
+      "model_name": "bge-reranker-large"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "BAAI",
+      "model_name": "bge-reranker-v2-m3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "BAAI",
+      "model_name": "bge-small-en-v1.5"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "BAAI",
+      "model_name": "kernel_meta"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "ByteDance-Seed",
+      "model_name": "BAGEL-7B-MoT"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "DeepSeek-ai",
+      "model_name": "DeepSeek-OCR"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "gdydems",
+      "model_name": "DeepSeek-V4-Flash-w4a8-mtp"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "DevQuasar",
+      "model_name": "deepseek-ai.DeepSeek-V3.2-BF16"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "DeepSeek-V3.1-w8a8-mtp-QuaRot"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "Qwen3-30B-A3B-w8a8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "Kimi-K2.5-W4A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "Qwen3-VL-235B-A22B-Instruct-w8a8-QuaRot"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "Qwen3-VL-32B-Instruct-w8a8-QuaRot"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Howeee",
+      "model_name": "Qwen2.5-1.5B-apeach"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "IntervitensInc",
+      "model_name": "pangu-pro-moe-model"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "IntervitensInc",
+      "model_name": "pangu-pro-moe-modelt"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "JackFram",
+      "model_name": "llama-160m"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "JackFram",
+      "model_name": "llama-68m"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Kwai-Keye",
+      "model_name": "Keye-VL-8B-Preview"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "LLM-Research",
+      "model_name": "Llama-3.2-11B-Vision"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "LLM-Research",
+      "model_name": "Llama-3.2-1B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "LLM-Research",
+      "model_name": "Llama-3.2-3B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "LLM-Research",
+      "model_name": "Meta-Llama-3-8B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "LLM-Research",
+      "model_name": "Meta-Llama-3.1-8B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "LLM-Research",
+      "model_name": "Molmo-7B-D-0924"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "LLM-Research",
+      "model_name": "Phi-4-mini-instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "LLM-Research",
+      "model_name": "gemma-2-9b-it"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "LLM-Research",
+      "model_name": "gemma-3-4b-it"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "LLM-Research",
+      "model_name": "kernel_meta"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "OpenBMB",
+      "model_name": "MiniCPM-2B-dpo-bf16"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "OpenBMB",
+      "model_name": "MiniCPM-Llama3-V-2_5"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "OpenBMB",
+      "model_name": "MiniCPM3-4B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "OpenBMB",
+      "model_name": "MiniCPM4-0.5B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "OpenGVLab",
+      "model_name": "InternVL2-8B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "OpenGVLab",
+      "model_name": "InternVL2_5-8B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "OpenGVLab",
+      "model_name": "InternVL3-78B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "OpenGVLab",
+      "model_name": "InternVL3-8B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "OpenGVLab",
+      "model_name": "InternVL3_5-8B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "OpenGVLab",
+      "model_name": "InternVL3_5-8B-hf"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "PaddlePaddle",
+      "model_name": "ERNIE-4.5-21B-A3B-PT"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "PaddlePaddle",
+      "model_name": "PaddleOCR-VL"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "QuantTrio",
+      "model_name": "Qwen3-VL-235B-A22B-Instruct-AWQ"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "QwQ-32B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "QwQ-32B-AWQ"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen-Image"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen1.5-MoE-A2.7B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2-1.5B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2-7B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2-7B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2-7B-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2-Audio-7B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2-VL-2B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2-VL-7B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2-VL-7B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-0.5B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-0.5B-Instruct-AWQ"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-1.5B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-14B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-32B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-7B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-7B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-7B-Instruct-1M"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-7b-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-Math-PRM-7B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-Math-RM-72B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-Omni-3B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-Omni-7B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-VL-32B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-VL-3B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-VL-7B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen2.7-7B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-0.6B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-1.7B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-0.6B-Base"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-ASR-1.7B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-VL-4B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-235B-A22B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-235B-A22B-Instruct-2507"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-30B-A3B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-30B-A3B-Instruct-2507"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-30B-A3B-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-32B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-32B-AWQ"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-8B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-8B-A3B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-8B-Base"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-8B-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-8B-w4a8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-8B-w8a8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-Base"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-Coder-30B-A3B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-Embedding-0.6B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-Embedding-8B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-Next-80B-A3B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-Next-A3B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-Omni-30B-A3B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-Reranker-0.6B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-VL-235B-A22B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-VL-2B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-VL-30B-A3B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-VL-32B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-VL-8B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3.5-4B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3.5-27B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "RedHatAI",
+      "model_name": "Qwen3-32B-speculator.eagle3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "RedHatAI",
+      "model_name": "Qwen3-8B-speculator.eagle3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Shanghai_AI_Laboratory",
+      "model_name": "internlm--chat-7b"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Shanghai_AI_Laboratory",
+      "model_name": "internlm-7b"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Shanghai_AI_Laboratory",
+      "model_name": "internlm-7b-chat"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Shanghai_AI_Laboratory",
+      "model_name": "internlm-7bi-chat"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Shanghai_AI_Laboratory",
+      "model_name": "internlm-chat-7b"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Tencent-Hunyuan",
+      "model_name": "HunyuanOCR"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Tencent-Hunyuan",
+      "model_name": "Hunyuan-A13B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Tencent-Hunyuan",
+      "model_name": "Hy3-preview"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Tengyunw",
+      "model_name": "qwen3_8b_eagle3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Tongyi-MAI",
+      "model_name": "Z-Image-Turbo"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "baichuan-inc",
+      "model_name": "Baichuan2-7B-Chat"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "billy800",
+      "model_name": "Qwen3-30B-A3B-Instruct-2507-AWQ"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "deepseek-ai",
+      "model_name": "DeepSeek-OCR"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "deepseek-ai",
+      "model_name": "DeepSeek-R1-Distill-Qwen-7B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "deepseek-ai",
+      "model_name": "DeepSeek-V2"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "deepseek-ai",
+      "model_name": "DeepSeek-V2-Lite"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "deepseek-ai",
+      "model_name": "DeepSeek-V2-Lite-Chat"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "deepseek-ai",
+      "model_name": "Deepseek-V2-Lite"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "dengcao",
+      "model_name": "ms-marco-MiniLM-L6-v2"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "facebook",
+      "model_name": "opt-125m"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "google",
+      "model_name": "gemma-2-9b"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "google",
+      "model_name": "gemma-3n-E2B-it"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "google",
+      "model_name": "siglip2-base-patch16-224"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "hmellor",
+      "model_name": "Ilama-3.2-1B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "ibm-research",
+      "model_name": "PowerMoE-3b"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "intfloat",
+      "model_name": "multilingual-e5-small"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "jason9693",
+      "model_name": "Qwen2.5-1.5B-apeach"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "jinaai",
+      "model_name": "jina-embeddings-v3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "jinaai",
+      "model_name": "jina-embeddings-v4"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "jinaai",
+      "model_name": "jina-embeddings-v4-vllm-code"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "jinaai",
+      "model_name": "jina-embeddings-v4-vllm-retrieval"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "kernel_meta",
+      "model_name": "kernel_meta_temp_2116872659434949099"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "llava-hf",
+      "model_name": "LLaVA-NeXT-Video-7B-hf"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "llava-hf",
+      "model_name": "llava-1.5-7b-hf"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "llava-hf",
+      "model_name": "llava-onevision-qwen2-0.5b-ov-hf"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "llava-hf",
+      "model_name": "llava-v1.6-mistral-7b-hf"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "meta-llama",
+      "model_name": "Llama-3.2-1B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "mistralai",
+      "model_name": "Ministral-3-3B-Instruct-2512-BF16"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "mistralai",
+      "model_name": "Ministral-3-8B-Instruct-2512-BF16"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "mistralai",
+      "model_name": "Mistral-7B-Instruct-v0.1"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "mistralai",
+      "model_name": "Mixtral-8x7B-Instruct-v0.1"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "mistralai",
+      "model_name": "Mistral-Small-3.1-24B-Instruct-2503"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "mlx-community",
+      "model_name": "DeepSeek-V3-3bit-bf16"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "moonshotai",
+      "model_name": "Kimi-K2-Thinking"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "moonshotai",
+      "model_name": "Kimi-Linear-48B-A3B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "neuralmagic",
+      "model_name": "Qwen2.5-3B-quantized.w8a8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "MNN",
+      "model_name": "Qwen3-VL-8B-Instruct-Eagle3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "nv-community",
+      "model_name": "audio-flamingo-3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "nv-community",
+      "model_name": "audio-flamingo-3-hf"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "nvidia",
+      "model_name": "audio-flamingo-3-hf"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "nv-community",
+      "model_name": "Minitron-8B-Base"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "openbmb",
+      "model_name": "MiniCPM-2B-sft-bf16"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "openbmb",
+      "model_name": "MiniCPM-V-2_6"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "openbmb",
+      "model_name": "MiniCPM-V-4_5"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "opendatalab",
+      "model_name": "MinerU2.5-2509-1.2B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "rhymes-ai",
+      "model_name": "Aria"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "sentence-transformers",
+      "model_name": "all-MiniLM-L12-v2"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "tencent",
+      "model_name": "HunyuanOCR"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "unsloth",
+      "model_name": "DeepSeek-V3.1-BF16"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "unsloth",
+      "model_name": "Kimi-K2-Thinking-BF16"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "unsloth",
+      "model_name": "gpt-oss-20b-BF16"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-R1-0528-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-R1-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-R1-fa3-pruning"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-R1-w4a8-pruning"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-V2-Lite"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-V2-Lite-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-V3-Pruning"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-V3-W4A8-Pruing"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-V3-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-V3.1"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-V3.1-W4A8-puring"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-V3.1-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-V3.2-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "DeepSeek-V3.2-W8A8-Pruning"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "EAGLE-LLaMA3.1-Instruct-8B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "EAGLE3-LLaMA3.1-Instruct-8B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "GLM-4.7-W8A8C8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Kimi-K2-Instruct-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Kimi-K2-Thinking-Pruning"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Llama-2-7b-hf"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Llama-3.2-3B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Meta-Llama-3-8B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "QwQ-32B-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "QwQ-32B-w8a8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen2-7B-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen2-VL-7B-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen2.5-0.5B-Instruct-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen2.5-0.5B-Instruct-W8A8-new"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen2.5-0.5B-Instruct-fa3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen2.5-0.5B-Instruct-w8a8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen2.5-Omni-7B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-0.6B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-0.6B-Instruct-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-0.6B-W8A16"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-0.6B-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-1.7B-W4A8-V1"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-235B-A22B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-235B-A22B-W4A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-235B-A22B-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-235B-A22B-w8a8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-30B-A3B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-a3B_eagle3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-30B-A3B-Puring"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-30B-A3B-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-30B-A3B-W8A8-Pruning"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-30B-A3B-W8A8-QuaRot"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-30B-A3B-Instruct-2507-quantized.w8a8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-30B-A3B-Instruct-2507-quantized.w4a8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-32B-W4A4"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-32B-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-32B-W8A8-QuaRot"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-8B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-8B-W4A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-8B-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-Next-80B-A3B-Instruct-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-Next-80B-A3B-Instruct-W8A8-Pruning"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-Omni-30B-A3B-Thinking"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-VL-8B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-VL-8B-Instruct-W8A8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "TinyLlama-1.1B-Chat-v0.3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "benchmark"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "ilama-3.2-1B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "ilama-text2sql-spider"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "kernel_meta"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "llama-160m"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "llama-160m-accelerator"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "llama-2-7b-sql-lora-test"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "llama-68m"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "llama32-3b-text2sql-spider"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "pangu-pro-moe-pruing"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "self_cognition_Alice"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "self_cognition_Bob"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "tinyllama-colorist-lora"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "vllm-eagle-llama-68m-random"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "Qwen3-1.7B_eagle3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "qwen-linear-algebra-coder"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "qwen2-vl-lora-pokemon"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "qwen25-vl-lora-pokemon"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "qwen2.5-3b-vl-lora-vision-connector"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "qwen3-4b-vl-lora-vision-connector"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "qwen2vl-flickr-lora-language"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "qwen2vl-flickr-lora-tower-connector"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "qwen2vl-flickr-lora-tower"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "qwen35-4b-text-only-sql-lora"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "wemaster",
+      "model_name": "deepseek_mtp_main_random_bf16"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "wemaster",
+      "model_name": "deepseek_mtp_main_random_w8a8_part"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "xlangai",
+      "model_name": "OpenCUA-7B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "GLM-5-w4a8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "GLM-4.7-W8A8-floatmtp"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "MiniMax",
+      "model_name": "MiniMax-M2.5"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "Qwen3.5-27B-w8a8-mtp"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "MiniMax-M2.5-w8a8-QuaRot"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "MiniMax-M2.5-eagle-model-0318"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "Qwen3.5-397B-A17B-w8a8-mtp"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "z-lab",
+      "model_name": "Qwen3-8B-DFlash-b16"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "GLM-5.1-w8a8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "Qwen3.5-397B-A17B-w4a8-mtp"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "lightseekorg",
+      "model_name": "kimi-k2.5-eagle3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "Qwen3.5-122B-A10B-w8a8-mtp"
+    }
+  ],
+  "datasets": [
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K-in1024-bs210"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K-in3500-bs2800"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K-in3500-bs400"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K-in64000-bs2800"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "aime2024"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "aime2025"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "gsm8k"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "gsm8k-lite"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "prefix0-in3500-bs210"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "prefix75-in3500-bs210"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "textvqa-lite"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "textvqa-perf-1080p"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "gpqa"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K-in131072-bs100-qwen3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in131072_bs100_glm"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in16384_bs200_qwen"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in32768_bs100_qwen"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in65536_bs100_qwen"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in131072_bs100_qwen"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in32768_bs1000_qwen"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in65536_bs1000_qwen"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in16384_bs100_glm"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in32768_bs100_glm"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in32768_bs100_glm"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in65536_bs100_glm"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in16384_bs200_Minimax"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in32768_bs800_Minimax"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in32768_bs1000_Minimax"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in65536_bs1000_Minimax"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in131072_bs1000_Minimax"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in16384_bs200_kimi"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in32768_bs1000_kimi"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in32768_bs200_kimi"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in65536_bs1000_kimi"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in131072_bs1000_kimi"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in16384_bs1200_deepseek"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in32768_bs1000_deepseek"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in65536_bs400_deepseek"
+    }
+  ]
+}

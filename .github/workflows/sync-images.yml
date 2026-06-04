@@ -62,6 +62,7 @@ jobs:
               quay.io/*)              echo "${QUAY_ASCEND_USER}:${QUAY_ASCEND_PWD}" ;;
               docker.io/*)            echo "${DOCKERHUB_USER}:${DOCKERHUB_PWD}" ;;
               swr.cn-southwest-2.*)   echo "${HWCLOUD_USER}:${HWCLOUD_PWD}" ;;
+              swr.cn-east-3.*)        echo "${HWCLOUD_USER}:${HWCLOUD_PWD}" ;;
               swr.ap-southeast-1.*)   echo "${SWR_HK_USER}:${SWR_HK_SECRET}" ;;
               *)                      echo "" ;;
             esac

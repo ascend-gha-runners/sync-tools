@@ -3,6 +3,7 @@
   { "src": "quay.io/ascend/cann",        "dest": "docker.io/ascendai/cann" },
 
   { "src": "quay.io/ascend/vllm-ascend", "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend" },
+  { "src": "quay.io/ascend/vllm-ascend", "dest": "swr.cn-east-3.myhuaweicloud.com/upupup/ascend-ci/vllm-ascend/vllm-ascend" },
   { "src": "quay.io/ascend/vllm-ascend", "dest": "docker.io/ascendai/vllm-ascend" },
 
   { "src": "quay.io/ascend/manylinux",   "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/manylinux/manylinux" },

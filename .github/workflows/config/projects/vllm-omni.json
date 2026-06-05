@@ -3,614 +3,512 @@
     {
       "platform": "modelscope",
       "organization": "AngelSlim",
-      "model_name": "Qwen3-a3B_eagle3",
-      "size_gb": 0.52
+      "model_name": "Qwen3-a3B_eagle3"
     },
     {
       "platform": "modelscope",
       "organization": "BAAI",
-      "model_name": "bge-m3",
-      "size_gb": 4.27
+      "model_name": "bge-m3"
     },
     {
       "platform": "modelscope",
       "organization": "BAAI",
-      "model_name": "bge-reranker-v2-m3",
-      "size_gb": 2.14
+      "model_name": "bge-reranker-v2-m3"
     },
     {
       "platform": "modelscope",
       "organization": "deepseek-ai",
-      "model_name": "DeepSeek-V2",
-      "size_gb": 439.11
+      "model_name": "DeepSeek-V2"
     },
     {
       "platform": "modelscope",
       "organization": "deepseek-ai",
-      "model_name": "DeepSeek-V2-Chat",
-      "size_gb": 439.11
+      "model_name": "DeepSeek-V2-Chat"
     },
     {
       "platform": "modelscope",
       "organization": "deepseek-ai",
-      "model_name": "DeepSeek-V2-Lite",
-      "size_gb": 29.26
+      "model_name": "DeepSeek-V2-Lite"
     },
     {
       "platform": "modelscope",
       "organization": "deepseek-ai",
-      "model_name": "DeepSeek-V2-Lite-Chat",
-      "size_gb": 29.26
+      "model_name": "DeepSeek-V2-Lite-Chat"
     },
     {
       "platform": "modelscope",
       "organization": "deepseek-ai",
-      "model_name": "DeepSeek-V3.2-Exp",
-      "size_gb": 642.15
+      "model_name": "DeepSeek-V3.2-Exp"
     },
     {
       "platform": "modelscope",
       "organization": "dengcao",
-      "model_name": "ms-marco-MiniLM-L6-v2",
-      "size_gb": 0.83
+      "model_name": "ms-marco-MiniLM-L6-v2"
     },
     {
       "platform": "modelscope",
       "organization": "Eco-Tech",
-      "model_name": "DeepSeek-V4-Flash-w8a8-mtp",
-      "size_gb": 279.49
+      "model_name": "DeepSeek-V4-Flash-w8a8-mtp"
     },
     {
       "platform": "modelscope",
       "organization": "Eco-Tech",
-      "model_name": "GLM-4.7-W8A8-floatmtp",
-      "size_gb": 352.35
+      "model_name": "GLM-4.7-W8A8-floatmtp"
     },
     {
       "platform": "modelscope",
       "organization": "Eco-Tech",
-      "model_name": "GLM-5-w4a8",
-      "size_gb": 391.17
+      "model_name": "GLM-5-w4a8"
     },
     {
       "platform": "modelscope",
       "organization": "Eco-Tech",
-      "model_name": "GLM-5.1-w8a8",
-      "size_gb": 712.31
+      "model_name": "GLM-5.1-w8a8"
     },
     {
       "platform": "modelscope",
       "organization": "Eco-Tech",
-      "model_name": "Kimi-K2.5-W4A8",
-      "size_gb": 499.1
+      "model_name": "Kimi-K2.5-W4A8"
     },
     {
       "platform": "modelscope",
       "organization": "Eco-Tech",
-      "model_name": "MiniMax-M2.5-w8a8-QuaRot",
-      "size_gb": 214.97
+      "model_name": "MiniMax-M2.5-w8a8-QuaRot"
     },
     {
       "platform": "modelscope",
       "organization": "Eco-Tech",
-      "model_name": "Qwen3-VL-32B-Instruct-w8a8-QuaRot",
-      "size_gb": 56.05
+      "model_name": "Qwen3-VL-32B-Instruct-w8a8-QuaRot"
     },
     {
       "platform": "modelscope",
       "organization": "Eco-Tech",
-      "model_name": "Qwen3-VL-235B-A22B-Instruct-w8a8-QuaRot",
-      "size_gb": 221.76
+      "model_name": "Qwen3-VL-235B-A22B-Instruct-w8a8-QuaRot"
     },
     {
       "platform": "modelscope",
       "organization": "Eco-Tech",
-      "model_name": "Qwen3.5-27B-w8a8-mtp",
-      "size_gb": 33.94
+      "model_name": "Qwen3.5-27B-w8a8-mtp"
     },
     {
       "platform": "modelscope",
       "organization": "Eco-Tech",
-      "model_name": "Qwen3.5-122B-A10B-w8a8-mtp",
-      "size_gb": 124.92
+      "model_name": "Qwen3.5-122B-A10B-w8a8-mtp"
     },
     {
       "platform": "modelscope",
       "organization": "Eco-Tech",
-      "model_name": "Qwen3.5-397B-A17B-w4a8-mtp",
-      "size_gb": 219.68
+      "model_name": "Qwen3.5-397B-A17B-w4a8-mtp"
     },
     {
       "platform": "modelscope",
       "organization": "Eco-Tech",
-      "model_name": "Qwen3.5-397B-A17B-w8a8-mtp",
-      "size_gb": 391.91
+      "model_name": "Qwen3.5-397B-A17B-w8a8-mtp"
     },
     {
       "platform": "modelscope",
       "organization": "facebook",
-      "model_name": "opt-125m",
-      "size_gb": 0.7
+      "model_name": "opt-125m"
     },
     {
       "platform": "modelscope",
       "organization": "gdydems",
-      "model_name": "DeepSeek-V4-Flash-w4a8-mtp",
-      "size_gb": 150.42
+      "model_name": "DeepSeek-V4-Flash-w4a8-mtp"
     },
     {
       "platform": "modelscope",
       "organization": "Howeee",
-      "model_name": "Qwen2.5-1.5B-apeach",
-      "size_gb": 5.77
+      "model_name": "Qwen2.5-1.5B-apeach"
     },
     {
       "platform": "modelscope",
       "organization": "intfloat",
-      "model_name": "multilingual-e5-small",
-      "size_gb": 2.12
+      "model_name": "multilingual-e5-small"
     },
     {
       "platform": "modelscope",
       "organization": "lightseekorg",
-      "model_name": "kimi-k2.5-eagle3",
-      "size_gb": 5.92
+      "model_name": "kimi-k2.5-eagle3"
     },
     {
       "platform": "modelscope",
       "organization": "LLM-Research",
-      "model_name": "gemma-3-4b-it",
-      "size_gb": 8.05
+      "model_name": "gemma-3-4b-it"
     },
     {
       "platform": "modelscope",
       "organization": "LLM-Research",
-      "model_name": "Llama-3.2-3B-Instruct",
-      "size_gb": 11.98
+      "model_name": "Llama-3.2-3B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "LLM-Research",
-      "model_name": "Meta-Llama-3.1-8B-Instruct",
-      "size_gb": 29.93
+      "model_name": "Meta-Llama-3.1-8B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "LLM-Research",
-      "model_name": "Molmo-7B-D-0924",
-      "size_gb": 29.89
+      "model_name": "Molmo-7B-D-0924"
     },
     {
       "platform": "modelscope",
       "organization": "llava-hf",
-      "model_name": "llava-onevision-qwen2-0.5b-ov-hf",
-      "size_gb": 13.18
+      "model_name": "llava-onevision-qwen2-0.5b-ov-hf"
     },
     {
       "platform": "modelscope",
       "organization": "mistralai",
-      "model_name": "Mixtral-8x7B-Instruct-v0.1",
-      "size_gb": 177.4
+      "model_name": "Mixtral-8x7B-Instruct-v0.1"
     },
     {
       "platform": "modelscope",
       "organization": "MNN",
-      "model_name": "Qwen3-VL-8B-Instruct-Eagle3",
-      "size_gb": 0.74
+      "model_name": "Qwen3-VL-8B-Instruct-Eagle3"
     },
     {
       "platform": "modelscope",
       "organization": "moonshotai",
-      "model_name": "Kimi-K2-Thinking",
-      "size_gb": 553.44
+      "model_name": "Kimi-K2-Thinking"
     },
     {
       "platform": "modelscope",
       "organization": "nv-community",
-      "model_name": "Minitron-8B-Base",
-      "size_gb": 30.85
+      "model_name": "Minitron-8B-Base"
     },
     {
       "platform": "modelscope",
       "organization": "openai-mirror",
-      "model_name": "whisper-large-v3-turbo",
-      "size_gb": 1.51
+      "model_name": "whisper-large-v3-turbo"
     },
     {
       "platform": "modelscope",
       "organization": "openbmb",
-      "model_name": "MiniCPM-2B-sft-bf16",
-      "size_gb": 5.08
+      "model_name": "MiniCPM-2B-sft-bf16"
     },
     {
       "platform": "modelscope",
       "organization": "OpenBMB",
-      "model_name": "MiniCPM4-0.5B",
-      "size_gb": 0.82
+      "model_name": "MiniCPM4-0.5B"
     },
     {
       "platform": "modelscope",
       "organization": "OpenGVLab",
-      "model_name": "InternVL3_5-8B",
-      "size_gb": 15.9
+      "model_name": "InternVL3_5-8B"
     },
     {
       "platform": "modelscope",
       "organization": "OpenGVLab",
-      "model_name": "InternVL3_5-8B-hf",
-      "size_gb": 15.9
+      "model_name": "InternVL3_5-8B-hf"
     },
     {
       "platform": "modelscope",
       "organization": "PaddlePaddle",
-      "model_name": "ERNIE-4.5-21B-A3B-PT",
-      "size_gb": 40.9
+      "model_name": "ERNIE-4.5-21B-A3B-PT"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen2-Audio-7B-Instruct",
-      "size_gb": 15.65
+      "model_name": "Qwen2-Audio-7B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen2.5-0.5B-Instruct",
-      "size_gb": 0.93
+      "model_name": "Qwen2.5-0.5B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen2.5-Math-RM-72B",
-      "size_gb": 135.56
+      "model_name": "Qwen2.5-Math-RM-72B"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen2.5-VL-7B-Instruct",
-      "size_gb": 15.46
+      "model_name": "Qwen2.5-VL-7B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-0.6B",
-      "size_gb": 1.41
+      "model_name": "Qwen3-0.6B"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-1.7B",
-      "size_gb": 3.8
+      "model_name": "Qwen3-1.7B"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-8B",
-      "size_gb": 15.27
+      "model_name": "Qwen3-8B"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-30B-A3B",
-      "size_gb": 56.89
+      "model_name": "Qwen3-30B-A3B"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-32B",
-      "size_gb": 61.04
+      "model_name": "Qwen3-32B"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-235B-A22B",
-      "size_gb": 437.92
+      "model_name": "Qwen3-235B-A22B"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-ASR-1.7B",
-      "size_gb": 4.38
+      "model_name": "Qwen3-ASR-1.7B"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-Embedding-0.6B",
-      "size_gb": 1.13
+      "model_name": "Qwen3-Embedding-0.6B"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-Reranker-0.6B",
-      "size_gb": 1.13
+      "model_name": "Qwen3-Reranker-0.6B"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-Next-80B-A3B-Instruct",
-      "size_gb": 151.51
+      "model_name": "Qwen3-Next-80B-A3B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-Omni-30B-A3B-Instruct",
-      "size_gb": 65.69
+      "model_name": "Qwen3-Omni-30B-A3B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-VL-2B-Instruct",
-      "size_gb": 3.97
+      "model_name": "Qwen3-VL-2B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-VL-8B-Instruct",
-      "size_gb": 16.34
+      "model_name": "Qwen3-VL-8B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-VL-30B-A3B-Instruct",
-      "size_gb": 57.89
+      "model_name": "Qwen3-VL-30B-A3B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3-VL-235B-A22B-Instruct",
-      "size_gb": 438.98
+      "model_name": "Qwen3-VL-235B-A22B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3.5-4B",
-      "size_gb": 8.7
+      "model_name": "Qwen3.5-4B"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3.5-27B",
-      "size_gb": 51.77
+      "model_name": "Qwen3.5-27B"
     },
     {
       "platform": "modelscope",
       "organization": "Qwen",
-      "model_name": "Qwen3.5-35B-A3B",
-      "size_gb": 66.99
+      "model_name": "Qwen3.5-35B-A3B"
     },
     {
       "platform": "modelscope",
       "organization": "RedHatAI",
-      "model_name": "Qwen3-8B-speculator.eagle3",
-      "size_gb": 1.9
+      "model_name": "Qwen3-8B-speculator.eagle3"
     },
     {
       "platform": "modelscope",
       "organization": "RedHatAI",
-      "model_name": "Qwen3-32B-speculator.eagle3",
-      "size_gb": 2.91
+      "model_name": "Qwen3-32B-speculator.eagle3"
     },
     {
       "platform": "modelscope",
       "organization": "sentence-transformers",
-      "model_name": "all-MiniLM-L12-v2",
-      "size_gb": 1.22
+      "model_name": "all-MiniLM-L12-v2"
     },
     {
       "platform": "modelscope",
       "organization": "Shanghai_AI_Laboratory",
-      "model_name": "internlm3-8b-instruct",
-      "size_gb": 16.4
+      "model_name": "internlm3-8b-instruct"
     },
     {
       "platform": "modelscope",
       "organization": "Tencent-Hunyuan",
-      "model_name": "Hunyuan-A13B-Instruct",
-      "size_gb": 149.76
+      "model_name": "Hunyuan-A13B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "Tencent-Hunyuan",
-      "model_name": "HunyuanOCR",
-      "size_gb": 1.86
+      "model_name": "HunyuanOCR"
     },
     {
       "platform": "modelscope",
       "organization": "Tencent-Hunyuan",
-      "model_name": "Hy3-preview",
-      "size_gb": 556.55
+      "model_name": "Hy3-preview"
     },
     {
       "platform": "modelscope",
       "organization": "unsloth",
-      "model_name": "DeepSeek-V3.1-BF16",
-      "size_gb": 1274.98
+      "model_name": "DeepSeek-V3.1-BF16"
     },
     {
       "platform": "modelscope",
       "organization": "unsloth",
-      "model_name": "gpt-oss-20b-BF16",
-      "size_gb": 38.98
+      "model_name": "gpt-oss-20b-BF16"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "DeepSeek-R1-0528-W8A8",
-      "size_gb": 653.5
+      "model_name": "DeepSeek-R1-0528-W8A8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "DeepSeek-V2-Lite-W8A8",
-      "size_gb": 16.04
+      "model_name": "DeepSeek-V2-Lite-W8A8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "DeepSeek-V3-Pruning",
-      "size_gb": 25.98
+      "model_name": "DeepSeek-V3-Pruning"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "DeepSeek-V3-W8A8",
-      "size_gb": 653.5
+      "model_name": "DeepSeek-V3-W8A8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "DeepSeek-V3.2-W8A8",
-      "size_gb": 646.78
+      "model_name": "DeepSeek-V3.2-W8A8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "DeepSeek-V3.2-W8A8-Pruning",
-      "size_gb": 21.37
+      "model_name": "DeepSeek-V3.2-W8A8-Pruning"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "EAGLE-LLaMA3.1-Instruct-8B",
-      "size_gb": 1.45
+      "model_name": "EAGLE-LLaMA3.1-Instruct-8B"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "EAGLE3-LLaMA3.1-Instruct-8B",
-      "size_gb": 0.81
+      "model_name": "EAGLE3-LLaMA3.1-Instruct-8B"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "GLM-4.7-W8A8C8",
-      "size_gb": 333.51
+      "model_name": "GLM-4.7-W8A8C8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "ilama-3.2-1B",
-      "size_gb": 4.62
+      "model_name": "ilama-3.2-1B"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "ilama-text2sql-spider",
-      "size_gb": 0.02
+      "model_name": "ilama-text2sql-spider"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Kimi-K2-Thinking-Pruning",
-      "size_gb": 14.44
+      "model_name": "Kimi-K2-Thinking-Pruning"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Llama-3.2-3B-Instruct",
-      "size_gb": 11.98
+      "model_name": "Llama-3.2-3B-Instruct"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "MiniMax-M2.5-eagle-model-0318",
-      "size_gb": 2.5
+      "model_name": "MiniMax-M2.5-eagle-model-0318"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Qwen3-0.6B-W8A8",
-      "size_gb": 1.09
+      "model_name": "Qwen3-0.6B-W8A8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Qwen3-1.7B_eagle3",
-      "size_gb": 0.26
+      "model_name": "Qwen3-1.7B_eagle3"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Qwen3-8B-W8A8",
-      "size_gb": 10.5
+      "model_name": "Qwen3-8B-W8A8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Qwen3-30B-A3B-Instruct-2507-quantized.w4a8",
-      "size_gb": 29.47
+      "model_name": "Qwen3-30B-A3B-Instruct-2507-quantized.w4a8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Qwen3-30B-A3B-W8A8",
-      "size_gb": 29.14
+      "model_name": "Qwen3-30B-A3B-W8A8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Qwen3-30B-A3B-W8A8-QuaRot",
-      "size_gb": 29.22
+      "model_name": "Qwen3-30B-A3B-W8A8-QuaRot"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Qwen3-32B-W8A8",
-      "size_gb": 39.84
+      "model_name": "Qwen3-32B-W8A8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Qwen3-32B-W8A8-QuaRot",
-      "size_gb": 33.21
+      "model_name": "Qwen3-32B-W8A8-QuaRot"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Qwen3-235B-A22B-W8A8",
-      "size_gb": 220.54
+      "model_name": "Qwen3-235B-A22B-W8A8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Qwen3-a3B_eagle3",
-      "size_gb": 0.28
+      "model_name": "Qwen3-a3B_eagle3"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Qwen3-Next-80B-A3B-Instruct-W8A8",
-      "size_gb": 79.07
+      "model_name": "Qwen3-Next-80B-A3B-Instruct-W8A8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "Qwen3-VL-8B-Instruct-W8A8",
-      "size_gb": 11.32
+      "model_name": "Qwen3-VL-8B-Instruct-W8A8"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "qwen-linear-algebra-coder",
-      "size_gb": 0.08
+      "model_name": "qwen-linear-algebra-coder"
     },
     {
       "platform": "modelscope",
       "organization": "vllm-ascend",
-      "model_name": "qwen35-4b-text-only-sql-lora",
-      "size_gb": 0.03
+      "model_name": "qwen35-4b-text-only-sql-lora"
     },
     {
       "platform": "modelscope",
       "organization": "wemaster",
-      "model_name": "deepseek_mtp_main_random_bf16",
-      "size_gb": 11.16
+      "model_name": "deepseek_mtp_main_random_bf16"
     },
     {
       "platform": "modelscope",
       "organization": "z-lab",
-      "model_name": "Qwen3-8B-DFlash-b16",
-      "size_gb": 1.95
+      "model_name": "Qwen3-8B-DFlash-b16"
     },
     {
       "platform": "huggingface",

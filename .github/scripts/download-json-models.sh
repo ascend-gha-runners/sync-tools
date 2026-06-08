@@ -35,6 +35,7 @@ jq -c '.[]' "$CONFIG_FILE" | while IFS= read -r entry; do
     [ -n "$local_dir" ] && ms_args+=(--local_dir "$local_dir")
     modelscope download "${ms_args[@]}" || echo "WARNING: Failed to download $TYPE $organization/$name from ModelScope"
   elif [ "$platform" = "huggingface" ]; then
+    export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
     if [ "$TYPE" = "model" ]; then
       if [ -n "$local_dir" ]; then
         python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='$organization/$name', local_dir='$local_dir')" || echo "WARNING: Failed to download model $organization/$name from HuggingFace"

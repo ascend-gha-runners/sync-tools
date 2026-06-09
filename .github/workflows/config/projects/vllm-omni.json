@@ -92,6 +92,11 @@
     },
     {
       "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-Coder-30B-A3B-Instruct"
+    },
+    {
+      "platform": "modelscope",
       "organization": "Eco-Tech",
       "model_name": "Qwen3.5-122B-A10B-w8a8-mtp"
     },

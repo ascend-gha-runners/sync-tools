@@ -93,6 +93,9 @@
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindformers",  "dest": "docker.io/ascendai/mindformers" },
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindformers",  "dest": "quay.io/ascend/mindformers" },
 
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/model-agent",   "dest": "quay.io/ascend/model-agent" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/model-agent",   "dest": "docker.io/ascendai/model-agent" },
+
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspore",   "dest": "quay.io/ascend/mindspore" },
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspore",   "dest": "docker.io/ascendai/mindspore" },
 

@@ -53,6 +53,9 @@
   { "src": "https://raw.gitcode.com/Ascend/MultiModalSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/multimodalsdk" },
   { "src": "https://raw.gitcode.com/Ascend/MultiModalSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/multimodalsdk" },
 
+  { "src": "https://raw.githubusercontent.com/triton-lang/triton-ascend/refs/heads/main/docker/OVERVIEW.md", "dest": "quay.io/ascend/triton" },
+  { "src": "https://raw.githubusercontent.com/triton-lang/triton-ascend/refs/heads/main/docker/OVERVIEW.md", "dest": "docker.io/ascendai/triton" },
+  
   { "src": "https://raw.gitcode.com/Ascend/VisionSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/visionsdk" },
   { "src": "https://raw.gitcode.com/Ascend/VisionSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/visionsdk" }
 ]

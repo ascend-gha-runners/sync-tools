@@ -34,7 +34,7 @@
       "platform": "modelscope",
       "organization": "Zjcxy-SmartAI",
       "model_name": "Eagle3-Qwen3-32B-zh"
-    },
+    }
   ],
   "datasets": [
     {

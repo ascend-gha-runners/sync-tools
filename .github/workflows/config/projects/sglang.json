@@ -24,6 +24,16 @@
       "platform": "modelscope",
       "organization": "Qwen",
       "model_name": "Qwen3.5-9B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "aleoyang",
+      "model_name": "Qwen3-32B-w8a8-MindIE"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Zjcxy-SmartAI",
+      "model_name": "Eagle3-Qwen3-32B-zh"
     }
   ],
   "datasets": [

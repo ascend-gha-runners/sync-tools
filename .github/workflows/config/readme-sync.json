@@ -47,6 +47,12 @@
   { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/clusterd/OVERVIEW.md", "dest": "quay.io/ascend/clusterd" },
   { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/clusterd/OVERVIEW.md", "dest": "docker.io/ascendai/clusterd" },
 
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-for-volcano/OVERVIEW.md", "dest": "quay.io/ascend/vc-scheduler" },
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-for-volcano/OVERVIEW.md", "dest": "docker.io/ascendai/vc-scheduler" },
+
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-for-volcano/OVERVIEW.md", "dest": "quay.io/ascend/vc-controller-manager" },
+  { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-for-volcano/OVERVIEW.md", "dest": "docker.io/ascendai/vc-controller-manager" },
+
   { "src": "https://raw.gitcode.com/Ascend/IndexSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/indexsdk" },
   { "src": "https://raw.gitcode.com/Ascend/IndexSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/indexsdk" },
 

@@ -108,5 +108,9 @@
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/visionsdk",   "dest": "quay.io/ascend/visionsdk" },
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/visionsdk",   "dest": "docker.io/ascendai/visionsdk" },
 
-  { "src": "quay.io/wjunlu/vllm-ascend-daily",   "dest": "swr.cn-east-3.myhuaweicloud.com/upupup/ascend-ci/vllm-ascend/vllm-ascend-daily" }
+  { "src": "quay.io/wjunlu/vllm-ascend-daily",   "dest": "swr.cn-east-3.myhuaweicloud.com/upupup/ascend-ci/vllm-ascend/vllm-ascend-daily" },
+
+
+
+  { "src": "ghcr.io/nektos/act-environments-ubuntu:22.04",   "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/act-environments-ubuntu:22.04" }
 ]

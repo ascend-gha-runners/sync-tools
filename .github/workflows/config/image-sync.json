@@ -112,5 +112,5 @@
 
 
 
-  { "src": "ghcr.io/nektos/act-environments-ubuntu:22.04",   "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/act-environments-ubuntu:22.04" }
+  { "src": "ghcr.io/nektos/act-environments-ubuntu",   "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/act-environments-ubuntu" }
 ]

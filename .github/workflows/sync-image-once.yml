@@ -1,0 +1,64 @@
+name: Sync Single Image (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      src:
+        description: "Source image (e.g. ghcr.io/catthehacker/ubuntu:act-22.04)"
+        required: true
+      dest:
+        description: "Destination image (e.g. swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/act-environments-ubuntu:act-22.04)"
+        required: true
+
+jobs:
+  sync:
+    name: Sync ${{ inputs.src }} → ${{ inputs.dest }}
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/skopeo/stable:latest
+    steps:
+      - name: Install jq
+        run: microdnf install -y jq
+
+      - name: Sync image
+        env:
+          QUAY_ASCEND_USER: ${{ vars.QUAY_ASCEND_USER }}
+          QUAY_ASCEND_PWD: ${{ secrets.QUAY_ASCEND_PWD }}
+          DOCKERHUB_USER: ${{ vars.DOCKERHUB_USER }}
+          DOCKERHUB_PWD: ${{ secrets.DOCKERHUB_PWD }}
+          HWCLOUD_USER: ${{ vars.HWCLOUD_USER }}
+          HWCLOUD_PWD: ${{ secrets.HWCLOUD_PWD }}
+          SWR_EAST3_USER: ${{ vars.SWR_EAST3_USER }}
+          SWR_EAST3_SECRET: ${{ secrets.SWR_EAST3_SECRET }}
+          SWR_HK_USER: ${{ vars.REGISTRY_HK_USER }}
+          SWR_HK_SECRET: ${{ secrets.SWR_HK_SECRET }}
+          SRC: ${{ inputs.src }}
+          DEST: ${{ inputs.dest }}
+        run: |
+          get_creds() {
+            case "$1" in
+              quay.io/*)              echo "${QUAY_ASCEND_USER}:${QUAY_ASCEND_PWD}" ;;
+              docker.io/*)            echo "${DOCKERHUB_USER}:${DOCKERHUB_PWD}" ;;
+              ghcr.io/*)              echo "x-access-token:${GITHUB_TOKEN}" ;;
+              swr.cn-southwest-2.*)   echo "${HWCLOUD_USER}:${HWCLOUD_PWD}" ;;
+              swr.cn-east-3.*)        echo "${SWR_EAST3_USER}:${SWR_EAST3_SECRET}" ;;
+              swr.ap-southeast-1.*)   echo "${SWR_HK_USER}:${SWR_HK_SECRET}" ;;
+              *)                      echo "" ;;
+            esac
+          }
+
+          SRC_CREDS=$(get_creds "$SRC")
+          DEST_CREDS=$(get_creds "$DEST")
+
+          [ -n "$SRC_CREDS" ]  && SRC_ARGS="--src-creds $SRC_CREDS"   || SRC_ARGS="--src-no-creds"
+          [ -n "$DEST_CREDS" ] && DEST_ARGS="--dest-creds $DEST_CREDS" || DEST_ARGS="--dest-no-creds"
+
+          echo "Syncing docker://$SRC → docker://$DEST"
+          skopeo copy --all \
+            --retry-times 3 \
+            --retry-delay 5s \
+            $SRC_ARGS \
+            $DEST_ARGS \
+            "docker://$SRC" \
+            "docker://$DEST"
+          echo "✅ Done"

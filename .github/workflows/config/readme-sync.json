@@ -63,5 +63,11 @@
   { "src": "https://raw.githubusercontent.com/triton-lang/triton-ascend/refs/heads/main/docker/OVERVIEW.md", "dest": "docker.io/ascendai/triton" },
   
   { "src": "https://raw.gitcode.com/Ascend/VisionSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/visionsdk" },
-  { "src": "https://raw.gitcode.com/Ascend/VisionSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/visionsdk" }
+  { "src": "https://raw.gitcode.com/Ascend/VisionSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/visionsdk" },
+
+  { "src": "https://raw.gitcode.com/Ascend/pytorch/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/torch-npu" },
+  { "src": "https://raw.gitcode.com/Ascend/pytorch/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/torch-npu" },
+
+  { "src": "https://raw.gitcode.com/mindspore/mindformers/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/mindformers" },
+  { "src": "https://raw.gitcode.com/mindspore/mindformers/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/mindformers" }
 ]

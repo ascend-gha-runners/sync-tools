@@ -34,6 +34,46 @@
       "platform": "modelscope",
       "organization": "Zjcxy-SmartAI",
       "model_name": "Eagle3-Qwen3-32B-zh"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "nv-community",
+      "model_name": "Cosmos3-Nano"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "PaddlePaddle",
+      "model_name": "ERNIE-Image"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "black-forest-labs",
+      "model_name": "FLUX.2-klein-4B"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "ZhipuAI",
+      "model_name": "GLM-Image"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "jd-opensource",
+      "model_name": "JoyAI-Image-Edit-Diffusers"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Lightricks",
+      "model_name": "LTX-2"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "openmoss",
+      "model_name": "MOVA-360p"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Tongyi-MAI",
+      "model_name": "Z-Image"
     }
   ],
   "datasets": [

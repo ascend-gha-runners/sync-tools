@@ -69,5 +69,8 @@
   { "src": "https://raw.gitcode.com/Ascend/pytorch/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/torch-npu" },
 
   { "src": "https://raw.gitcode.com/mindspore/mindformers/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/mindformers" },
-  { "src": "https://raw.gitcode.com/mindspore/mindformers/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/mindformers" }
+  { "src": "https://raw.gitcode.com/mindspore/mindformers/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/mindformers" },
+
+  { "src": "https://raw.gitcode.com/Ascend/MindIE-SD/raw/master/docker/omni/OVERVIEW.md", "dest": "quay.io/ascend/mindiesd" },
+  { "src": "https://raw.gitcode.com/Ascend/MindIE-SD/raw/master/docker/omni/OVERVIEW.md", "dest": "docker.io/ascendai/mindiesd" }
 ]

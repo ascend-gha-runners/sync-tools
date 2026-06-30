@@ -39,6 +39,9 @@
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie-motor",      "dest": "docker.io/ascendai/mindie-motor" },
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie-motor",      "dest": "quay.io/ascend/mindie-motor" },
 
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindiesd",      "dest": "docker.io/ascendai/mindiesd" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindiesd",      "dest": "quay.io/ascend/mindiesd" },
+
   { "src": "docker.io/lmsysorg/sglang",  "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/dockerhub/lmsysorg/sglang", "tag_filter": "cann" },
   { "src": "docker.io/lmsysorg/sglang",  "dest": "quay.io/ascend/sglang", "tag_filter": "cann" },
 

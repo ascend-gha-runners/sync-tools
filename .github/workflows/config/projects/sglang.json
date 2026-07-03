@@ -17,6 +17,11 @@
     },
     {
       "platform": "modelscope",
+      "organization": "z-lab",
+      "model_name": "Qwen3-8B-DFlash-b16"
+    },
+    {
+      "platform": "modelscope",
       "organization": "baichuan-inc",
       "model_name": "Baichuan2-7B-Chat"
     },

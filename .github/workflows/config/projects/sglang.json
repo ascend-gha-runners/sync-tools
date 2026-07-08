@@ -111,6 +111,11 @@
       "platform": "modelscope",
       "organization": "mlfoundations-dev",
       "dataset_name": "cogito-v1-preview-llama-3B_eval_2e29"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "openslr",
+      "dataset_name": "librispeech_asr"
     }
   ]
 }

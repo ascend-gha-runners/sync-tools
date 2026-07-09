@@ -8,7 +8,12 @@
     {
       "platform": "modelscope",
       "organization": "BAAI",
-      "model_name": "bge-m3"
+      "model_name": "Qwen3-30B-A3B-vwn-eagle-model"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "bge-reranker-v2-m3"
     },
     {
       "platform": "modelscope",

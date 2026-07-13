@@ -98,6 +98,10 @@ jobs:
               continue
             fi
 
+            # Remove language-switcher lines (e.g. "> English | [中文](...)")
+            # The 中文 link is a relative path that breaks on registry pages.
+            sed -i '/English.*中文\|中文.*English/d' "$readme_file"
+
             case "$dest" in
               docker.io/*) provider_args=() ;;
               quay.io/*)

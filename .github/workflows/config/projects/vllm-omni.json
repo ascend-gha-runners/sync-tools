@@ -549,6 +549,21 @@
       "platform": "huggingface",
       "organization": "Qwen",
       "model_name": "Qwen3.5-0.8B"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
     }
   ],
   "datasets": [
@@ -741,6 +756,11 @@
       "platform": "modelscope",
       "organization": "vllm-ascend",
       "dataset_name": "GSM8K_prefix0_in65536_bs400_deepseek"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "linyueqian",
+      "dataset_name": "seed-tts-eval-subset"
     }
   ]
 }

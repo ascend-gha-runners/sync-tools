@@ -564,6 +564,31 @@
       "platform": "huggingface",
       "organization": "Qwen",
       "model_name": "Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen3-Omni-30B-A3B-Instruct"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "openbmb",
+      "model_name": "MiniCPM-o-4_5"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "Wan-AI",
+      "model_name": "Wan2.2-I2V-A14B-Diffusers"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "tencent",
+      "model_name": "HunyuanImage-3.0-Instruct"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen-Image-Edit"
     }
   ],
   "datasets": [

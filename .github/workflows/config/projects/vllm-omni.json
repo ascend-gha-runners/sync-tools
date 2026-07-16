@@ -584,16 +584,6 @@
       "platform": "huggingface",
       "organization": "mistralai",
       "model_name": "Voxtral-4B-TTS-2603"
-    },
-    {
-      "platform": "huggingface",
-      "organization": "Qwen",
-      "model_name": "Qwen-Image-Edit"
-    },
-    {
-      "platform": "huggingface",
-      "organization": "tencent",
-      "model_name": "HunyuanImage-3.0-Instruct"
     }
   ],
   "datasets": [
@@ -791,6 +781,11 @@
       "platform": "huggingface",
       "organization": "linyueqian",
       "dataset_name": "seed-tts-eval-subset"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "zhaochenyang20",
+      "dataset_name": "seed-tts-eval"
     }
   ]
 }

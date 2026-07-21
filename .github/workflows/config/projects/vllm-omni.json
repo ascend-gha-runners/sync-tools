@@ -592,6 +592,16 @@
     },
     {
       "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen-Image-Edit-2511"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "tencent",
+      "model_name": "HunyuanVideo-1.5"
+    },
+    {
+      "platform": "huggingface",
       "organization": "tencent",
       "model_name": "HunyuanImage-3.0-Instruct"
     }

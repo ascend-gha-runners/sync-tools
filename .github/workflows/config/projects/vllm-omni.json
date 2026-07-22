@@ -836,6 +836,11 @@
       "organization": "chenhegu",
       "dataset_name": "geo3k_imgurl",
       "local_dir": "~/.cache/huggingface/datasets/geo3k_imgurl"
-    }    
+    },
+    {
+      "platform": "huggingface",
+      "organization": "openai",
+      "dataset_name": "whisper-large-v3"
+    }
   ]
 }

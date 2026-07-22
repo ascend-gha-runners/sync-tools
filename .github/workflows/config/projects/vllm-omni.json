@@ -806,6 +806,11 @@
       "platform": "huggingface",
       "organization": "zhaochenyang20",
       "dataset_name": "seed-tts-eval"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "openai",
+      "dataset_name": "whisper-large-v3"
     }
   ]
 }

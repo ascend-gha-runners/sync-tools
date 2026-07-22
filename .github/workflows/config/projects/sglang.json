@@ -104,6 +104,11 @@
       "platform": "modelscope",
       "organization": "Qwen",
       "model_name": "Qwen3-Omni-30B-A3B-Instruct"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "Tengyunw",
+      "model_name": "qwen3_30b_moe_eagle3"
     }
   ],
   "datasets": [

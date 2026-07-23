@@ -607,6 +607,11 @@
     },
     {
       "platform": "huggingface",
+      "organization": "openai",
+      "model_name": "whisper-large-v3"
+    },
+    {
+      "platform": "huggingface",
       "organization": "Qwen",
       "model_name": "Qwen3-30B-A3B",
       "local_dir": "~/.cache/huggingface/models/Qwen3-30B-A3B"
@@ -622,11 +627,6 @@
       "organization": "Qwen",
       "model_name": "Qwen3-VL-8B-Instruct",
       "local_dir": "~/.cache/huggingface/models/Qwen3-VL-8B-Instruct"
-    },
-    {
-      "platform": "huggingface",
-      "organization": "openai",
-      "model_name": "whisper-large-v3"
     }
   ],
   "datasets": [

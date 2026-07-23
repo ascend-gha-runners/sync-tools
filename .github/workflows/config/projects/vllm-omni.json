@@ -626,7 +626,7 @@
     {
       "platform": "huggingface",
       "organization": "openai",
-      "dataset_name": "whisper-large-v3"
+      "model_name": "whisper-large-v3"
     }
   ],
   "datasets": [

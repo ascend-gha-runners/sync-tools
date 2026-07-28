@@ -47,6 +47,11 @@
     },
     {
       "platform": "modelscope",
+      "organization": "yzgjhdxf",
+      "model_name": "GLM-5-top64-pruned-gsm8k"
+    },
+    {
+      "platform": "modelscope",
       "organization": "PaddlePaddle",
       "model_name": "ERNIE-Image"
     },

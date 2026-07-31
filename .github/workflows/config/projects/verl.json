@@ -4,6 +4,26 @@
       "platform": "modelscope",
       "organization": "Qwen",
       "model_name": "Qwen2.5-0.5B-Instruct"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen3-8B"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "deepseek-ai",
+      "model_name": "dspark_qwen3_8b_block7"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "AngelSlim",
+      "model_name": "Qwen3-8B_eagle3"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "z-lab",
+      "model_name": "Qwen3-8B-DFlash-b16"
     }
   ],
   "datasets": [
@@ -11,6 +31,16 @@
       "platform": "modelscope",
       "organization": "AI-ModelScope",
       "dataset_name": "gsm8k"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "BytedTsinghua-SIA",
+      "dataset_name": "AIME-2024"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "BytedTsinghua-SIA",
+      "dataset_name": "DAPO-Math-17k"
     }
   ]
 }

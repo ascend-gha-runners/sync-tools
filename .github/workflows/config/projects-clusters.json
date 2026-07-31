@@ -6,7 +6,7 @@
     "clusters": ["linux-amd64-sglang-a2", "linux-amd64-sglang-a3"]
   },
   "verl": {
-    "clusters": ["linux-amd64-verl-a3"]
+    "clusters": ["linux-amd64-verl-a3","linux-aarch64-sync-hk001"]
   },
   "ms-swift": {
     "clusters": ["linux-aarch64-sync-hk001"]

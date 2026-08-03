@@ -114,7 +114,12 @@
       "platform": "huggingface",
       "organization": "Tengyunw",
       "model_name": "qwen3_30b_moe_eagle3"
-    }
+    },
+	{
+	  "platform": "modelscope",
+	  "organization": "Eco-Tech",
+      "model_name": "GLM-5.2-w4a8"
+	}
   ],
   "datasets": [
     {

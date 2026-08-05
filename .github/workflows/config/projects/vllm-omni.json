@@ -612,6 +612,16 @@
     },
     {
       "platform": "huggingface",
+      "organization": "openai",
+      "model_name": "whisper-small"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "MiniMaxAI",
+      "model_name": "MiniMax-H3"
+    },
+    {
+      "platform": "huggingface",
       "organization": "Qwen",
       "model_name": "Qwen3-30B-A3B",
       "local_dir": "~/.cache/huggingface/models/Qwen3-30B-A3B"

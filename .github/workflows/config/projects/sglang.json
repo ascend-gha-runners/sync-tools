@@ -119,6 +119,16 @@
 	  "platform": "modelscope",
 	  "organization": "Eco-Tech",
       "model_name": "GLM-5.2-w4a8"
+	},
+	{
+	  "platform": "modelscope",
+	  "organization": "vllm-ascend",
+      "model_name": "MiniMax-M2.7-w8a8-QuaRot"
+	},
+	{
+	  "platform": "modelscope",
+	  "organization": "Eco-Tech",
+      "model_name": "MiniMax-M2.7-eagle-model-short"
 	}
   ],
   "datasets": [
@@ -131,6 +141,27 @@
       "platform": "modelscope",
       "organization": "openslr",
       "dataset_name": "librispeech_asr"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_in131072_bs100_deepseek"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_in3500_bs2800_deepseek"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K-in3500-bs2800-qwen3"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K-in2048-bs4000-ds3.2"
     }
+	  
   ]
 }

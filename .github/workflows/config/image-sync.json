@@ -13,6 +13,8 @@
 
   { "src": "swr.cn-north-12.myhuaweicloud.com/ascend/vllm-ascend", "dest": "quay.io/ascend/vllm-ascend" },
   { "src": "swr.cn-north-12.myhuaweicloud.com/atlas_inference/vllm-ascend", "dest": "quay.io/atlas_inference/vllm-ascend" },
+  { "src": "quay.io/ascend/vllm-ascend", "dest": "swr.cn-north-12.myhuaweicloud.com/ascend/vllm-ascend" },
+  { "src": "quay.io/atlas_inference/vllm-ascend", "dest": "swr.cn-north-12.myhuaweicloud.com/atlas_inference/vllm-ascend" },
 
   { "src": "quay.io/ascend/manylinux",   "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/manylinux/manylinux" },
   { "src": "quay.io/ascend/manylinux",   "dest": "docker.io/ascendai/manylinux" },

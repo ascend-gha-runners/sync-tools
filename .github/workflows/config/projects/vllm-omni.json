@@ -612,6 +612,31 @@
     },
     {
       "platform": "huggingface",
+      "organization": "openai",
+      "model_name": "whisper-small"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "microsoft",
+      "model_name": "wavlm-base-plus"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "MiniMaxAI",
+      "model_name": "MiniMax-H3"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "hunyuanvideo-community",
+      "model_name": "HunyuanVideo-1.5-Diffusers-480p_t2v"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "hunyuanvideo-community",
+      "model_name": "HunyuanVideo-1.5-Diffusers-480p_i2v"
+    },
+    {
+      "platform": "huggingface",
       "organization": "Qwen",
       "model_name": "Qwen3-30B-A3B",
       "local_dir": "~/.cache/huggingface/models/Qwen3-30B-A3B"
@@ -835,6 +860,26 @@
       "platform": "huggingface",
       "organization": "zhaochenyang20",
       "dataset_name": "seed-tts-eval"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "liarliar",
+      "dataset_name": "Daily-Omni"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "lmms-eval",
+      "dataset_name": "Video-MME"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "lmms-lab",
+      "dataset_name": "Video-MME"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "YiYiXu",
+      "dataset_name": "testing-images"
     },
     {
       "platform": "huggingface",

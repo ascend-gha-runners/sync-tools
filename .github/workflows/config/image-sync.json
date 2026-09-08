@@ -36,7 +36,7 @@
 
   { "src": "quay.io/ascend/vllm-omni",   "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-omni/vllm-omni" },
   { "src": "quay.io/ascend/vllm-omni",   "dest": "docker.io/ascendai/vllm-omni" },
-  { "src": "quay.io/jd_xllm/xllm-ai", "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/xllm-ai/xllm-ai", "tag_filter": "a2|a3" },
+  { "src": "quay.io/jd_xllm/xllm-ai", "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/xllm-ai/xllm-ai", "tag_filter": "a2|a3|release" },
   
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie",      "dest": "docker.io/ascendai/mindie" },
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie",      "dest": "quay.io/ascend/mindie" },

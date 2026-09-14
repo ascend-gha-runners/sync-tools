@@ -121,5 +121,6 @@
   { "src": "ghcr.io/nektos/act-environments-ubuntu",   "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/act-environments-ubuntu" },
 
   { "src": "swr.cn-north-12.myhuaweicloud.com/ascend/vllm-ascend", "dest": "quay.io/ascend/vllm-ascend" },
-  { "src": "swr.cn-north-12.myhuaweicloud.com/atlas_inference/vllm-ascend", "dest": "quay.io/atlas_inference/vllm-ascend" }
+  { "src": "swr.cn-north-12.myhuaweicloud.com/atlas_inference/vllm-ascend", "dest": "quay.io/atlas_inference/vllm-ascend" },
+  { "src": "swr.cn-north-12.myhuaweicloud.com/atlas_inference/vllm-ascend", "dest": "swr.cn-north-4.myhuaweicloud.com/inference/vllm-ascend" }
 ]

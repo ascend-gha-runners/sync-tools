@@ -1,8 +1,6 @@
 [
   { "src": "quay.io/ascend/cann",        "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann/cann" },
   { "src": "quay.io/ascend/cann",        "dest": "docker.io/ascendai/cann" },
-  { "src": "swr.cn-north-4.myhuaweicloud.com/inference/cann", "dest": "swr.cn-north-12.myhuaweicloud.com/atlas_inference/cann" },
-  { "src": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann", "dest": "swr.cn-north-12.myhuaweicloud.com/base_image/ascend-ci/cann" },
 
   { "src": "quay.io/ascend/vllm-ascend", "dest": "swr.cn-east-3.myhuaweicloud.com/upupup/ascend-ci/vllm-ascend/vllm-ascend" },
   { "src": "quay.io/ascend/vllm-ascend", "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend" },

@@ -119,7 +119,12 @@
 	  "platform": "modelscope",
 	  "organization": "Eco-Tech",
       "model_name": "GLM-5.2-w4a8"
-	}
+	},
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "GLM-5.2-w8a8"
+    }
   ],
   "datasets": [
     {

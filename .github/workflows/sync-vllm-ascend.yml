@@ -57,6 +57,8 @@ jobs:
           SWR_HK_SECRET: ${{ secrets.SWR_HK_SECRET }}
           SWR_NORTH12_USER: ${{ vars.SWR_NORTH12_USER }}
           SWR_NORTH12_SECRET: ${{ secrets.SWR_NORTH12_SECRET }}
+          SWR_NORTH4_USER: ${{ vars.SWR_NORTH4_USER }}
+          SWR_NORTH4_SECRET: ${{ secrets.SWR_NORTH4_SECRET }}
           QUAY_ATLAS_INFERENCE_USER: ${{ vars.QUAY_ATLAS_INFERENCE_USER }}
           QUAY_ATLAS_INFERENCE_PWD: ${{ secrets.QUAY_ATLAS_INFERENCE_PWD }}
           CURRENT_SRC: ${{ matrix.src }}
@@ -70,6 +72,7 @@ jobs:
               swr.cn-east-3.*)        echo "${SWR_EAST3_USER}:${SWR_EAST3_SECRET}" ;;
               swr.ap-southeast-1.*)   echo "${SWR_HK_USER}:${SWR_HK_SECRET}" ;;
               swr.cn-north-12.*)      echo "${SWR_NORTH12_USER}:${SWR_NORTH12_SECRET}" ;;
+              swr.cn-north-4.*)       echo "${SWR_NORTH4_USER}:${SWR_NORTH4_SECRET}" ;;
               *)                      echo "" ;;
             esac
           }

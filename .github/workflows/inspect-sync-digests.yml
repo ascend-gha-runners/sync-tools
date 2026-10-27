@@ -1,0 +1,91 @@
+name: Inspect sync digest history (read-only)
+
+# 只读排查工具：不会执行 skopeo copy，也不会触发 sync-images。
+# 针对某次 sync-images 运行，找出指定 src→dest 下每个 tag 在
+# “上一次同步 / 本次同步 / 下一次同步”的 config digest 指纹，
+# 结合源镜像的 build time、目标 tag 的 last_modified，判断
+# 当时的 Synced 是上游重新构建，还是 digest 比对失败导致的重复写。
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "目标 sync-images run id"
+        required: true
+        default: "40060465208"
+      src:
+        description: "源镜像（不含 tag）"
+        required: true
+        default: "swr.cn-north-12.myhuaweicloud.com/ascend/vllm-ascend"
+      dest:
+        description: "目标镜像（不含 tag）"
+        required: true
+        default: "quay.io/ascend/vllm-ascend"
+      tags:
+        description: "只检查这些 tag（逗号分隔；留空=本次 run 中 Synced 的 tag）"
+        required: false
+        default: ""
+      lookback_hours:
+        description: "向前/向后搜索 run 的小时数"
+        required: false
+        default: "168"
+      max_runs:
+        description: "最多解析多少个历史 run（按离目标时间由近到远）"
+        required: false
+        default: "50"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inspect:
+    name: Inspect digests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install skopeo
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq skopeo
+
+      - name: Inspect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TARGET_RUN_ID: ${{ inputs.run_id }}
+          SRC: ${{ inputs.src }}
+          DEST: ${{ inputs.dest }}
+          TAGS_INPUT: ${{ inputs.tags }}
+          LOOKBACK_HOURS: ${{ inputs.lookback_hours }}
+          MAX_RUNS: ${{ inputs.max_runs }}
+
+          QUAY_ASCEND_USER: ${{ vars.QUAY_ASCEND_USER }}
+          QUAY_ASCEND_PWD: ${{ secrets.QUAY_ASCEND_PWD }}
+          QUAY_ATLAS_INFERENCE_USER: ${{ vars.QUAY_ATLAS_INFERENCE_USER }}
+          QUAY_ATLAS_INFERENCE_PWD: ${{ secrets.QUAY_ATLAS_INFERENCE_PWD }}
+          QUAY_API_TOKEN: ${{ secrets.QUAY_API_TOKEN }}
+
+          DOCKERHUB_USER: ${{ vars.DOCKERHUB_USER }}
+          DOCKERHUB_PWD: ${{ secrets.DOCKERHUB_PWD }}
+          HWCLOUD_USER: ${{ vars.HWCLOUD_USER }}
+          HWCLOUD_PWD: ${{ secrets.HWCLOUD_PWD }}
+          SWR_EAST3_USER: ${{ vars.SWR_EAST3_USER }}
+          SWR_EAST3_SECRET: ${{ secrets.SWR_EAST3_SECRET }}
+          SWR_NORTH12_USER: ${{ vars.SWR_NORTH12_USER }}
+          SWR_NORTH12_SECRET: ${{ secrets.SWR_NORTH12_SECRET }}
+          SWR_NORTH4_USER: ${{ vars.SWR_NORTH4_USER }}
+          SWR_NORTH4_SECRET: ${{ secrets.SWR_NORTH4_SECRET }}
+          SWR_HK_USER: ${{ vars.REGISTRY_HK_USER }}
+          SWR_HK_SECRET: ${{ secrets.SWR_HK_SECRET }}
+        run: python3 .github/scripts/inspect-sync-digests.py
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-digest-history-${{ inputs.run_id }}
+          path: /tmp/inspect-sync-digests/
+          if-no-files-found: warn

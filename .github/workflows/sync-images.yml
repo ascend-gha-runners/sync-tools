@@ -206,14 +206,21 @@ jobs:
                 echo "::error title=List tags failed::$SRC: $(tr '\n' ' ' < /tmp/list_tags_err)"
                 exit 1
               fi
-              TAGS=$(printf '%s' "$TAGS_RAW" | jq -r --arg f "$TAG_FILTER" '.Tags[] | select(test($f; "i"))' | sort -u)
+              if ! TAGS=$(printf '%s' "$TAGS_RAW" | jq -r --arg f "$TAG_FILTER" '.Tags[] | select(test($f; "i"))'); then
+                echo "::error title=List tags failed::cannot parse list-tags output for $SRC"
+                exit 1
+              fi
+              TAGS=$(printf '%s\n' "$TAGS" | sed '/^$/d' | sort -u)
             fi
           else
             if ! TAGS_RAW=$(list_tags "${SRC_INSPECT_ARGS[@]}" docker://"$SRC" 2>/tmp/list_tags_err); then
               echo "::error title=List tags failed::$SRC: $(tr '\n' ' ' < /tmp/list_tags_err)"
               exit 1
             fi
-            TAGS=$(printf '%s' "$TAGS_RAW" | jq -r '.Tags[]')
+            if ! TAGS=$(printf '%s' "$TAGS_RAW" | jq -r '.Tags[]'); then
+              echo "::error title=List tags failed::cannot parse list-tags output for $SRC"
+              exit 1
+            fi
           fi
 
           if [ -z "$TAGS" ]; then

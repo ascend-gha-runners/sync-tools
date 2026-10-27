@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Read-only investigation helper for sync-images.
 
-For a given sync-images run and src/dest, it reconstructs, per tag:
-  - the decision and config digest fingerprint of the previous/next syncs
-    (parsed from GitHub Actions job logs),
-  - the current source build time (image config Created) and manifest digest,
-  - the current destination digest and Quay tag last_modified,
-and emits a verdict explaining whether a "Synced" event was caused by an
-upstream rebuild or by a failed digest comparison (e.g. registry 503s).
+Given one tag and src/dest, it answers:
+  - when was the destination tag last written (Quay last_modified),
+  - which sync run wrote it,
+  - whether that sync was caused by an upstream rebuild or by a failed
+    digest comparison (e.g. registry 503s), using config digest fingerprints
+    from surrounding job logs,
+  - what the current source build time and source/destination digests are.
 
 It never runs skopeo copy and never triggers a sync workflow.
 """
@@ -17,19 +17,19 @@ import os
 import re
 import subprocess
 import sys
-import urllib.error
 import urllib.parse
 import urllib.request
-from collections import defaultdict
 from email.utils import parsedate_to_datetime
 
 REPO = os.environ["REPO"]
-TARGET_RUN_ID = int(os.environ["TARGET_RUN_ID"])
+TAG = os.environ.get("TAG", "").strip()
 SRC = os.environ["SRC"].rstrip("/")
 DEST = os.environ["DEST"].rstrip("/")
-TAGS_INPUT = os.environ.get("TAGS_INPUT", "").strip()
-LOOKBACK = int(os.environ.get("LOOKBACK_HOURS", "168"))
-MAX_RUNS = int(os.environ.get("MAX_RUNS", "50"))
+LOOKBACK_DAYS = int(os.environ.get("LOOKBACK_DAYS", "14"))
+MAX_RUNS = int(os.environ.get("MAX_RUNS", "80"))
+
+if not TAG:
+    raise SystemExit("TAG is required")
 
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 TS_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T[\d:.]+Z\s+")
@@ -39,6 +39,12 @@ def log(*args):
 
 def parse_iso(s):
     return dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
+
+def parse_http_date(s):
+    d = parsedate_to_datetime(s)
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=dt.timezone.utc)
+    return d
 
 # ---------- GitHub API ----------
 
@@ -247,38 +253,37 @@ def job_entries(run):
         "entries": parse_job_log(text),
     }
 
-# ---------- target run ----------
+# ---------- anchor: when was this tag last written to dest? ----------
 
-target_run = gh_json(f"repos/{REPO}/actions/runs/{TARGET_RUN_ID}")
-target_job = find_job(TARGET_RUN_ID)
-if not target_job:
-    log(f"ERROR: job 'Sync {SRC}' not found in run {TARGET_RUN_ID}")
-    sys.exit(1)
-target_log = gh_text(f"repos/{REPO}/actions/jobs/{target_job['id']}/logs")
-target_entries = parse_job_log(target_log)
-target_run_created = parse_iso(target_run["created_at"])
-# 用 job 真正开始执行的时间做时间边界（run.created_at 可能因排队晚很久）
-target_anchor = parse_iso(target_job.get("started_at") or target_run["created_at"])
+qmeta = quay_tag_meta(DEST, TAG)
+anchor_time = None
+anchor_source = "now"
+if isinstance(qmeta, dict) and qmeta.get("last_modified"):
+    try:
+        anchor_time = parse_http_date(qmeta["last_modified"])
+        anchor_source = "quay_last_modified"
+    except Exception:
+        anchor_time = None
+if anchor_time is None:
+    anchor_time = dt.datetime.now(dt.timezone.utc)
+    log("No usable Quay last_modified; anchoring at now")
 
-log(f"Target run: {TARGET_RUN_ID} ({target_run['created_at']}) job={target_job['id']}")
+now = dt.datetime.now(dt.timezone.utc)
+start = anchor_time - dt.timedelta(days=LOOKBACK_DAYS)
+end = min(anchor_time + dt.timedelta(days=1), now + dt.timedelta(hours=1))
+log(f"Tag: {TAG}")
+log(f"Anchor: {anchor_time.isoformat()} ({anchor_source})")
+log(f"Search runs created in [{start.isoformat()}, {end.isoformat()}]")
 
-if TAGS_INPUT:
-    tags = [t.strip() for t in TAGS_INPUT.split(",") if t.strip()]
-else:
-    tags = sorted(t for t, e in target_entries.items() if e["status"] == "synced")
+# ---------- collect runs around the anchor ----------
 
-log(f"Tags to inspect ({len(tags)}): {', '.join(tags)}")
-
-# ---------- collect nearby runs ----------
-
-start = (target_run_created - dt.timedelta(hours=LOOKBACK)).strftime("%Y-%m-%dT%H:%M:%SZ")
-end = (target_run_created + dt.timedelta(hours=LOOKBACK + 24)).strftime("%Y-%m-%dT%H:%M:%SZ")
 runs = []
 page = 1
 while True:
     path = (
         f"repos/{REPO}/actions/workflows/sync-images.yml/runs"
-        f"?per_page=100&page={page}&created={start}..{end}"
+        f"?per_page=100&page={page}"
+        f"&created={start.strftime('%Y-%m-%dT%H:%M:%SZ')}..{end.strftime('%Y-%m-%dT%H:%M:%SZ')}"
     )
     data = gh_json(path)
     batch = data.get("workflow_runs", [])
@@ -287,12 +292,11 @@ while True:
         break
     page += 1
 
-runs = [r for r in runs if r["id"] != TARGET_RUN_ID]
-runs.sort(key=lambda r: abs((parse_iso(r["created_at"]) - target_run_created).total_seconds()))
+runs.sort(key=lambda r: abs((parse_iso(r["created_at"]) - anchor_time).total_seconds()))
 runs = runs[:MAX_RUNS]
 runs.sort(key=lambda r: r["created_at"])
 
-log(f"Fetching logs for {len(runs)} nearby runs ...")
+log(f"Fetching logs for {len(runs)} runs ...")
 history = []
 for i, run in enumerate(runs, 1):
     try:
@@ -304,120 +308,128 @@ for i, run in enumerate(runs, 1):
         continue
     history.append(item)
     log(f"  [{i}/{len(runs)}] run {run['id']} {run['created_at']} "
-        f"(synced={sum(1 for e in item['entries'].values() if e['status'] == 'synced')})")
-
+        f"(tag: {item['entries'].get(TAG, {}).get('status', 'absent')})")
 history.sort(key=lambda h: h["job_started"])
 
-# ---------- per-tag analysis ----------
+# ---------- timeline for this tag ----------
+
+events = []
+for h in history:
+    if TAG not in h["entries"]:
+        continue
+    events.append(h["entries"][TAG] | {
+        "run_id": h["run_id"],
+        "run_created": h["run_created"],
+        "job_started": h["job_started"],
+        "job_completed": h["job_completed"],
+    })
+
+def event_time(e):
+    return parse_iso(e.get("event_at") or e.get("job_started") or e["run_created"])
+
+synced_events = [e for e in events if e.get("status") == "synced"]
+
+# Quay 目标：优先匹配 last_modified 附近（±30 分钟）的那次 Synced。
+# 非 Quay 目标：没有 last_modified，退化为“窗口内最近一次 Synced”。
+tgt = None
+if anchor_source == "quay_last_modified":
+    near = [
+        e for e in synced_events
+        if abs((event_time(e) - anchor_time).total_seconds()) <= 30 * 60
+    ]
+    if near:
+        tgt = max(near, key=event_time)
+elif synced_events:
+    tgt = max(synced_events, key=event_time)
+
+target_anchor = event_time(tgt) if tgt else anchor_time
+target_run_id = tgt["run_id"] if tgt else None
+
+log(f"Events in window: {len(events)} (synced={len(synced_events)})")
+if tgt:
+    log(f"Target sync: run {tgt['run_id']} @ {tgt.get('event_at') or tgt['job_started']}")
+elif anchor_source == "quay_last_modified":
+    log("NOTE: 没有找到与 Quay last_modified 对应的 Synced 日志"
+        "（日志可能已过期，或这次写入不是本 workflow 做的）")
+
+def event_before(e):
+    return event_time(e) < target_anchor
+
+all_before = [
+    e for e in events
+    if e["run_id"] != target_run_id and event_before(e)
+]
+all_after = [
+    e for e in events
+    if e["run_id"] != target_run_id and event_time(e) > target_anchor
+]
+before = [e for e in all_before if e.get("status") == "synced"]
+after = [e for e in all_after if e.get("status") == "synced"]
+prev = before[-1] if before else None
+nxt = after[0] if after else None
+prev_any = all_before[-1] if all_before else None
+next_any = after[0] if after else None
+
+# ---------- current registry state ----------
+
+src_ref = f"{SRC}:{TAG}"
+dest_ref = f"{DEST}:{TAG}"
+src_raw, src_err = skopeo_raw(src_ref)
+dest_raw, dest_err = skopeo_raw(dest_ref)
+src_mid_now = manifest_id(src_raw)
+dest_mid_now = manifest_id(dest_raw)
+src_top, src_top_err = skopeo_digest(src_ref)
+dest_top, dest_top_err = skopeo_digest(dest_ref)
+src_created, created_err = (None, None)
+if src_raw:
+    src_created, created_err = image_created(src_ref, src_raw)
+
+now_equal = bool(src_mid_now and dest_mid_now and src_mid_now == dest_mid_now)
 
 def short(digests):
     ds = sorted(digests)
-    if not ds:
-        return "-"
-    return ", ".join(d[:19] for d in ds)
+    return ", ".join(d[:19] for d in ds) if ds else "-"
 
-def fingerprint(entry):
-    return sorted(entry["configs"]) if entry else []
+target_fp = sorted(tgt["configs"]) if tgt else []
+prev_fp = sorted(prev["configs"]) if prev else []
+next_fp = sorted(nxt["configs"]) if nxt else []
 
-report = {
-    "target_run": TARGET_RUN_ID,
-    "target_run_created": target_run["created_at"],
-    "src": SRC,
-    "dest": DEST,
-    "tags": {},
-}
-summary = [
-    "# Sync digest history",
-    "",
-    f"- target run: `{TARGET_RUN_ID}` @ `{target_run['created_at']}`",
-    f"- src: `{SRC}`",
-    f"- dest: `{DEST}`",
-    "",
-    "| tag | target | prev any | prev synced | next synced | target config digests | prev config digests | src Created | verdict | now src==dest | quay last_modified |",
-    "|---|---|---|---|---|---|---|---|---|---|---|",
-]
+created_dt = None
+if src_created:
+    try:
+        created_dt = parse_iso(src_created)
+    except Exception:
+        created_dt = None
 
-for tag in tags:
-    log("")
-    log(f"=== {tag} ===")
-    tgt = target_entries.get(tag)
+def time_of(entry):
+    return event_time(entry) if entry else None
 
-    def attach(h):
-        return h["entries"][tag] | {
-            "run_id": h["run_id"],
-            "run_created": h["run_created"],
-            "job_started": h["job_started"],
-            "job_completed": h.get("job_completed") or h["run_created"],
-        }
+def time_end(entry):
+    return parse_iso(entry.get("job_completed") or entry["run_created"]) if entry else None
 
-    def entry_time(entry, key="job_started"):
-        return parse_iso(entry.get(key) or entry["run_created"])
+# ---------- verdict ----------
 
-    all_before = [
-        attach(h)
-        for h in history
-        if tag in h["entries"]
-        and parse_iso(h["job_started"]) < target_anchor
-    ]
-    all_after = [
-        attach(h)
-        for h in history
-        if tag in h["entries"]
-        and parse_iso(h["job_started"]) > target_anchor
-    ]
-    before = [e for e in all_before if e["status"] == "synced"]
-    after = [e for e in all_after if e["status"] == "synced"]
-    prev = before[-1] if before else None
-    nxt = after[0] if after else None
-    prev_any = all_before[-1] if all_before else None
-    next_any = all_after[0] if all_after else None
-
-    src_ref = f"{SRC}:{tag}"
-    dest_ref = f"{DEST}:{tag}"
-    src_raw, src_err = skopeo_raw(src_ref)
-    dest_raw, dest_err = skopeo_raw(dest_ref)
-    src_mid_now = manifest_id(src_raw)
-    dest_mid_now = manifest_id(dest_raw)
-    src_top, src_top_err = skopeo_digest(src_ref)
-    dest_top, dest_top_err = skopeo_digest(dest_ref)
-    src_created, created_err = (None, None)
-    if src_raw:
-        src_created, created_err = image_created(src_ref, src_raw)
-    qmeta = quay_tag_meta(DEST, tag)
-
-    target_fp = fingerprint(tgt)
-    prev_fp = fingerprint(prev)
-    next_fp = fingerprint(nxt)
-
-    created_dt = None
-    if src_created:
-        try:
-            created_dt = parse_iso(src_created)
-        except Exception:
-            created_dt = None
-
-    def time_of(entry):
-        return entry_time(entry) if entry else None
-
-    # 判断优先级：
-    #   1) 上次 Synced 的 config 指纹（最硬的证据）
-    #   2) 上次任意状态是 Skip（说明当时源==目标）+ 源 Created 时间
-    #   3) 下次 Synced 的 config 指纹
-    #   4) 下次任意状态是 Skip + 源 Created 时间
-    #   5) 仅源 Created
-    verdict = ""
-    if not tgt:
-        verdict = "target run 没有这个 tag 的记录"
-    elif tgt["status"] != "synced":
-        verdict = f"target 状态是 {tgt['status']}，无需解释"
-    elif prev and prev_fp and target_fp:
+verdict = ""
+if tgt is None:
+    if anchor_source == "quay_last_modified":
+        verdict = "没有找到与目标 tag 最后一次写入对应的 Synced 日志；只能按当前状态判断"
+    else:
+        verdict = "窗口内没有找到该 tag 的 Synced 日志；只能按当前状态判断"
+    if created_dt:
+        if created_dt > anchor_time:
+            verdict += "；源 Created 晚于目标最后写入 → 源之后重建过"
+        else:
+            verdict += "；源 Created 不晚于目标最后写入"
+    verdict += "；当前源/目标 digest 一致" if now_equal else "；当前源/目标 digest 不一致"
+else:
+    if prev and prev_fp and target_fp:
         if prev_fp == target_fp:
             verdict = "源未变：与上次 Synced 的 config digest 完全相同 → 这次是重复写（inspect 失败/抖动）"
         else:
             verdict = "源已重新构建：config digest 与上次 Synced 不同"
-    elif prev_any and prev_any["status"] == "skipped" and created_dt:
+    elif prev_any and prev_any.get("status") == "skipped" and created_dt:
         p = time_of(prev_any)
-        p_end = entry_time(prev_any, "job_completed")
+        p_end = time_end(prev_any)
         if created_dt <= p:
             verdict = "源内容未变：上次运行 Skip（当时源==目标），且源 Created 早于上次运行 → 这次很可能是 inspect 失败导致的重复写"
         elif created_dt <= p_end:
@@ -431,9 +443,9 @@ for tag in tags:
             verdict = "源未变：与下一次 Synced 的 config digest 相同"
         else:
             verdict = "目标之后又重建过；target 当时内容无法仅凭日志回推"
-    elif next_any and next_any["status"] == "skipped" and created_dt:
+    elif next_any and next_any.get("status") == "skipped" and created_dt:
         q = time_of(next_any)
-        q_end = entry_time(next_any, "job_completed")
+        q_end = time_end(next_any)
         if created_dt <= target_anchor:
             verdict = "源未变（下次运行 Skip 且 Created 不晚于 target）；target 的写入可能只是补同步"
         elif created_dt <= q:
@@ -442,114 +454,131 @@ for tag in tags:
             verdict = "无法确定：源在下次运行期间重建"
         else:
             verdict = "源在下次运行之后又重建过；target 当时内容无法回推"
-    elif prev_any and prev_any["status"] == "failed":
+    elif prev_any and prev_any.get("status") == "failed":
         verdict = "上次运行失败、缺少可比指纹；需结合源 Created 判断"
     else:
         verdict = "日志指纹不足，需结合源 Created 判断"
 
-    created_hint = ""
-    if created_dt and ("不足" in verdict or "无法确定" in verdict):
-        if created_dt > parse_iso(tgt.get("event_at") or target_job.get("completed_at") or target_run["created_at"]):
-            created_hint = "（Created 晚于 target 写入时间 → 之后又重建过）"
-        elif prev_any and created_dt <= time_of(prev_any):
-            created_hint = "（Created 早于上次运行 → target 时未重建）"
-        elif prev_any and created_dt <= target_anchor:
-            created_hint = "（Created 在上次运行与 target 之间 → target 前已重建）"
+    if created_dt and created_dt > target_anchor + dt.timedelta(minutes=10):
+        verdict += "；源在 target 之后又重建过（当前是否落后看 now src==dest）"
+    if not now_equal:
+        verdict += "；当前源/目标 digest 不一致"
 
-    now_equal = bool(src_mid_now and dest_mid_now and src_mid_now == dest_mid_now)
-    prev_desc = (
-        f"{prev['run_id']} @ {prev['job_started']} ({len(prev_fp)} cfg)"
-        if prev
-        else "-"
-    )
-    next_desc = (
-        f"{nxt['run_id']} @ {nxt['job_started']} ({len(next_fp)} cfg)"
-        if nxt
-        else "-"
-    )
-    prev_any_desc = (
-        f"{prev_any['run_id']} @ {prev_any['job_started']} ({prev_any['status']})"
-        if prev_any
-        else "-"
-    )
-    next_any_desc = (
-        f"{next_any['run_id']} @ {next_any['job_started']} ({next_any['status']})"
-        if next_any
-        else "-"
-    )
-    qlm = (qmeta or {}).get("last_modified", "-") if isinstance(qmeta, dict) else "-"
-    verdict_full = verdict + created_hint
+created_hint = ""
+if created_dt and ("不足" in verdict or "无法确定" in verdict):
+    if created_dt > anchor_time:
+        created_hint = "（Created 晚于目标最后写入 → 之后又重建过）"
+    elif prev_any and created_dt <= time_of(prev_any):
+        created_hint = "（Created 早于上次运行 → target 时未重建）"
+    elif prev_any and created_dt <= target_anchor:
+        created_hint = "（Created 在上次运行与 target 之间 → target 前已重建）"
 
-    # 能推断出的“当时 digest”（不是从历史接口读出来的，而是由
-    # “没有变化”这个结论 + 当前 digest 反推）：
-    #   - 上次运行是 Skip/Synced 且源未变 → 当时源/目标 digest = 当前源 digest
-    #   - Quay tag 的 last_modified 落在 target 这次写入的时间点 → 当前目标 digest 就是当时写进去的
-    inferred_before = (
-        src_top
-        if ("未变" in verdict and prev_any and now_equal)
-        else None
-    )
-    inferred_after = None
-    if isinstance(qmeta, dict) and qmeta.get("last_modified") and tgt.get("event_at"):
-        try:
-            lm = parsedate_to_datetime(qmeta["last_modified"])
-            if lm.tzinfo is None:
-                lm = lm.replace(tzinfo=dt.timezone.utc)
-            if lm <= parse_iso(tgt["event_at"]) + dt.timedelta(minutes=10):
-                inferred_after = qmeta.get("manifest_digest") or dest_mid_now
-        except Exception:
-            pass
+verdict_full = verdict + created_hint
 
-    log(f"target: {tgt['status']} @ {tgt.get('event_at')} configs={short(target_fp)}")
-    log(f"prev any: {prev_any_desc}")
-    log(f"next any: {next_any_desc}")
-    log(f"prev synced: {prev_desc} configs={short(prev_fp)}")
-    log(f"next synced: {next_desc} configs={short(next_fp)}")
-    log(f"src Created: {src_created or 'n/a'}"
-        + (f" (err: {created_err})" if created_err else ""))
-    log(f"src  manifest_id now: {src_mid_now or 'n/a'}"
-        + (f" (err: {src_err})" if src_err else ""))
-    log(f"dest manifest_id now: {dest_mid_now or 'n/a'}"
-        + (f" (err: {dest_err})" if dest_err else ""))
-    log(f"src  top digest: {src_top or 'n/a'}"
-        + (f" (err: {src_top_err})" if src_top_err else ""))
-    log(f"dest top digest: {dest_top or 'n/a'}"
-        + (f" (err: {dest_top_err})" if dest_top_err else ""))
-    log(f"quay last_modified: {qlm}")
-    log(f"quay manifest_digest: {(qmeta or {}).get('manifest_digest', '-')}")
-    log(f"now src==dest: {now_equal}")
-    log(f"inferred before digest: {inferred_before or '无法推断（历史 manifest digest 未落盘）'}")
-    log(f"inferred after  digest: {inferred_after or '无法推断（该 tag 之后又被写过）'}")
-    log(f"verdict: {verdict_full}")
+# 能推断出的“当时 digest”：
+#   - 如果 target 就是 Quay last_modified 那次写入 → 当前 Quay digest 就是当时写进去的
+#   - 如果结论是“源未变”且当前源/目标一致 → 当时源/目标 digest = 当前源 top digest
+inferred_before = (
+    src_top
+    if ("未变" in verdict and prev_any and now_equal)
+    else None
+)
+inferred_after = None
+if (tgt and anchor_source == "quay_last_modified"
+        and abs((target_anchor - anchor_time).total_seconds()) <= 30 * 60):
+    inferred_after = (qmeta or {}).get("manifest_digest") or dest_top
 
-    def ser(entry):
-        if not entry:
-            return None
-        return {**entry, "configs": sorted(entry.get("configs", []))}
+tgt_desc = (
+    f"{tgt['run_id']} @ {tgt.get('event_at') or tgt['job_started']}"
+    if tgt else "-"
+)
+prev_desc = (
+    f"{prev['run_id']} @ {prev.get('event_at') or prev['job_started']} ({len(prev_fp)} cfg)"
+    if prev else "-"
+)
+next_desc = (
+    f"{nxt['run_id']} @ {nxt.get('event_at') or nxt['job_started']} ({len(next_fp)} cfg)"
+    if nxt else "-"
+)
+prev_any_desc = (
+    f"{prev_any['run_id']} @ {prev_any.get('event_at') or prev_any['job_started']} ({prev_any.get('status')})"
+    if prev_any else "-"
+)
+next_any_desc = (
+    f"{next_any['run_id']} @ {next_any.get('event_at') or next_any['job_started']} ({next_any.get('status')})"
+    if next_any else "-"
+)
+qlm = (qmeta or {}).get("last_modified", "-") if isinstance(qmeta, dict) else "-"
 
-    report["tags"][tag] = {
-        "target": ser(tgt),
-        "prev_any": ser(prev_any),
-        "next_any": ser(next_any),
-        "prev_synced": ser(prev),
-        "next_synced": ser(nxt),
-        "src_manifest_id_now": src_mid_now,
-        "dest_manifest_id_now": dest_mid_now,
-        "src_top_digest_now": src_top,
-        "dest_top_digest_now": dest_top,
+log("")
+log(f"anchor: {anchor_time.isoformat()} ({anchor_source})")
+log(f"target: {tgt_desc} configs={short(target_fp)}")
+log(f"prev any: {prev_any_desc}")
+log(f"next any: {next_any_desc}")
+log(f"prev synced: {prev_desc} configs={short(prev_fp)}")
+log(f"next synced: {next_desc} configs={short(next_fp)}")
+log(f"src Created: {src_created or 'n/a'}" + (f" (err: {created_err})" if created_err else ""))
+log(f"src  manifest_id now: {src_mid_now or 'n/a'}" + (f" (err: {src_err})" if src_err else ""))
+log(f"dest manifest_id now: {dest_mid_now or 'n/a'}" + (f" (err: {dest_err})" if dest_err else ""))
+log(f"src  top digest: {src_top or 'n/a'}" + (f" (err: {src_top_err})" if src_top_err else ""))
+log(f"dest top digest: {dest_top or 'n/a'}" + (f" (err: {dest_top_err})" if dest_top_err else ""))
+log(f"quay last_modified: {qlm}")
+log(f"quay manifest_digest: {(qmeta or {}).get('manifest_digest', '-') if isinstance(qmeta, dict) else '-'}")
+log(f"now src==dest: {now_equal}")
+log(f"inferred before digest: {inferred_before or '无法推断（历史 manifest digest 未落盘）'}")
+log(f"inferred after  digest: {inferred_after or '无法推断（该 tag 之后又被写过）'}")
+log(f"verdict: {verdict_full}")
+
+log("")
+log("Timeline (oldest -> newest):")
+for e in events[-20:]:
+    mark = "  <== target" if tgt and e["run_id"] == target_run_id else ""
+    log(f"  {e['run_id']} @ {e.get('event_at') or e['job_started']} "
+        f"{e.get('status')} configs={short(e['configs'])}{mark}")
+
+def ser(entry):
+    if not entry:
+        return None
+    return {**entry, "configs": sorted(entry.get("configs", []))}
+
+report = {
+    "tag": TAG,
+    "src": SRC,
+    "dest": DEST,
+    "anchor": {"source": anchor_source, "time": anchor_time.isoformat()},
+    "current": {
+        "src_manifest_id": src_mid_now,
+        "dest_manifest_id": dest_mid_now,
+        "src_top_digest": src_top,
+        "dest_top_digest": dest_top,
         "src_created": src_created,
-        "quay": qmeta,
         "now_equal": now_equal,
-        "inferred_before_manifest_digest": inferred_before,
-        "inferred_after_manifest_digest": inferred_after,
-        "verdict": verdict_full,
-    }
+        "quay": qmeta,
+    },
+    "target": ser(tgt),
+    "prev_any": ser(prev_any),
+    "next_any": ser(next_any),
+    "prev_synced": ser(prev),
+    "next_synced": ser(nxt),
+    "inferred_before_manifest_digest": inferred_before,
+    "inferred_after_manifest_digest": inferred_after,
+    "verdict": verdict_full,
+    "timeline": [ser(e) for e in events],
+}
 
-    summary.append(
-        f"| `{tag}` | {tgt['status']} | {prev_any_desc} | {prev_desc} | {next_desc} "
-        f"| {short(target_fp)} | {short(prev_fp)} | {src_created or '-'} "
-        f"| {verdict_full} | {now_equal} | {qlm} |"
-    )
+summary = [
+    "# Sync history for one tag",
+    "",
+    f"- tag: `{TAG}`",
+    f"- src: `{SRC}`",
+    f"- dest: `{DEST}`",
+    f"- anchor: `{anchor_time.isoformat()}` ({anchor_source})",
+    "",
+    "| tag | anchor | target sync | prev any | prev synced | next synced | target config digests | prev config digests | src Created | now src==dest | verdict |",
+    "|---|---|---|---|---|---|---|---|---|---|---|",
+    f"| `{TAG}` | {anchor_time.isoformat()} ({anchor_source}) | {tgt_desc} | {prev_any_desc} | {prev_desc} | {next_desc} "
+    f"| {short(target_fp)} | {short(prev_fp)} | {src_created or '-'} | {now_equal} | {verdict_full} |",
+]
 
 os.makedirs("/tmp/inspect-sync-digests", exist_ok=True)
 with open("/tmp/inspect-sync-digests/report.json", "w") as f:

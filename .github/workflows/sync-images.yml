@@ -95,18 +95,53 @@ jobs:
           }
 
           # 比较各平台子 manifest digest 列表（content-addressed，跨 registry 稳定）
-          # 避免 Docker Hub 重新序列化 manifest list 导致顶层 digest 不一致
+          # 避免 Docker Hub 重新序列化 manifest list 导致顶层 digest 不一致。
+          #
+          # 返回码：
+          #   0 = 成功，stdout 是 manifest id
+          #   3 = manifest/tag 不存在（正常情况，调用方决定是否 copy）
+          #   4 = 重试后仍然失败（调用方应跳过该 tag，避免把“查不到”误判成“内容不同”）
+          INSPECT_ATTEMPTS="${INSPECT_ATTEMPTS:-5}"
+          INSPECT_DELAY="${INSPECT_DELAY:-5}"
+
           get_manifest_id() {
-            local raw
-            raw=$(skopeo inspect --raw "$@" 2>/dev/null || true)
-            [ -z "$raw" ] && echo "" && return
-            echo "$raw" | jq -r '
-              if .manifests then
-                [.manifests[].digest] | sort | join(",")
+            local image="${!#}"
+            local attempt=1 raw err msg id
+            while [ "$attempt" -le "$INSPECT_ATTEMPTS" ]; do
+              err=$(mktemp)
+              if raw=$(skopeo inspect --raw "$@" 2>"$err"); then
+                id=$(printf '%s' "$raw" | jq -r '
+                  if .manifests then
+                    [.manifests[].digest] | sort | join(",")
+                  else
+                    .config.digest // empty
+                  end
+                ' 2>/dev/null) || id=""
+                if [ -n "$id" ]; then
+                  rm -f "$err"
+                  printf '%s' "$id"
+                  return 0
+                fi
+                msg="manifest 解析后 digest 为空"
               else
-                .config.digest // empty
-              end
-            ' 2>/dev/null || true
+                msg=$(cat "$err")
+              fi
+              rm -f "$err"
+
+              # 404 / manifest unknown 是“目标还没有这个 tag”，不是网络故障
+              if printf '%s' "$msg" | grep -qiE 'manifest unknown|not found|name unknown|does not exist|404'; then
+                echo "inspect: $image not found" >&2
+                return 3
+              fi
+
+              echo "::warning title=Inspect failed::attempt $attempt/$INSPECT_ATTEMPTS for $image: $msg" >&2
+              attempt=$((attempt + 1))
+              if [ "$attempt" -le "$INSPECT_ATTEMPTS" ]; then
+                sleep "$INSPECT_DELAY"
+              fi
+            done
+            echo "::warning title=Inspect failed::giving up on $image after $INSPECT_ATTEMPTS attempts; skip this tag" >&2
+            return 4
           }
 
           CONFIG=".github/workflows/config/image-sync.json"
@@ -168,11 +203,24 @@ jobs:
               SRC_IMG="docker://$SRC:$tag"
               DEST_IMG="docker://$DEST:$tag"
               echo "from=\"$SRC_IMG\" to=\"$DEST_IMG\""
+
+              set +e
               SRC_DIGEST=$(get_manifest_id "${SRC_INSPECT_ARGS[@]}" "$SRC_IMG")
+              src_rc=$?
+              set -e
+              if [ "$src_rc" -ne 0 ]; then
+                if [ "$src_rc" -eq 3 ]; then
+                  echo "⏭️  Skip $tag (source tag not found)"
+                else
+                  echo "⏭️  Skip $tag (source inspect failed after $INSPECT_ATTEMPTS attempts)"
+                fi
+                SKIPPED=$((SKIPPED + 1))
+                continue
+              fi
 
               if [[ "$DEST" == docker.io/* ]]; then
                 CACHED_DIGEST=$(jq -r --arg key "$DEST:$tag" '.[$key] // empty' "$CACHE_FILE")
-                if [ -n "$SRC_DIGEST" ] && [ -n "$CACHED_DIGEST" ] && [ "$SRC_DIGEST" = "$CACHED_DIGEST" ]; then
+                if [ -n "$CACHED_DIGEST" ] && [ "$SRC_DIGEST" = "$CACHED_DIGEST" ]; then
                   echo "⏭️  Skip $tag (cache)"
                   SKIPPED=$((SKIPPED + 1))
                   # skip 时也刷新 cache，确保本次 run 的 cache 文件是完整的
@@ -181,12 +229,21 @@ jobs:
                   continue
                 fi
               else
+                set +e
                 DEST_DIGEST=$(get_manifest_id "${DEST_INSPECT_ARGS[@]}" "$DEST_IMG")
-                if [ -n "$SRC_DIGEST" ] && [ -n "$DEST_DIGEST" ] && [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
+                dest_rc=$?
+                set -e
+                if [ "$dest_rc" -eq 4 ]; then
+                  echo "⏭️  Skip $tag (destination inspect failed after $INSPECT_ATTEMPTS attempts)"
+                  SKIPPED=$((SKIPPED + 1))
+                  continue
+                fi
+                if [ "$dest_rc" -eq 0 ] && [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
                   echo "⏭️  Skip $tag"
                   SKIPPED=$((SKIPPED + 1))
                   continue
                 fi
+                # dest_rc == 3 表示目标还没有这个 tag，继续走 copy
               fi
 
               echo "Syncing $tag..."

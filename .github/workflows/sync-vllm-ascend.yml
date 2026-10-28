@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: sync-vllm-ascend
+  group: sync-images-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -92,17 +92,76 @@ jobs:
             [ -n "$creds" ] && eval "${var}=(--dest-creds \"$creds\")" || eval "${var}=(--dest-no-creds)"
           }
 
+          # 比较各平台子 manifest digest 列表（content-addressed，跨 registry 稳定）
+          # 避免 Docker Hub 重新序列化 manifest list 导致顶层 digest 不一致。
+          #
+          # 返回码：
+          #   0 = 成功，stdout 是 manifest id
+          #   3 = registry 明确返回 MANIFEST_UNKNOWN / NAME_UNKNOWN（确认 tag 不存在）
+          #   4 = 重试后仍然失败（网络/5xx/超时/未知），调用方禁止 copy
+          #   5 = 鉴权/权限/配置错误，调用方禁止 copy，并让 job 失败
+          INSPECT_ATTEMPTS="${INSPECT_ATTEMPTS:-5}"
+          INSPECT_DELAY="${INSPECT_DELAY:-5}"
+          INSPECT_TIMEOUT="${INSPECT_TIMEOUT:-60s}"
+
           get_manifest_id() {
-            local raw
-            raw=$(skopeo inspect --raw "$@" 2>/dev/null || true)
-            [ -z "$raw" ] && echo "" && return
-            echo "$raw" | jq -r '
-              if .manifests then
-                [.manifests[].digest] | sort | join(",")
+            local image="${!#}"
+            local attempt=1 raw err msg id status
+            while [ "$attempt" -le "$INSPECT_ATTEMPTS" ]; do
+              err=$(mktemp)
+              if raw=$(skopeo --command-timeout "$INSPECT_TIMEOUT" inspect --raw "$@" 2>"$err"); then
+                id=$(printf '%s' "$raw" | jq -r '
+                  if .manifests then
+                    [.manifests[].digest] | sort | join(",")
+                  else
+                    .config.digest // empty
+                  end
+                ' 2>/dev/null) || id=""
+                if [ -n "$id" ]; then
+                  rm -f "$err"
+                  printf '%s' "$id"
+                  return 0
+                fi
+                msg="manifest 解析后 digest 为空"
               else
-                .config.digest // empty
-              end
-            ' 2>/dev/null || true
+                msg=$(tr '\n' ' ' < "$err")
+              fi
+              rm -f "$err"
+
+              status=$(printf '%s' "$msg" | grep -oE 'unexpected HTTP status: [0-9]{3}' | grep -oE '[0-9]{3}' | head -n1 || true)
+
+              # 鉴权/权限/配置错误：重试没有意义，直接失败（禁止 copy）
+              if [ "$status" = "401" ] || [ "$status" = "403" ] \
+                 || printf '%s' "$msg" | grep -qiE 'unauthorized|authentication required|denied|invalid username/password|forbidden|not authorized'; then
+                echo "::error title=Inspect auth failed::$image: $msg" >&2
+                return 5
+              fi
+
+              # registry 明确返回 MANIFEST_UNKNOWN / NAME_UNKNOWN：确认不存在
+              if printf '%s' "$msg" | grep -qiE 'manifest unknown|name unknown'; then
+                echo "inspect: $image not found" >&2
+                return 3
+              fi
+
+              # 只有 HTTP 404、没有 registry 错误码：可能是代理/路径问题，按未知处理（禁止 copy）
+              if [ "$status" = "404" ]; then
+                echo "::warning title=Inspect ambiguous 404::$image: $msg" >&2
+              fi
+
+              echo "::warning title=Inspect failed::attempt $attempt/$INSPECT_ATTEMPTS for $image: $msg" >&2
+              attempt=$((attempt + 1))
+              if [ "$attempt" -le "$INSPECT_ATTEMPTS" ]; then
+                sleep "$INSPECT_DELAY"
+              fi
+            done
+            echo "::warning title=Inspect failed::giving up on $image after $INSPECT_ATTEMPTS attempts; no sync" >&2
+            return 4
+          }
+
+          # list-tags 失败时直接让 job 失败；不能把“查不到 tag”当成“没有 tag”。
+          list_tags() {
+            skopeo --command-timeout "$INSPECT_TIMEOUT" list-tags \
+              --retry-times "$INSPECT_ATTEMPTS" "$@"
           }
 
           CONFIG=".github/workflows/config/image-sync.json"
@@ -111,6 +170,7 @@ jobs:
           mkdir -p /tmp/digest-cache
           [ -f "$CACHE_FILE" ] || echo '{}' > "$CACHE_FILE"
 
+          # 获取该 src 的所有 dest 和 tag_filter（取第一个 tag_filter，同一 src 应一致）
           DESTS=$(jq -r --arg src "$SRC" '.[] | select(.src == $src) | .dest' "$CONFIG")
           TAG_FILTER=$(jq -r --arg src "$SRC" 'first(.[] | select(.src == $src) | .tag_filter // empty)' "$CONFIG")
 
@@ -118,24 +178,47 @@ jobs:
           build_inspect_args SRC_INSPECT_ARGS "$SRC_CREDS"
           build_copy_src_args SRC_COPY_ARGS "$SRC_CREDS"
 
+          # 获取 tag 列表（只做一次）
           if [ -n "$TAG_FILTER" ]; then
             if [[ "$SRC" == docker.io/* ]]; then
+              # Docker Hub 源：走分页 API 过滤，避免触发拉取限速
               repo=$(echo "$SRC" | sed 's|docker\.io/||')
               TAGS="" next_url="https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100" page=1
               while [ "$next_url" != "null" ] && [ "$page" -le 20 ]; do
-                resp=$(curl -s "$next_url")
+                if ! resp=$(curl -sf --retry 5 --retry-delay 5 "$next_url"); then
+                  echo "::error title=List tags failed::Docker Hub API request failed: $next_url"
+                  exit 1
+                fi
                 page_tags=$(echo "$resp" | jq -r --arg f "$TAG_FILTER" '.results[] | select(.name | test($f; "i")) | .name' 2>/dev/null || true)
                 [ -n "$page_tags" ] && TAGS="$TAGS"$'\n'"$page_tags"
-                next_url=$(echo "$resp" | jq -r '.next // "null"')
+                if ! next_url=$(echo "$resp" | jq -r '.next // "null"'); then
+                  echo "::error title=List tags failed::invalid Docker Hub API response: $next_url"
+                  exit 1
+                fi
                 page=$((page + 1))
               done
               TAGS=$(echo "$TAGS" | sed '/^$/d' | sort -u)
             else
-              TAGS=$(skopeo list-tags "${SRC_INSPECT_ARGS[@]}" docker://"$SRC" 2>/dev/null \
-                | jq -r --arg f "$TAG_FILTER" '.Tags[] | select(test($f; "i"))' 2>/dev/null | sort -u)
+              # 非 Docker Hub 源（如 quay.io）：list-tags 后按关键词过滤
+              if ! TAGS_RAW=$(list_tags "${SRC_INSPECT_ARGS[@]}" docker://"$SRC" 2>/tmp/list_tags_err); then
+                echo "::error title=List tags failed::$SRC: $(tr '\n' ' ' < /tmp/list_tags_err)"
+                exit 1
+              fi
+              if ! TAGS=$(printf '%s' "$TAGS_RAW" | jq -r --arg f "$TAG_FILTER" '.Tags[] | select(test($f; "i"))'); then
+                echo "::error title=List tags failed::cannot parse list-tags output for $SRC"
+                exit 1
+              fi
+              TAGS=$(printf '%s\n' "$TAGS" | sed '/^$/d' | sort -u)
             fi
           else
-            TAGS=$(skopeo list-tags "${SRC_INSPECT_ARGS[@]}" docker://"$SRC" 2>/dev/null | jq -r '.Tags[]')
+            if ! TAGS_RAW=$(list_tags "${SRC_INSPECT_ARGS[@]}" docker://"$SRC" 2>/tmp/list_tags_err); then
+              echo "::error title=List tags failed::$SRC: $(tr '\n' ' ' < /tmp/list_tags_err)"
+              exit 1
+            fi
+            if ! TAGS=$(printf '%s' "$TAGS_RAW" | jq -r '.Tags[]'); then
+              echo "::error title=List tags failed::cannot parse list-tags output for $SRC"
+              exit 1
+            fi
           fi
 
           if [ -z "$TAGS" ]; then
@@ -146,6 +229,7 @@ jobs:
           TAG_COUNT=$(echo "$TAGS" | wc -l)
           echo "Found $TAG_COUNT tags for $SRC"
 
+          # 对每个 dest 逐 tag 同步，src inspect 结果复用
           for DEST in $DESTS; do
             echo ""
             echo "--- $SRC → $DEST ---"
@@ -153,30 +237,69 @@ jobs:
             build_inspect_args DEST_INSPECT_ARGS "$DEST_CREDS"
             build_copy_dest_args DEST_COPY_ARGS "$DEST_CREDS"
 
-            SYNCED=0; SKIPPED=0; FAILED=0
+            SYNCED=0; SKIPPED=0; INSPECT_FAILED=0; FAILED=0
+            SRC_FAIL_CONSEC=0; DEST_FAIL_CONSEC=0
 
             for tag in $TAGS; do
               SRC_IMG="docker://$SRC:$tag"
               DEST_IMG="docker://$DEST:$tag"
               echo "from=\"$SRC_IMG\" to=\"$DEST_IMG\""
+
+              set +e
               SRC_DIGEST=$(get_manifest_id "${SRC_INSPECT_ARGS[@]}" "$SRC_IMG")
+              src_rc=$?
+              set -e
+              if [ "$src_rc" -eq 3 ]; then
+                echo "⏭️  Skip $tag (source tag not found)"
+                SKIPPED=$((SKIPPED + 1))
+                SRC_FAIL_CONSEC=0
+                continue
+              fi
+              if [ "$src_rc" -ne 0 ]; then
+                echo "⏭️  Skip $tag (source inspect failed after $INSPECT_ATTEMPTS attempts, no sync)"
+                INSPECT_FAILED=$((INSPECT_FAILED + 1))
+                SRC_FAIL_CONSEC=$((SRC_FAIL_CONSEC + 1))
+                if [ "$SRC_FAIL_CONSEC" -ge "${MAX_CONSECUTIVE_INSPECT_FAILURES:-5}" ]; then
+                  echo "::error::$SRC → $DEST: too many consecutive source inspect failures; aborting this destination"
+                  break
+                fi
+                continue
+              fi
+              SRC_FAIL_CONSEC=0
 
               if [[ "$DEST" == docker.io/* ]]; then
                 CACHED_DIGEST=$(jq -r --arg key "$DEST:$tag" '.[$key] // empty' "$CACHE_FILE")
-                if [ -n "$SRC_DIGEST" ] && [ -n "$CACHED_DIGEST" ] && [ "$SRC_DIGEST" = "$CACHED_DIGEST" ]; then
+                if [ -n "$CACHED_DIGEST" ] && [ "$SRC_DIGEST" = "$CACHED_DIGEST" ]; then
                   echo "⏭️  Skip $tag (cache)"
                   SKIPPED=$((SKIPPED + 1))
+                  DEST_FAIL_CONSEC=0
+                  # skip 时也刷新 cache，确保本次 run 的 cache 文件是完整的
                   tmp=$(mktemp)
                   jq --arg key "$DEST:$tag" --arg val "$SRC_DIGEST" '.[$key] = $val' "$CACHE_FILE" > "$tmp" && mv "$tmp" "$CACHE_FILE"
                   continue
                 fi
               else
+                set +e
                 DEST_DIGEST=$(get_manifest_id "${DEST_INSPECT_ARGS[@]}" "$DEST_IMG")
-                if [ -n "$SRC_DIGEST" ] && [ -n "$DEST_DIGEST" ] && [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
+                dest_rc=$?
+                set -e
+                if [ "$dest_rc" -ne 0 ] && [ "$dest_rc" -ne 3 ]; then
+                  echo "⏭️  Skip $tag (destination inspect failed after $INSPECT_ATTEMPTS attempts, no sync)"
+                  INSPECT_FAILED=$((INSPECT_FAILED + 1))
+                  DEST_FAIL_CONSEC=$((DEST_FAIL_CONSEC + 1))
+                  if [ "$DEST_FAIL_CONSEC" -ge "${MAX_CONSECUTIVE_INSPECT_FAILURES:-5}" ]; then
+                    echo "::error::$SRC → $DEST: too many consecutive destination inspect failures; aborting this destination"
+                    break
+                  fi
+                  continue
+                fi
+                DEST_FAIL_CONSEC=0
+                if [ "$dest_rc" -eq 0 ] && [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
                   echo "⏭️  Skip $tag"
                   SKIPPED=$((SKIPPED + 1))
                   continue
                 fi
+                # dest_rc == 3 表示 registry 明确返回 tag 不存在，继续走 copy
               fi
 
               echo "Syncing $tag..."
@@ -202,7 +325,7 @@ jobs:
               fi
             done
 
-            echo "Done [$SRC → $DEST]: $SYNCED synced, $SKIPPED skipped, $FAILED failed"
+            echo "Done [$SRC → $DEST]: $SYNCED synced, $SKIPPED skipped, $INSPECT_FAILED inspect-failed, $FAILED failed"
 
             if [[ "$DEST" == docker.io/* ]]; then
               rate_token=$(curl -sf "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" \
@@ -213,7 +336,9 @@ jobs:
               echo "Docker Hub rate limit remaining: $rate"
             fi
 
-            [ $FAILED -eq 0 ] || exit 1
+            if [ $FAILED -ne 0 ] || [ $INSPECT_FAILED -ne 0 ]; then
+              exit 1
+            fi
           done
 
       - name: Save digest cache

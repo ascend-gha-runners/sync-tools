@@ -49,6 +49,7 @@ jobs:
           QUAY_ASCEND_PWD: ${{ secrets.QUAY_ASCEND_PWD }}
           DOCKERHUB_USER: ${{ vars.DOCKERHUB_USER }}
           DOCKERHUB_PWD: ${{ secrets.DOCKERHUB_PWD }}
+          DOCKERHUB_PAGE_CAP: ${{ vars.DOCKERHUB_PAGE_CAP }}
           HWCLOUD_USER: ${{ vars.HWCLOUD_USER }}
           HWCLOUD_PWD: ${{ secrets.HWCLOUD_PWD }}
           SWR_EAST3_USER: ${{ vars.SWR_EAST3_USER }}
@@ -219,7 +220,11 @@ jobs:
                 page=$((page + 1))
               done
               if [ "$next_url" != "null" ]; then
-                echo "::warning title=Tag list truncated::stopped at page ${DH_PAGE_CAP} for $SRC; more tags exist, raise DOCKERHUB_PAGE_CAP to include them"
+                if [ "$DH_AUTH_MODE" = "bearer" ]; then
+                  echo "::warning title=Tag list truncated::stopped at page ${DH_PAGE_CAP} for $SRC; more tags exist, raise DOCKERHUB_PAGE_CAP to include them"
+                else
+                  echo "::warning title=Tag list truncated::stopped at page ${DH_PAGE_CAP} for $SRC; more tags exist, but pagination is anonymous (capped at 10 pages). Set valid DOCKERHUB_USER/DOCKERHUB_PWD to lift the cap"
+                fi
               fi
               TAGS=$(echo "$TAGS" | sed '/^$/d' | sort -u)
             else

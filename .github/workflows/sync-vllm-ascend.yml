@@ -49,6 +49,7 @@ jobs:
           QUAY_ASCEND_PWD: ${{ secrets.QUAY_ASCEND_PWD }}
           DOCKERHUB_USER: ${{ vars.DOCKERHUB_USER }}
           DOCKERHUB_PWD: ${{ secrets.DOCKERHUB_PWD }}
+          DOCKERHUB_PAGE_CAP: ${{ vars.DOCKERHUB_PAGE_CAP }}
           HWCLOUD_USER: ${{ vars.HWCLOUD_USER }}
           HWCLOUD_PWD: ${{ secrets.HWCLOUD_PWD }}
           SWR_EAST3_USER: ${{ vars.SWR_EAST3_USER }}
@@ -181,12 +182,33 @@ jobs:
           # 获取 tag 列表（只做一次）
           if [ -n "$TAG_FILTER" ]; then
             if [[ "$SRC" == docker.io/* ]]; then
-              # Docker Hub 源：走分页 API 过滤，避免触发拉取限速
+              # Docker Hub 源：走分页 API 过滤，避免触发拉取限速。
+              # 匿名分页最多 10 页（1000 tag），超过返回 403
+              # "pagination offset too large for anonymous requests"，
+              # 带 DOCKERHUB 登录 token 后可继续翻页。
               repo=$(echo "$SRC" | sed 's|docker\.io/||')
+              DH_PAGE_CAP=10
+              DH_AUTH_MODE=anonymous
+              DH_AUTH_ARGS=()
+              if [ -n "$DOCKERHUB_USER" ] && [ -n "$DOCKERHUB_PWD" ]; then
+                login_body=$(jq -cn --arg u "$DOCKERHUB_USER" --arg p "$DOCKERHUB_PWD" '{username:$u,password:$p}')
+                if dh_token=$(curl -sf --retry 3 --retry-delay 3 \
+                    -H "Content-Type: application/json" -d "$login_body" \
+                    "https://hub.docker.com/v2/users/login" | jq -r '.token // empty') \
+                   && [ -n "$dh_token" ]; then
+                  DH_AUTH_ARGS=(-H "Authorization: Bearer ${dh_token}")
+                  DH_AUTH_MODE=bearer
+                  DH_PAGE_CAP="${DOCKERHUB_PAGE_CAP:-50}"
+                else
+                  echo "::warning title=Docker Hub auth failed::failed to obtain Docker Hub token; anonymous pagination capped at ${DH_PAGE_CAP} pages"
+                fi
+              else
+                echo "::warning title=Docker Hub anonymous::DOCKERHUB_USER/DOCKERHUB_PWD not set; anonymous pagination capped at ${DH_PAGE_CAP} pages"
+              fi
               TAGS="" next_url="https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100" page=1
-              while [ "$next_url" != "null" ] && [ "$page" -le 20 ]; do
-                if ! resp=$(curl -sf --retry 5 --retry-delay 5 "$next_url"); then
-                  echo "::error title=List tags failed::Docker Hub API request failed: $next_url"
+              while [ "$next_url" != "null" ] && [ "$page" -le "$DH_PAGE_CAP" ]; do
+                if ! resp=$(curl -sf --retry 5 --retry-delay 5 "${DH_AUTH_ARGS[@]}" "$next_url"); then
+                  echo "::error title=List tags failed::Docker Hub API request failed: $next_url (page=$page, auth=$DH_AUTH_MODE)"
                   exit 1
                 fi
                 page_tags=$(echo "$resp" | jq -r --arg f "$TAG_FILTER" '.results[] | select(.name | test($f; "i")) | .name' 2>/dev/null || true)
@@ -197,6 +219,13 @@ jobs:
                 fi
                 page=$((page + 1))
               done
+              if [ "$next_url" != "null" ]; then
+                if [ "$DH_AUTH_MODE" = "bearer" ]; then
+                  echo "::warning title=Tag list truncated::stopped at page ${DH_PAGE_CAP} for $SRC; more tags exist, raise DOCKERHUB_PAGE_CAP to include them"
+                else
+                  echo "::warning title=Tag list truncated::stopped at page ${DH_PAGE_CAP} for $SRC; more tags exist, but pagination is anonymous (capped at 10 pages). Set valid DOCKERHUB_USER/DOCKERHUB_PWD to lift the cap"
+                fi
+              fi
               TAGS=$(echo "$TAGS" | sed '/^$/d' | sort -u)
             else
               # 非 Docker Hub 源（如 quay.io）：list-tags 后按关键词过滤

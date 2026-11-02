@@ -12,6 +12,9 @@ on:
       - ".github/workflows/sync-pypi.yml"
       - ".github/scripts/sync-pypi.py"
 
+permissions:
+  contents: read
+
 concurrency:
   group: sync-pypi-${{ github.ref }}
   cancel-in-progress: false

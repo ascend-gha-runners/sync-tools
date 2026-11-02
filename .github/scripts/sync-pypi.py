@@ -57,7 +57,7 @@ def regenerate_index(dst, obj_prefix, title):
     dirs = sorted(list_subdirs(dst, DST_BUCKET, obj_prefix))
     if not dirs:
         print(f"  [index] {obj_prefix} 无子目录，跳过")
-        return
+        return True
     html = "<html><head><title>%s</title><meta name='api-version' value='2' /></head><body>\n" % title
     for d in dirs:
         html += "<a href='%s/'>%s</a><br />\n" % (d, d)
@@ -66,8 +66,9 @@ def regenerate_index(dst, obj_prefix, title):
     r = dst.putContent(DST_BUCKET, key, content=html, headers={"Content-Type": "text/html"})
     if r.status < 300:
         print(f"  [index] 已更新 {key}")
-    else:
-        print(f"  [index] 更新失败 {key} -> {r.status} {r.errorCode} {r.errorMessage}")
+        return True
+    print(f"  [index] 更新失败 {key} -> {r.status} {r.errorCode} {r.errorMessage}")
+    return False
 
 
 def main():
@@ -84,6 +85,11 @@ def main():
 
     with open(CONFIG_PATH) as f:
         entries = json.load(f)
+
+    for i, e in enumerate(entries):
+        if not e.get("name") or not e.get("target_dir"):
+            print(f"配置第 {i} 项缺少 name 或 target_dir: {e}")
+            sys.exit(1)
 
     src = ObsClient(access_key_id=envs["OBS_VLLM_ASCEND_READ_AK"],
                     secret_access_key=envs["OBS_VLLM_ASCEND_READ_SK"], server=SERVER)
@@ -121,7 +127,7 @@ def main():
                 skipped += 1
                 continue
 
-            tmp = os.path.join(tempfile.gettempdir(), filename)
+            tmp = os.path.join(tempfile.gettempdir(), f"syncpypi-{os.getpid()}-{filename}")
             try:
                 r = src.getObject(SRC_BUCKET, src_key, downloadPath=tmp)
                 if r.status >= 300:
@@ -147,7 +153,13 @@ def main():
         obj_prefix = DST_PREFIX + (parent + "/" if parent else "")
         mirror_path = parent + "/" if parent else ""
         title = fetch_title(mirror_path)
-        regenerate_index(dst, obj_prefix, title)
+        try:
+            ok = regenerate_index(dst, obj_prefix, title)
+        except Exception as exc:
+            print(f"  [index] 更新异常 {obj_prefix} -> {exc}")
+            ok = False
+        if not ok:
+            failed += 1
 
     print(f"done: {synced} synced, {skipped} skipped, {failed} failed")
     sys.exit(1 if failed else 0)

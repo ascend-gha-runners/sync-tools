@@ -32,6 +32,6 @@ jobs:
 
       - name: Sync packages
         env:
-          HW_AK: ${{ secrets.HW_AK }}
-          HW_SK: ${{ secrets.HW_SK }}
+          OBS_AK: ${{ secrets.OBS_MIRROR_PUSH_AK }}
+          OBS_SK: ${{ secrets.OBS_MIRROR_PUSH_SK }}
         run: python .github/scripts/sync-pypi.py

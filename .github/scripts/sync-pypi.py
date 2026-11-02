@@ -14,10 +14,10 @@ TARGET_PREFIX = "pypi/packages/ascend/repos/pypi/"
 
 
 def main():
-    ak = os.environ.get("HW_AK")
-    sk = os.environ.get("HW_SK")
+    ak = os.environ.get("OBS_AK")
+    sk = os.environ.get("OBS_SK")
     if not ak or not sk:
-        print("缺少 HW_AK / HW_SK 环境变量")
+        print("缺少 OBS_AK / OBS_SK 环境变量")
         sys.exit(1)
 
     with open(CONFIG_PATH) as f:

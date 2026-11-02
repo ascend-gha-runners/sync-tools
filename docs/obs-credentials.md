@@ -14,10 +14,10 @@
 | Secret 名 | 桶 | 区域 | 前缀 | 权限 | 用途 |
 |---|---|---|---|---|---|
 | `OBS_MIRROR_PUSH_AK` / `OBS_MIRROR_PUSH_SK` | `ascend-artifcat-packages` | cn-north-4 | `pypi/packages/ascend/repos/pypi/` | 上传、删除、列目录；**无读**（HEAD 403） | sync-pypi 上传 wheel 到镜像 |
-| `OBS_VLLM_ASCEND_READ_AK` / `OBS_VLLM_ASCEND_READ_SK` | `vllm-ascend` | cn-north-4 | `vllm-ascend/` | （预留）只读 | 自动发现源桶新包 |
+| `OBS_VLLM_ASCEND_READ_AK` / `OBS_VLLM_ASCEND_READ_SK` | `vllm-ascend` | cn-north-4 | `vllm-ascend/` | 只读（列目录 + 下载） | 自动发现源桶新包 |
 
 ## 说明
 
 - 镜像地址 `mirrors.huaweicloud.com/ascend/repos/pypi/` 对应桶 `ascend-artifcat-packages` 的 `pypi/packages/ascend/repos/pypi/` 前缀。
 - 当前 `OBS_MIRROR_PUSH_AK` 只有写权限（无 `GetObject`），所以脚本用 `listObjects` 判断对象是否已存在，不能用 `HEAD`。
-- 源桶 `vllm-ascend` 目前匿名只能 `GET` 已知对象、无法 `listObjects`；要自动发现新包需申请源桶只读 AK/SK 并填在上表。
+- 源桶 `vllm-ascend` 用 `OBS_VLLM_ASCEND_READ_AK` 列目录 + 下载；`pypi-sync.json` 里每项 `name` 对应源桶里 `vllm-ascend/<name>-*.whl`，`target_dir` 是目标目录。新版本自动发现、只同步新增。

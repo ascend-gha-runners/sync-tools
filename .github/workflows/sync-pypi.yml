@@ -32,6 +32,8 @@ jobs:
 
       - name: Sync packages
         env:
-          OBS_AK: ${{ secrets.OBS_MIRROR_PUSH_AK }}
-          OBS_SK: ${{ secrets.OBS_MIRROR_PUSH_SK }}
+          OBS_VLLM_ASCEND_READ_AK: ${{ secrets.OBS_VLLM_ASCEND_READ_AK }}
+          OBS_VLLM_ASCEND_READ_SK: ${{ secrets.OBS_VLLM_ASCEND_READ_SK }}
+          OBS_MIRROR_PUSH_AK: ${{ secrets.OBS_MIRROR_PUSH_AK }}
+          OBS_MIRROR_PUSH_SK: ${{ secrets.OBS_MIRROR_PUSH_SK }}
         run: python .github/scripts/sync-pypi.py

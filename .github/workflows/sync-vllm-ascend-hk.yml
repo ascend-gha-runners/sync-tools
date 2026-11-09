@@ -1,0 +1,98 @@
+name: Sync vllm-ascend Image to HK
+
+# 把一个指定的 tag 从 cn-north-12 同步到香港 SWR（同仓库路径），供香港弹性节点就近拉取。
+# 只同步单个 tag，避免像 sync-images.yml 那样按 src 全量同步（nightly tag 数量多、体积大）。
+# CONFIG: swr.cn-north-12/... -> swr.ap-southeast-1/...
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要同步的镜像 tag，例如 nightly-ci-main-a2'
+        required: true
+        type: string
+      repository:
+        description: '源/目标仓库路径（两边同名）'
+        required: false
+        default: 'base_image/ascend-ci/vllm-ascend'
+        type: string
+      source_registry:
+        description: '源 registry'
+        required: false
+        default: 'swr.cn-north-12.myhuaweicloud.com'
+        type: string
+      dest_registry:
+        description: '目标 registry'
+        required: false
+        default: 'swr.ap-southeast-1.myhuaweicloud.com'
+        type: string
+
+concurrency:
+  group: sync-vllm-ascend-hk-${{ inputs.source_registry }}-${{ inputs.repository }}-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync ${{ inputs.tag }} to HK
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/skopeo/stable:latest
+    steps:
+      - name: Install jq
+        run: microdnf install -y jq
+
+      - name: Sync ${{ inputs.tag }}
+        env:
+          SRC_REGISTRY: ${{ inputs.source_registry }}
+          DEST_REGISTRY: ${{ inputs.dest_registry }}
+          REPOSITORY: ${{ inputs.repository }}
+          TAG: ${{ inputs.tag }}
+          SRC_USER: ${{ vars.SWR_NORTH12_USER }}
+          SRC_PASSWORD: ${{ secrets.SWR_NORTH12_SECRET }}
+          DEST_USER: ${{ vars.REGISTRY_HK_USER }}
+          DEST_PASSWORD: ${{ secrets.SWR_HK_SECRET }}
+        run: |
+          set -euo pipefail
+
+          SRC="docker://${SRC_REGISTRY}/${REPOSITORY}:${TAG}"
+          DEST="docker://${DEST_REGISTRY}/${REPOSITORY}:${TAG}"
+
+          # 用各架构子 manifest digest 判断是否已经同步（顶层 digest 会因 registry 重新序列化而变化）。
+          manifest_id() {
+            skopeo --command-timeout 60s inspect --raw "$@" 2>/dev/null \
+              | jq -r '(.manifests // [.]) | map(.digest) | sort | join(",")' || true
+          }
+
+          SRC_ID=$(manifest_id --creds "${SRC_USER}:${SRC_PASSWORD}" "$SRC")
+          if [ -z "$SRC_ID" ]; then
+            echo "::error::source image not found: ${SRC}"
+            exit 1
+          fi
+
+          DEST_ID=$(manifest_id --creds "${DEST_USER}:${DEST_PASSWORD}" "$DEST")
+          if [ -n "$DEST_ID" ] && [ "$SRC_ID" = "$DEST_ID" ]; then
+            echo "already in sync: ${DEST}"
+            exit 0
+          fi
+
+          echo "syncing ${SRC} -> ${DEST}"
+          skopeo copy --all \
+            --retry-times 5 \
+            --retry-delay 10s \
+            --src-creds "${SRC_USER}:${SRC_PASSWORD}" \
+            --dest-creds "${DEST_USER}:${DEST_PASSWORD}" \
+            "$SRC" "$DEST"
+
+      - name: Verify destination
+        env:
+          DEST_REGISTRY: ${{ inputs.dest_registry }}
+          REPOSITORY: ${{ inputs.repository }}
+          TAG: ${{ inputs.tag }}
+          DEST_USER: ${{ vars.REGISTRY_HK_USER }}
+          DEST_PASSWORD: ${{ secrets.SWR_HK_SECRET }}
+        run: |
+          set -euo pipefail
+          skopeo --command-timeout 60s inspect \
+            --creds "${DEST_USER}:${DEST_PASSWORD}" \
+            "docker://${DEST_REGISTRY}/${REPOSITORY}:${TAG}" >/dev/null
+          echo "verified ${DEST_REGISTRY}/${REPOSITORY}:${TAG}"

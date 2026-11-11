@@ -4,6 +4,12 @@
       "platform": "huggingface",
       "organization": "Qwen",
       "model_name": "Qwen2.5-0.5B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-sr",
+      "model_name": "d3-edge",
+      "legacy_layout": true
     }
   ],
   "datasets": []

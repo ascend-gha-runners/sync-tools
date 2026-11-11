@@ -62,13 +62,10 @@
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/multimodalsdk",  "dest": "docker.io/ascendai/multimodalsdk" },
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/multimodalsdk",  "dest": "quay.io/ascend/multimodalsdk" },
 
-  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspeed-llm",  "dest": "docker.io/ascendai/mindspeed-llm" },
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspeed-llm",  "dest": "quay.io/ascend/mindspeed-llm" },
   
-  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspeed-mm",  "dest": "docker.io/ascendai/mindspeed-mm" },
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspeed-mm",  "dest": "quay.io/ascend/mindspeed-mm" },
 
-  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspeed-core",  "dest": "docker.io/ascendai/mindspeed-core" },
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/mindspeed-core",  "dest": "quay.io/ascend/mindspeed-core" },
   
   { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/drivingsdk",  "dest": "docker.io/ascendai/drivingsdk" },

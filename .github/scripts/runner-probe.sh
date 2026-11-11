@@ -10,7 +10,7 @@ shares=$(grep -oE '[0-9a-f]{8}-[0-9a-f-]+\.sfsturbo' /proc/mounts 2>/dev/null | 
 host=$(hostname)
 ip=$(hostname -I 2>/dev/null | awk '{print $1}')
 
-clusters=$(jq -rn --arg s "$shares" --slurpfile c "$CFG" '
+clusters=$(jq -rcn --arg s "$shares" --slurpfile c "$CFG" '
   ($s | split(" ") | map(select(length>0))) as $ids |
   [ $c[0] | to_entries[]
     | select( any(.value.match.share_ids[]?; . as $sid | ($ids | index($sid)) != null) )

@@ -48,7 +48,10 @@ select_from_range() {
   local changed
   changed=$(git diff --name-only "$range" 2>/dev/null || git diff --name-only HEAD~1..HEAD)
 
-  if echo "$changed" | grep -qx "$WORKFLOW_FILE\|$MATRIX_SCRIPT"; then
+  # workflow/script edits select all projects ONLY on push (post-merge
+  # full revalidation). On pull_request we keep the diff narrow so PR checks
+  # don't flood the shared cluster runner queues.
+  if [ "${GITHUB_EVENT_NAME:-}" = push ] && echo "$changed" | grep -qx "$WORKFLOW_FILE\|$MATRIX_SCRIPT"; then
     select_all
     return
   fi

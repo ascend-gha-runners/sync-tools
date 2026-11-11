@@ -100,7 +100,16 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.plan.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Fetch repo snapshot via codeload (mainland-safe, no github.com git)
+        run: |
+          SHA='${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}'
+          curl -fsSL --retry 4 --retry-delay 5 -m 600 \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -o /tmp/repo.tgz "https://codeload.github.com/${{ github.repository }}/tar.gz/$SHA"
+          mkdir -p "$GITHUB_WORKSPACE"
+          tar xzf /tmp/repo.tgz -C "$GITHUB_WORKSPACE" --strip-components=1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Ensure host tooling
         run: |
@@ -168,36 +177,45 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Commit entry into library registry
+      - name: Upload ledger patch
         if: github.event_name == 'workflow_dispatch' && success()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ledger-patch-${{ matrix.cluster }}
+          path: /tmp/models.json
+          if-no-files-found: ignore
+
+  # Single writer for ledger updates, on a hosted runner where github.com git
+  # is reliable; mainland host runners only upload patch artifacts.
+  ledger:
+    needs: download
+    if: github.event_name == 'workflow_dispatch' && needs.download.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "ledger-patch-*"
+          path: /tmp/patches
+          merge-multiple: false
+      - name: Apply patches and push
         run: |
-          LIB="model-library/${{ matrix.cluster }}.json"
-          mkdir -p "$(dirname "$LIB")"
-          [ -f "$LIB" ] || printf '{"models": [], "datasets": []}\n' > "$LIB"
-          jq --slurpfile new /tmp/models.json \
-            '.models = ((.models + $new[0]) | unique_by(.platform + "/" + .organization + "/" + .model_name))' \
-            "$LIB" > /tmp/lib.new.json
-          if cmp -s /tmp/lib.new.json "$LIB"; then echo "already registered"; exit 0; fi
-          mv /tmp/lib.new.json "$LIB"
-          git config user.name "model-library-bot"
-          git config user.email "model-library-bot@users.noreply.github.com"
-          # Ledger push may race with sibling matrix jobs updating other cluster
-          # files. On rejection: reset to the remote tip, re-apply our entry, retry.
-          for i in 1 2 3 4 5; do
-            git add "$LIB"
-            git diff --cached --quiet || git commit -m "library(${{ matrix.cluster }}): register $(jq -r '.[0].organization + "/" + .[0].model_name' /tmp/models.json)"
-            if git push -q origin "HEAD:${{ github.ref_name }}" 2>/tmp/push.err; then echo "ledger pushed"; exit 0; fi
-            cat /tmp/push.err
-            git fetch -q origin "${{ github.ref_name }}"
-            git reset --hard -q "origin/${{ github.ref_name }}"
+          changed=0
+          for d in /tmp/patches/ledger-patch-*; do
+            cluster=$(basename "$d" | sed 's/ledger-patch-//')
+            LIB="model-library/$cluster.json"
             mkdir -p "$(dirname "$LIB")"
             [ -f "$LIB" ] || printf '{"models": [], "datasets": []}\n' > "$LIB"
-            jq --slurpfile new /tmp/models.json \
+            jq --slurpfile new "$d/models.json" \
               '.models = ((.models + $new[0]) | unique_by(.platform + "/" + .organization + "/" + .model_name))' \
-              "$LIB" > /tmp/lib.new.json && mv /tmp/lib.new.json "$LIB"
-            sleep $((RANDOM % 5 + 2))
+              "$LIB" > /tmp/l.json
+            cmp -s /tmp/l.json "$LIB" || { mv /tmp/l.json "$LIB"; changed=1; }
           done
-          echo "ledger push failed after retries"
-          exit 1
+          [ "$changed" = 1 ] || { echo "no ledger changes"; exit 0; }
+          git config user.name "model-library-bot"
+          git config user.email "model-library-bot@users.noreply.github.com"
+          git add model-library/
+          git commit -m "library: register dispatch downloads (${{ inputs.organization }}/${{ inputs.model_name }})"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

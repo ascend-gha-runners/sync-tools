@@ -224,13 +224,15 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 
 ### 用法一：手动表单（Actions → model library → Run workflow）
 
+> **权限**：手动触发要求触发者对 sync-tools 有 **write（committer）及以上**角色（admin/maintain/write），否则 plan 阶段直接失败。GitHub 本身也只允许 write+ 用户点 Run workflow，这里再做一次显式校验。
+
 业务同学填表触发：repo（需在 repos.json 登记）+ machine（a2/a3/a3-800i/a3-800t）+ platform（modelscope/huggingface）+ organization + model_name（可选 revision、flatten_legacy、requires_auth）。流水线自动解析该机型对应的**全部集群**并行下载，成功后把条目**自动写回** `model-library/<cluster>.json` 台账。
 
 例：vllm 同学在 a3-800i 机型下 `modelscope vllm-sr/d3-edge` → 自动落 cn12-001、mind3、aiframe 三块共享盘。
 
 ### 用法二：编辑模型库提 PR
 
-直接改/建 `model-library/<cluster>.json` 的 `models` 数组并提 PR：check 里该集群的 job 立即按列表下载（幂等，已有资源秒过），合入即完成台账登记。新增集群/机器需先在 `clusters.json` 登记 runner label 与缓存路径。
+直接改/建 `model-library/<cluster>.json` 的 `models` 数组并提 PR：**给 PR 打上 `model-download` 标签**（打开 PR 后补打也会触发），check 里该集群的 job 立即按列表下载（幂等，已有资源秒过），合入即完成台账登记。无标签的 PR 只跑配置校验（test.yml），不占同步机带宽。新增集群/机器需先在 `clusters.json` 登记 runner label 与缓存路径。
 
 ## 相关文档
 

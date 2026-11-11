@@ -8,6 +8,7 @@ on:
         required: false
         default: ""
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     branches:
       - main
     paths:
@@ -32,13 +33,28 @@ concurrency:
 
 jobs:
   prepare:
-    # Self-hosted runners must never execute code from fork PRs.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # PRs must carry the "model-download" label to trigger downloads;
+    # fork PRs are skipped (self-hosted runners must not run fork code).
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       contains(github.event.pull_request.labels.*.name, 'model-download'))
     runs-on: ubuntu-latest
     outputs:
       arc-matrix: ${{ steps.split.outputs.arc-matrix }}
       host-matrix: ${{ steps.split.outputs.host-matrix }}
     steps:
+      - name: Authorize dispatch (repo write/committer level required)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          lvl=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission" | jq -r '.permission // "none"')
+          case "$lvl" in admin|maintain|write) echo "dispatch allowed: ${{ github.actor }} ($lvl)" ;;
+            *) echo "::error::需要 write（committer）及以上权限才能手动触发下载（${{ github.actor }}: $lvl）"; exit 1 ;;
+          esac
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 2 }}

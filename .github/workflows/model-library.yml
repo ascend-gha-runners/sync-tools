@@ -38,6 +38,7 @@ on:
         required: false
         default: false
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     branches:
       - main
     paths:
@@ -46,8 +47,9 @@ on:
       - ".github/scripts/lib-build-matrix.sh"
       - ".github/scripts/download-json-models.sh"
 
-permissions:
-  contents: read
+# NOTE: no top-level `permissions:` block — GITHUB_TOKEN needs default
+# (permissive) read scopes so the dispatch authorization can query the
+# collaborators API; jobs grant `contents: write` only where needed.
 
 concurrency:
   group: model-library-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || format('dispatch-{0}-{1}', inputs.repo, inputs.model_name) }}
@@ -55,12 +57,27 @@ concurrency:
 
 jobs:
   plan:
-    # Self-hosted runners must never execute code from fork PRs.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # PRs must carry the "model-download" label to trigger downloads;
+    # fork PRs are skipped (self-hosted runners must not run fork code).
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       contains(github.event.pull_request.labels.*.name, 'model-download'))
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.gen.outputs.matrix }}
     steps:
+      - name: Authorize dispatch (repo write/committer level required)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          lvl=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission" | jq -r '.permission // "none"')
+          case "$lvl" in admin|maintain|write) echo "dispatch allowed: ${{ github.actor }} ($lvl)" ;;
+            *) echo "::error::需要 write（committer）及以上权限才能手动触发下载（${{ github.actor }}: $lvl）"; exit 1 ;;
+          esac
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0

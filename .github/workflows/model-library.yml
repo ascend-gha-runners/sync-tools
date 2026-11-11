@@ -37,6 +37,10 @@ on:
         type: boolean
         required: false
         default: false
+      runner_label:
+        description: "【推荐】你的 runner 标签（从自己 workflow 的 runs-on 抄）；填了就自动识别所在集群，repo/machine 可留空"
+        required: false
+        default: ""
   pull_request:
     types: [opened, synchronize, reopened, labeled]
     branches:
@@ -56,13 +60,50 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  label-guard:
+    if: github.event_name == 'workflow_dispatch' && inputs.runner_label != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Allowlist runner label against registry patterns
+        run: |
+          L='${{ inputs.runner_label }}'
+          jq -e --arg l "$L" 'to_entries[] | select(.value.match.label_regex as $re | $re != null and ($l | test($re)))' \
+            model-library/clusters.json >/dev/null || {
+              echo "::error::runner 标签 \"$L\" 不属于任何已登记集群的标签模式；请改用 仓库+机型 模式，或让管理员补充 model-library/clusters.json 的 match 字段"; exit 1; }
+          echo "label allowed"
+
+  identify:
+    needs: label-guard
+    if: github.event_name == 'workflow_dispatch' && inputs.runner_label != '' && needs.label-guard.result == 'success'
+    runs-on: ${{ inputs.runner_label }}
+    timeout-minutes: 15
+    outputs:
+      clusters: ${{ steps.probe.outputs.clusters }}
+    steps:
+      - name: Fetch repo snapshot via codeload
+        run: |
+          curl -fsSL --retry 4 --retry-delay 5 -m 600 -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -o /tmp/repo.tgz "https://codeload.github.com/${{ github.repository }}/tar.gz/${{ github.sha }}"
+          mkdir -p "$GITHUB_WORKSPACE"
+          tar xzf /tmp/repo.tgz -C "$GITHUB_WORKSPACE" --strip-components=1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Probe runner environment
+        id: probe
+        run: bash .github/scripts/runner-probe.sh model-library/clusters.json
+
   plan:
     # PRs must carry the "model-download" label to trigger downloads;
     # fork PRs are skipped (self-hosted runners must not run fork code).
+    needs: [label-guard, identify]
     if: >-
-      github.event_name != 'pull_request' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-       contains(github.event.pull_request.labels.*.name, 'model-download'))
+      !cancelled() &&
+      needs.label-guard.result != 'failure' &&
+      needs.identify.result != 'failure' &&
+      (github.event_name != 'pull_request' ||
+       (github.event.pull_request.head.repo.full_name == github.repository &&
+        contains(github.event.pull_request.labels.*.name, 'model-download')))
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.gen.outputs.matrix }}
@@ -86,6 +127,9 @@ jobs:
         env:
           INPUT_REPO: ${{ inputs.repo }}
           INPUT_MACHINE: ${{ inputs.machine }}
+          INPUT_RUNNER_LABEL: ${{ inputs.runner_label }}
+          INPUT_MODEL_NAME: ${{ inputs.model_name }}
+          INPUT_DETECTED: ${{ needs.identify.outputs.clusters }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: bash .github/scripts/lib-build-matrix.sh
 
@@ -122,8 +166,13 @@ jobs:
         run: |
           if [ -n '${{ matrix.library }}' ]; then
             CFG='${{ github.workspace }}/${{ matrix.library }}'
-            jq '.models   // []' "$CFG" > /tmp/models.json
-            jq '.datasets // []' "$CFG" > /tmp/datasets.json
+            if [ -f "$CFG" ]; then
+              jq '.models   // []' "$CFG" > /tmp/models.json
+              jq '.datasets // []' "$CFG" > /tmp/datasets.json
+            else
+              echo "no ledger for ${{ matrix.cluster }} yet; nothing to sync"
+              echo '[]' > /tmp/models.json; echo '[]' > /tmp/datasets.json
+            fi
           else
             jq -n \
               --arg platform "${{ inputs.platform }}" \
@@ -179,7 +228,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload ledger patch
-        if: github.event_name == 'workflow_dispatch' && success()
+        if: github.event_name == 'workflow_dispatch' && inputs.model_name != '' && success()
         uses: actions/upload-artifact@v4
         with:
           name: ledger-patch-${{ matrix.cluster }}

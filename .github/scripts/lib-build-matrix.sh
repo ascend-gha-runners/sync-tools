@@ -47,14 +47,37 @@ case "${GITHUB_EVENT_NAME:-}" in
     done
     ;;
   workflow_dispatch)
-    REPO="$INPUT_REPO"; MACHINE="$INPUT_MACHINE"
-    CS=$(jq -r --arg r "$REPO" --arg m "$MACHINE" '.[$r][$m] // empty | .[]' "$CFG/repos.json")
-    [ -n "$CS" ] || { echo "ERROR: repos.json has no clusters for repo=$REPO machine=$MACHINE" >&2; exit 1; }
     ENTRIES=""
-    for c in $CS; do
-      entry=$(entry_for "$c" "") || exit 1
-      ENTRIES="$ENTRIES$entry"$'\n'
-    done
+    if [ -n "${INPUT_RUNNER_LABEL:-}" ]; then
+      # runner-label mode: union of probe-detected clusters and label-pattern
+      # matches from the registry; empty model name = sync whole ledger.
+      DETECTED="${INPUT_DETECTED:-[]}"
+      [ -z "$DETECTED" ] && DETECTED="[]"
+      CANDS=$(jq -rn --arg l "$INPUT_RUNNER_LABEL" --argjson d "$DETECTED" \
+        --slurpfile c "$CLUSTERS" '
+          ($d + [ $c[0] | to_entries[]
+                  | select(.value.match.label_regex as $re | $re != null and ($l | test($re)))
+                  | .key ]) | unique')
+      LIB_OR_EMPTY=""
+      [ -z "${INPUT_MODEL_NAME:-}" ] && LIB_OR_EMPTY="lib"
+      for c in $(echo "$CANDS" | jq -r '.[]'); do
+        if [ -n "$LIB_OR_EMPTY" ]; then
+          entry=$(entry_for "$c" "model-library/$c.json") || exit 1
+        else
+          entry=$(entry_for "$c" "") || exit 1
+        fi
+        ENTRIES="$ENTRIES$entry"$'\n'
+      done
+      [ -n "$ENTRIES" ] || { echo "ERROR: runner label '$INPUT_RUNNER_LABEL' 未匹配任何集群（探针也没识别到）。请改用 仓库+机型 模式或补 registry。" >&2; exit 1; }
+    else
+      REPO="$INPUT_REPO"; MACHINE="$INPUT_MACHINE"
+      CS=$(jq -r --arg r "$REPO" --arg m "$MACHINE" '.[$r][$m] // empty | .[]' "$CFG/repos.json")
+      [ -n "$CS" ] || { echo "ERROR: repos.json has no clusters for repo=$REPO machine=$MACHINE" >&2; exit 1; }
+      for c in $CS; do
+        entry=$(entry_for "$c" "") || exit 1
+        ENTRIES="$ENTRIES$entry"$'\n'
+      done
+    fi
     ;;
   *)
     echo "ERROR: unsupported event ${GITHUB_EVENT_NAME}" >&2; exit 1

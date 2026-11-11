@@ -48,8 +48,16 @@ report() {  # repo platform result
 legacy_materialize() {  # org name revision
   local org=$1 name=$2 rev=${3:-}
   local cache=${MODELSCOPE_CACHE:-$HOME/.cache/modelscope}
+  # modelscope >=1.38: content lives in models/<org>--<name>/snapshots/<rev> and
+  # needs flattening into the classic hub/models/<org>/<name> layout.
+  # <=1.37 already writes the classic layout directly under $MODELSCOPE_CACHE/models/
+  # (set MODELSCOPE_CACHE to .../modelscope/hub so the result is hub/models/<org>/<name>)
+  if [ -f "$cache/models/$org/${name//./___}/config.json" ] || ls "$cache/models/$org/${name//./___}/"*.safetensors >/dev/null 2>&1; then
+    echo "classic layout already in place: $cache/models/$org"
+    return 0
+  fi
   local srcroot="$cache/models/${org}--${name}/snapshots"
-  [ -d "$srcroot" ] || { echo "WARNING: legacy_layout: $srcroot missing"; return 1; }
+  [ -d "$srcroot" ] || { echo "WARNING: legacy_layout: no classic dir nor $srcroot"; return 1; }
   local src
   if [ -n "$rev" ] && [ -d "$srcroot/$rev" ]; then
     src="$srcroot/$rev"
@@ -57,7 +65,7 @@ legacy_materialize() {  # org name revision
     src=$(ls -d "$srcroot"/*/ 2>/dev/null | head -1)
   fi
   [ -n "$src" ] || { echo "WARNING: legacy_layout: no snapshot dir"; return 1; }
-  local dst="$cache/hub/models/$org/$name"
+  local dst="$cache/hub/models/$org/${name//./___}"
   mkdir -p "$dst"
   cp -a "$src/." "$dst/" || return 1
   local sb db

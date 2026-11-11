@@ -4,7 +4,7 @@
     "runner": "model-sync-hk001",
     "caches": {
       "huggingface": "/opt/vllm-ci/ascend-ci-share/huggingface",
-      "modelscope": "/opt/vllm-ci/ascend-ci-share-nv-sync-tools/modelscope"
+      "modelscope": "/opt/vllm-ci/ascend-ci-share-nv-sync-tools/modelscope/hub"
     },
     "note": "ecs-sync 直连 GitHub，共享盘 /opt/vllm-ci (SFS 24dd126e)",
     "endpoint": "https://huggingface.co"
@@ -14,7 +14,7 @@
     "runner": "model-sync-cn12001",
     "caches": {
       "huggingface": "/mnt/sfs_turbo/ascend-ci-share/huggingface",
-      "modelscope": "/mnt/sfs_turbo/modelscope"
+      "modelscope": "/mnt/sfs_turbo/modelscope/hub"
     },
     "note": "ecs-for-data-rsync (113.46.27.144)，SFS 8258ca0d/37cbefa6",
     "endpoint": "https://hf-mirror.com"
@@ -24,7 +24,7 @@
     "runner": "model-sync-mind3",
     "caches": {
       "huggingface": "/mnt/sfs_mind/huggingface",
-      "modelscope": "/mnt/sfs_mind/modelscope"
+      "modelscope": "/mnt/sfs_mind/modelscope/hub"
     },
     "note": "同一台 ecs-for-data-rsync 上的第二 runner 实例，共享盘 cc8060b8（同机不同盘）",
     "endpoint": "https://hf-mirror.com"
@@ -34,7 +34,7 @@
     "runner": "model-sync-hb3",
     "caches": {
       "huggingface": "/opt/vllm-ci/huggingface",
-      "modelscope": "/opt/vllm-ci/modelscope"
+      "modelscope": "/opt/vllm-ci/modelscope/hub"
     },
     "note": "ecs-21cc (113.46.1.251)，共享盘 /opt/vllm-ci (SFS c461cb6e)",
     "endpoint": "https://hf-mirror.com"
@@ -44,7 +44,7 @@
     "runner": "linux-aarch64-sync-gy001",
     "caches": {
       "huggingface": "/mnt/sfs_turbo/ascend-ci-share-nv-action-vllm-benchmarks/huggingface",
-      "modelscope": "/mnt/sfs_turbo/ascend-ci-share-nv-sync-tools/modelscope"
+      "modelscope": "/mnt/sfs_turbo/ascend-ci-share-nv-sync-tools/modelscope/hub"
     },
     "note": "gy001 ECS 无法直连 GitHub，走线下集群 ARC runner（TODO: runner 尚未创建）",
     "endpoint": "https://hf-mirror.com"
@@ -54,7 +54,7 @@
     "runner": "model-sync-gy004",
     "caches": {
       "huggingface": "/mnt/sfs_gy004/ascend-ci-share-pkking-sglang/huggingface",
-      "modelscope": "/mnt/sfs_gy004/ascend-ci-share-pkking-sglang/modelscope"
+      "modelscope": "/mnt/sfs_gy004/ascend-ci-share-pkking-sglang/modelscope/hub"
     },
     "note": "与 gy005 同一台机器不同共享盘：SFS 1b51fb58，仅 guiyang VPC 内可达，需线下 runner（TODO: 机器上需挂 NFS 到 /mnt/sfs_gy004）",
     "endpoint": "https://hf-mirror.com"
@@ -64,7 +64,7 @@
     "runner": "model-sync-gy005",
     "caches": {
       "huggingface": "/mnt/sfs_gy005/vllm-ascend-az5/huggingface",
-      "modelscope": "/mnt/sfs_gy005/vllm-ascend-az5/modelscope"
+      "modelscope": "/mnt/sfs_gy005/vllm-ascend-az5/modelscope/hub"
     },
     "note": "与 gy004 同一台机器不同共享盘：SFS b46afb97，仅 guiyang VPC 内可达，需线下 runner（TODO）",
     "endpoint": "https://hf-mirror.com"

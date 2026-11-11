@@ -261,6 +261,9 @@ jobs:
           echo "Found $TAG_COUNT tags for $SRC"
 
           # 对每个 dest 逐 tag 同步，src inspect 结果复用
+          # 单个 dest 失败只记录，不中断其余 dest 的同步（如 dockerhub 失败不影响 quay）
+          OVERALL_FAILED=0
+          FAILED_DESTS=""
           for DEST in $DESTS; do
             echo ""
             echo "--- $SRC → $DEST ---"
@@ -368,9 +371,16 @@ jobs:
             fi
 
             if [ $FAILED -ne 0 ] || [ $INSPECT_FAILED -ne 0 ]; then
-              exit 1
+              echo "::error::$SRC → $DEST: destination incomplete ($FAILED failed, $INSPECT_FAILED inspect-failed), continuing with remaining destinations"
+              OVERALL_FAILED=1
+              FAILED_DESTS="$FAILED_DESTS $DEST"
             fi
           done
+
+          if [ "$OVERALL_FAILED" -ne 0 ]; then
+            echo "::error::$SRC: sync incomplete, failed destinations:$FAILED_DESTS"
+            exit 1
+          fi
 
       - name: Save digest cache
         if: always()

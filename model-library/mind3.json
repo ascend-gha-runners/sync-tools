@@ -10,12 +10,6 @@
       "organization": "vllm-sr",
       "model_name": "d3-edge",
       "legacy_layout": true
-    },
-    {
-      "platform": "modelscope",
-      "organization": "vllm-sr",
-      "model_name": "d3-edge",
-      "legacy_layout": true
     }
   ],
   "datasets": []

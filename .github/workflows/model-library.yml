@@ -86,6 +86,7 @@ jobs:
         env:
           INPUT_REPO: ${{ inputs.repo }}
           INPUT_MACHINE: ${{ inputs.machine }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: bash .github/scripts/lib-build-matrix.sh
 
   download:

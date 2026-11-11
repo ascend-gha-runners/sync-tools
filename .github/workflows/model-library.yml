@@ -18,11 +18,13 @@ on:
         default: modelscope
         options: [modelscope, huggingface]
       organization:
-        description: "模型组织，如 Qwen / vllm-sr"
-        required: true
+        description: "模型组织，如 Qwen / vllm-sr（留空=只同步该集群台账）"
+        required: false
+        default: ""
       model_name:
-        description: "模型名，如 d3-edge"
-        required: true
+        description: "模型名，如 d3-edge（留空=只同步该集群台账）"
+        required: false
+        default: ""
       revision:
         description: "分支/commit（留空=默认）"
         required: false

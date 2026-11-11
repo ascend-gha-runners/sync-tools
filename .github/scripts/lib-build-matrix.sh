@@ -19,16 +19,17 @@ CFG="$ROOT/.github/workflows/config"
 CLUSTERS="$CFG/clusters.json"
 
 entry_for() {  # $1 cluster, $2 library path ("" for dispatch single model)
-  local c=$1 lib=$2 runner hf ms
+  local c=$1 lib=$2 runner hf ms ep
   runner=$(jq -r --arg c "$c" '.[$c].runner // empty' "$CLUSTERS")
   hf=$(jq -r --arg c "$c" '.[$c].caches.huggingface // empty' "$CLUSTERS")
   ms=$(jq -r --arg c "$c" '.[$c].caches.modelscope // empty' "$CLUSTERS")
+  ep=$(jq -r --arg c "$c" '.[$c].endpoint // "https://hf-mirror.com"' "$CLUSTERS")
   if [ -z "$runner" ] || [ -z "$hf" ] || [ -z "$ms" ]; then
     echo "ERROR: cluster '$c' has no runner or cache paths in clusters.json" >&2
     return 1
   fi
-  jq -cn --arg c "$c" --arg r "$runner" --arg l "$lib" --arg hf "$hf" --arg ms "$ms" \
-    '{cluster:$c, runner:$r, library:$l, hf_cache:$hf, ms_cache:$ms}'
+  jq -cn --arg c "$c" --arg r "$runner" --arg l "$lib" --arg hf "$hf" --arg ms "$ms" --arg ep "$ep" \
+    '{cluster:$c, runner:$r, library:$l, hf_cache:$hf, ms_cache:$ms, hf_endpoint:$ep}'
 }
 
 case "${GITHUB_EVENT_NAME:-}" in

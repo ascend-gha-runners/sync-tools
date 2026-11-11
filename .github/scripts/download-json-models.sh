@@ -27,10 +27,14 @@ fi
 
 NAME_KEY="${TYPE}_name"
 
+# default to the mirror when the caller (host profile / ARC template) has no
+# preference set; mainland hosts cannot reach huggingface.co directly
+export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
+
 # hf-mirror does not proxy the Xet CAS backend (cas-server.xethub.hf.co),
 # which makes snapshot downloads fail with 401. Pin classic HTTP transport.
-case "${HF_ENDPOINT:-https://hf-mirror.com}" in
-  *hf-mirror*|*aliyuncs*|"") export HF_HUB_DISABLE_XET=1 ;;
+case "${HF_ENDPOINT}" in
+  *hf-mirror*|*aliyuncs*) export HF_HUB_DISABLE_XET=1 ;;
 esac
 
 failures=0

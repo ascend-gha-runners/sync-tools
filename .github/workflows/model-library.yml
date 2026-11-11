@@ -120,6 +120,7 @@ jobs:
           MODELSCOPE_CACHE: ${{ matrix.ms_cache }}
           HF_HOME: ${{ matrix.hf_cache }}
           HUGGINGFACE_HUB_CACHE: ${{ matrix.hf_cache }}/hub
+          HF_ENDPOINT: ${{ matrix.hf_endpoint }}
           HF_TOKEN: ${{ github.event.inputs.requires_auth == 'true' && secrets.HF_TOKEN || '' }}
           MODELSCOPE_SDK_TOKEN: ${{ github.event.inputs.requires_auth == 'true' && secrets.MODELSCOPE_SDK_TOKEN || '' }}
         run: |
@@ -132,6 +133,7 @@ jobs:
           MODELSCOPE_CACHE: ${{ matrix.ms_cache }}
           HF_HOME: ${{ matrix.hf_cache }}
           HUGGINGFACE_HUB_CACHE: ${{ matrix.hf_cache }}/hub
+          HF_ENDPOINT: ${{ matrix.hf_endpoint }}
           HF_TOKEN: ${{ github.event.inputs.requires_auth == 'true' && secrets.HF_TOKEN || '' }}
           MODELSCOPE_SDK_TOKEN: ${{ github.event.inputs.requires_auth == 'true' && secrets.MODELSCOPE_SDK_TOKEN || '' }}
         run: |
@@ -168,4 +170,19 @@ jobs:
           git config user.email "model-library-bot@users.noreply.github.com"
           git add "$LIB"
           git commit -m "library(${{ matrix.cluster }}): register $(jq -r '.[0].organization + "/" + .[0].model_name' /tmp/models.json)"
-          git push origin "HEAD:${{ github.ref_name }}"
+          # concurrent matrix jobs may push ledger updates for other clusters;
+          # rebase onto the remote tip and retry a few times
+          for i in 1 2 3 4 5; do
+            git fetch -q origin "${{ github.ref_name }}" && \
+            git rebase -q "origin/${{ github.ref_name }}" && \
+            git push -q origin "HEAD:${{ github.ref_name }}" && break
+            rc=$?; [ "$i" = 5 ] && exit "$rc"
+            # another job may have appended the same entry meanwhile; keep ours once
+            git rebase --abort 2>/dev/null || true
+            git pull -q --rebase origin "${{ github.ref_name }}" || true
+            jq --slurpfile new /tmp/models.json \
+              '.models = ((.models + $new[0]) | unique_by(.platform + "/" + .organization + "/" + .model_name))' \
+              "$LIB" > "$LIB"
+            git add "$LIB"; git diff --cached --quiet || git commit -m "library(${{ matrix.cluster }}): merge ledger after push conflict"
+            sleep $((RANDOM % 5 + 2))
+          done

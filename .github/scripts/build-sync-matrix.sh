@@ -105,11 +105,12 @@ select_from_push() {
 }
 
 select_from_pr() {
-  # PR checkout uses fetch-depth: 0; diff against merge base with main so only
-  # the PR's own changes select projects. Falls back to all projects if the
-  # base cannot be resolved.
-  local base
-  base=$(git merge-base origin/main HEAD 2>/dev/null || git merge-base "origin/$GITHUB_BASE_REF" HEAD 2>/dev/null || true)
+  # Diff against the PR base commit from the event payload (always present);
+  # falls back to merge-base with main, then all projects.
+  local base="${PR_BASE_SHA:-}"
+  if [ -z "$base" ] || ! git cat-file -e "$base" 2>/dev/null; then
+    base=$(git merge-base origin/main HEAD 2>/dev/null || git merge-base "origin/${GITHUB_BASE_REF:-main}" HEAD 2>/dev/null || true)
+  fi
   if [ -z "$base" ]; then
     echo "WARN: cannot resolve merge-base with main, selecting all projects" >&2
     select_all

@@ -34,7 +34,10 @@ entry_for() {  # $1 cluster, $2 library path ("" for dispatch single model)
 
 case "${GITHUB_EVENT_NAME:-}" in
   pull_request)
-    BASE=$(git merge-base "origin/${GITHUB_BASE_REF:-main}" HEAD 2>/dev/null || echo HEAD~1)
+    BASE="${PR_BASE_SHA:-}"
+    if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
+      BASE=$(git merge-base "origin/${GITHUB_BASE_REF:-main}" HEAD 2>/dev/null || echo HEAD~1)
+    fi
     FILES=$(git diff --name-only "$BASE"..HEAD -- "$CFG/" | grep -vE '/(clusters|repos)\.json$' || true)
     ENTRIES=""
     for f in $FILES; do

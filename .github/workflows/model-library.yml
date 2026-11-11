@@ -78,6 +78,7 @@ jobs:
     if: needs.plan.result == 'success' && needs.plan.outputs.matrix != '[]'
     permissions:
       contents: write
+      workflows: write
     name: ${{ inputs.model_name || matrix.cluster }} -> ${{ matrix.cluster }}
     runs-on: ${{ matrix.runner }}
     strategy:

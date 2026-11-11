@@ -11,6 +11,8 @@
 #                              changed in projects-clusters.json. If the
 #                              workflow file or matrix script itself
 #                              changed, run all projects.
+#   - pull_request          -> same as push, but diffed against the merge
+#                              base with main (checkout needs fetch-depth 0)
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
@@ -39,15 +41,9 @@ select_from_dispatch() {
   fi
 }
 
-select_from_push() {
-  local before="${GITHUB_EVENT_BEFORE:-}"
-  local after="${GITHUB_SHA:-HEAD}"
-  local range
-  if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
-    range="HEAD~1..HEAD"
-  else
-    range="$before..$after"
-  fi
+select_from_range() {
+  # $1: git diff range (e.g. "before..after"), $2: rev used to read old files
+  local range="$1" before_ref="$2"
 
   local changed
   changed=$(git diff --name-only "$range" 2>/dev/null || git diff --name-only HEAD~1..HEAD)
@@ -73,7 +69,7 @@ select_from_push() {
 
   if echo "$changed" | grep -qx ".github/workflows/config/projects-clusters.json"; then
     local before_json after_json
-    before_json=$(git show "$before:.github/workflows/config/projects-clusters.json" 2>/dev/null || echo '{}')
+    before_json=$(git show "$before_ref:.github/workflows/config/projects-clusters.json" 2>/dev/null || echo '{}')
     after_json=$(cat "$CLUSTERS_FILE")
     local diff_projects
     diff_projects=$(jq -rn \
@@ -93,10 +89,37 @@ select_from_push() {
   echo "$selected" | sed '/^$/d' | sort -u
 }
 
+select_from_push() {
+  local before="${GITHUB_EVENT_BEFORE:-}"
+  local after="${GITHUB_SHA:-HEAD}"
+  local range before_ref
+  if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+    range="HEAD~1..HEAD"; before_ref="HEAD~1"
+  else
+    range="$before..$after"; before_ref="$before"
+  fi
+  select_from_range "$range" "$before_ref"
+}
+
+select_from_pr() {
+  # PR checkout uses fetch-depth: 0; diff against merge base with main so only
+  # the PR's own changes select projects. Falls back to all projects if the
+  # base cannot be resolved.
+  local base
+  base=$(git merge-base origin/main HEAD 2>/dev/null || git merge-base "origin/$GITHUB_BASE_REF" HEAD 2>/dev/null || true)
+  if [ -z "$base" ]; then
+    echo "WARN: cannot resolve merge-base with main, selecting all projects" >&2
+    select_all
+    return
+  fi
+  select_from_range "$base..HEAD" "$base"
+}
+
 case "${GITHUB_EVENT_NAME:-}" in
   schedule)         PROJECTS=$(select_all) ;;
   workflow_dispatch) PROJECTS=$(select_from_dispatch) ;;
   push)             PROJECTS=$(select_from_push) ;;
+  pull_request)     PROJECTS=$(select_from_pr) ;;
   *)                PROJECTS=$(select_all) ;;
 esac
 

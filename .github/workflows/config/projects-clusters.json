@@ -16,5 +16,8 @@
   },
   "vllm-omni": {
     "clusters": ["linux-amd64-hb003-omni"]
+  },
+  "model-sync-ecs": {
+    "clusters": ["model-sync-hk001", "model-sync-cn12001", "model-sync-hb3"]
   }
 }

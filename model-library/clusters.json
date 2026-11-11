@@ -68,5 +68,15 @@
     },
     "note": "与 gy004 同一台机器不同共享盘：SFS b46afb97，仅 guiyang VPC 内可达，需线下 runner（TODO）",
     "endpoint": "https://hf-mirror.com"
+  },
+  "gy003": {
+    "machine": "310p",
+    "runner": null,
+    "note": "TODO: 线下集群 runner 未接入；310p 共享盘路径待文档确认",
+    "endpoint": "https://hf-mirror.com",
+    "caches": {
+      "huggingface": "TODO",
+      "modelscope": "TODO"
+    }
   }
 }

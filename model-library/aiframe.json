@@ -1,0 +1,10 @@
+{
+  "models": [
+    {
+      "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen2.5-0.5B-Instruct"
+    }
+  ],
+  "datasets": []
+}

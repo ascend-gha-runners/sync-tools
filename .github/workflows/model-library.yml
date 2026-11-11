@@ -166,21 +166,21 @@ jobs:
           mv /tmp/lib.new.json "$LIB"
           git config user.name "model-library-bot"
           git config user.email "model-library-bot@users.noreply.github.com"
-          git add "$LIB"
-          git commit -m "library(${{ matrix.cluster }}): register $(jq -r '.[0].organization + "/" + .[0].model_name' /tmp/models.json)"
-          # concurrent matrix jobs may push ledger updates for other clusters;
-          # rebase onto the remote tip and retry a few times
+          # Ledger push may race with sibling matrix jobs updating other cluster
+          # files. On rejection: reset to the remote tip, re-apply our entry, retry.
           for i in 1 2 3 4 5; do
-            git fetch -q origin "${{ github.ref_name }}" && \
-            git rebase -q "origin/${{ github.ref_name }}" && \
-            git push -q origin "HEAD:${{ github.ref_name }}" && break
-            rc=$?; [ "$i" = 5 ] && exit "$rc"
-            # another job may have appended the same entry meanwhile; keep ours once
-            git rebase --abort 2>/dev/null || true
-            git pull -q --rebase origin "${{ github.ref_name }}" || true
+            git add "$LIB"
+            git diff --cached --quiet || git commit -m "library(${{ matrix.cluster }}): register $(jq -r '.[0].organization + "/" + .[0].model_name' /tmp/models.json)"
+            if git push -q origin "HEAD:${{ github.ref_name }}" 2>/tmp/push.err; then echo "ledger pushed"; exit 0; fi
+            cat /tmp/push.err
+            git fetch -q origin "${{ github.ref_name }}"
+            git reset --hard -q "origin/${{ github.ref_name }}"
+            mkdir -p "$(dirname "$LIB")"
+            [ -f "$LIB" ] || printf '{"models": [], "datasets": []}\n' > "$LIB"
             jq --slurpfile new /tmp/models.json \
               '.models = ((.models + $new[0]) | unique_by(.platform + "/" + .organization + "/" + .model_name))' \
-              "$LIB" > "$LIB"
-            git add "$LIB"; git diff --cached --quiet || git commit -m "library(${{ matrix.cluster }}): merge ledger after push conflict"
+              "$LIB" > /tmp/lib.new.json && mv /tmp/lib.new.json "$LIB"
             sleep $((RANDOM % 5 + 2))
           done
+          echo "ledger push failed after retries"
+          exit 1

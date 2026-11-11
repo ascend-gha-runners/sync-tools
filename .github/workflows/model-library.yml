@@ -241,7 +241,7 @@ jobs:
   # is reliable; mainland host runners only upload patch artifacts.
   ledger:
     needs: download
-    if: github.event_name == 'workflow_dispatch' && needs.download.result == 'success'
+    if: github.event_name == 'workflow_dispatch' && inputs.model_name != '' && needs.download.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write

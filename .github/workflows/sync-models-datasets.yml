@@ -124,10 +124,11 @@ jobs:
 
       - name: Resolve cache env from host profile
         run: |
-          # login shell picks up /etc/profile.d/model-tools.sh (HF_HOME /
-          # MODELSCOPE_CACHE / HF_ENDPOINT already point at this machine's
-          # shared disk); pass the values to the following steps.
-          bash -lc 'env | grep -E "^(HF_|MODELSCOPE_|HUGGINGFACE_)" ' | tee -a "$GITHUB_ENV"
+          # Per-label profile fragments let one machine serve several cluster
+          # shares: /etc/profile.d/model-tools-<suffix>.sh overrides the
+          # machine default (/etc/profile.d/model-tools.sh) when present.
+          SUFFIX='${{ matrix.cluster }}'; SUFFIX="${SUFFIX#model-sync-}"
+          bash -lc ". /etc/profile.d/model-tools.sh 2>/dev/null; [ -f /etc/profile.d/model-tools-$SUFFIX.sh ] && . /etc/profile.d/model-tools-$SUFFIX.sh; env | grep -E '^(HF_|HUGGINGFACE_|MODELSCOPE_)'" | tee -a "$GITHUB_ENV"
 
       - name: Split project config into models/datasets
         run: |

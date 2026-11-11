@@ -135,6 +135,7 @@ workflow 根据域名自动匹配认证信息，目前支持的源/目标 regist
 | `model-sync-hk001` | ecs-sync (159.138.152.35) | `/opt/vllm-ci/ascend-ci-share-nv-sync-tools/modelscope` · `/opt/vllm-ci/ascend-ci-share/huggingface` |
 | `model-sync-cn12001` | ecs-for-data-rsync (113.46.27.144) | `/mnt/sfs_turbo/modelscope` · `/mnt/sfs_turbo/ascend-ci-share/huggingface` |
 | `model-sync-hb3` | ecs-21cc (113.46.1.251) | `/opt/vllm-ci/modelscope` · `/opt/vllm-ci/huggingface` |
+| `model-sync-mind3` | ecs-for-data-rsync (113.46.27.144) 第二 runner 实例 | `/mnt/sfs_mind/modelscope` · `/mnt/sfs_mind/huggingface` |
 
 gy001 的 ECS 机器无法直连 GitHub，需走线下集群 ARC runner label 接入（待补）。
 

@@ -234,6 +234,16 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 
 直接改/建 `model-library/<cluster>.json` 的 `models` 数组并提 PR：**给 PR 打上 `model-download` 标签**（打开 PR 后补打也会触发），check 里该集群的 job 立即按列表下载（幂等，已有资源秒过），合入即完成台账登记。无标签的 PR 只跑配置校验（test.yml），不占同步机带宽。新增集群/机器需先在 `clusters.json` 登记 runner label 与缓存路径。
 
+### 用法三：只贴你的 runner 标签（不知道集群也能下载）
+
+不关心中文"集群"的业务同学，从自己 workflow 的 `runs-on:` 抄一行标签（如 `linux-aarch64-a3-800i-16-cn12-001`）填到 `runner_label` 即可：
+
+1. `label-guard`：标签必须匹配 `clusters.json` 里某个集群的 `match.label_regex`（白名单，防止任意调度）
+2. `identify`：**直接在你要的那个 runner 上跑探针**，读 `/proc/mounts` 里的 SFS Turbo share id，反查注册表 → 自动得出集群（如 c461cb6e → aiframe）
+3. 下载目标 = 探针结果 ∪ 标签正则结果；`organization/model_name` 留空时自动改为**整本台账同步**（把 `model-library/<cluster>.json` 的模型全部落到识别出的盘上）
+
+维护者义务：新集群接入时把它的 runner 标签正则与 SFS share id 填进 `clusters.json` 的 `match` 字段即可支持此模式。
+
 ## 相关文档
 
 - [功能设计文档](DESIGN.md) – 系统架构、各子系统工作原理与关键设计取舍（“它是怎么工作的、为什么这么设计”）。

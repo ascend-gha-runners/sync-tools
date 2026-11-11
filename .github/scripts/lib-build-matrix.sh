@@ -1,13 +1,13 @@
 #!/bin/bash
 # Build the download matrix for the model-library workflow.
 #
-# Sources of truth (one-to-one registry):
-#   config/clusters.json  cluster -> runner label + shared-disk cache roots
-#   config/repos.json     business repo -> machine type -> [clusters]
-#   config/libraries/<cluster>.json  desired model/dataset list per cluster
+# Sources of truth (one-to-one registry, all under model-library/):
+#   model-library/clusters.json        cluster -> runner + disk caches + endpoint
+#   model-library/repos.json           business repo -> machine type -> [clusters]
+#   model-library/<cluster>.json       desired model/dataset list per cluster (ledger)
 #
 # Selection rules:
-#   pull_request  -> one entry per changed config/libraries/<cluster>.json
+#   pull_request  -> one entry per changed model-library/<cluster>.json
 #   dispatch      -> clusters resolved from repos.json [repo][machine]
 #
 # Output: matrix=[{cluster, runner, library, hf_cache, ms_cache}, ...] to
@@ -15,7 +15,7 @@
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
-CFG="$ROOT/.github/workflows/config"
+CFG="$ROOT/model-library"
 CLUSTERS="$CFG/clusters.json"
 
 entry_for() {  # $1 cluster, $2 library path ("" for dispatch single model)
@@ -35,7 +35,7 @@ entry_for() {  # $1 cluster, $2 library path ("" for dispatch single model)
 case "${GITHUB_EVENT_NAME:-}" in
   pull_request)
     BASE=$(git merge-base "origin/${GITHUB_BASE_REF:-main}" HEAD 2>/dev/null || echo HEAD~1)
-    FILES=$(git diff --name-only "$BASE"..HEAD -- "$CFG/libraries/" || true)
+    FILES=$(git diff --name-only "$BASE"..HEAD -- "$CFG/" | grep -vE '/(clusters|repos)\.json$' || true)
     ENTRIES=""
     for f in $FILES; do
       c=$(basename "$f" .json)

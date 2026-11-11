@@ -210,6 +210,28 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 - **镜像同步超时**: 可适当调整 `skopeo` 的超时和重试参数。
 - **模型下载失败**: 确认模型名称是否正确，以及是否有访问权限。
 
+## 模型库与手动下载表单
+
+`model-library/` 目录是三份一一对应的注册表：
+
+| 文件 | 作用 |
+|---|---|
+| `clusters.json` | 集群 → runner label + 该集群共享盘缓存路径（`caches.modelscope` / `caches.huggingface`，即把 `root/.cache` 替换成机器实际共享盘后的位置）+ `endpoint`（HK 直连 huggingface.co，大陆走 hf-mirror） |
+| `repos.json` | 业务仓库 × 机器型号（a2 / a3 / a3-800i / a3-800t）→ 集群列表。如 `vllm-project/vllm-ascend` + `a3-800i` = [cn12-001, mind3, aiframe] |
+| `<cluster>.json` | 该集群的模型台账（期望存在的 models/datasets） |
+
+同一物理机挂不同共享盘的集群（mind3/cn12-001 同在 ecs-for-data-rsync；gy004/gy005 同机不同盘）用**两个 runner 实例 + 两个 label** 区分；缓存路径由注册表注入 job env，保证机器-盘-仓库一一对应。
+
+### 用法一：手动表单（Actions → model library → Run workflow）
+
+业务同学填表触发：repo（需在 repos.json 登记）+ machine（a2/a3/a3-800i/a3-800t）+ platform（modelscope/huggingface）+ organization + model_name（可选 revision、flatten_legacy、requires_auth）。流水线自动解析该机型对应的**全部集群**并行下载，成功后把条目**自动写回** `model-library/<cluster>.json` 台账。
+
+例：vllm 同学在 a3-800i 机型下 `modelscope vllm-sr/d3-edge` → 自动落 cn12-001、mind3、aiframe 三块共享盘。
+
+### 用法二：编辑模型库提 PR
+
+直接改/建 `model-library/<cluster>.json` 的 `models` 数组并提 PR：check 里该集群的 job 立即按列表下载（幂等，已有资源秒过），合入即完成台账登记。新增集群/机器需先在 `clusters.json` 登记 runner label 与缓存路径。
+
 ## 相关文档
 
 - [功能设计文档](DESIGN.md) – 系统架构、各子系统工作原理与关键设计取舍（“它是怎么工作的、为什么这么设计”）。

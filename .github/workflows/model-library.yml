@@ -41,9 +41,7 @@ on:
     branches:
       - main
     paths:
-      - ".github/workflows/config/libraries/**"
-      - ".github/workflows/config/clusters.json"
-      - ".github/workflows/config/repos.json"
+      - "model-library/**"
       - ".github/workflows/model-library.yml"
       - ".github/scripts/lib-build-matrix.sh"
       - ".github/scripts/download-json-models.sh"
@@ -78,7 +76,6 @@ jobs:
     if: needs.plan.result == 'success' && needs.plan.outputs.matrix != '[]'
     permissions:
       contents: write
-      workflows: write
     name: ${{ inputs.model_name || matrix.cluster }} -> ${{ matrix.cluster }}
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -159,7 +156,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LIB=".github/workflows/config/libraries/${{ matrix.cluster }}.json"
+          LIB="model-library/${{ matrix.cluster }}.json"
           mkdir -p "$(dirname "$LIB")"
           [ -f "$LIB" ] || printf '{"models": [], "datasets": []}\n' > "$LIB"
           jq --slurpfile new /tmp/models.json \

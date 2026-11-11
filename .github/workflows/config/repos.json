@@ -1,0 +1,19 @@
+{
+  "vllm-project/vllm-ascend": {
+    "a2": ["hk001"],
+    "a3-800i": ["cn12-001", "mind3", "aiframe"],
+    "a3": ["aiframe"]
+  },
+  "sgl-project/sglang": {
+    "a2": ["hk001"],
+    "a3-800i": ["cn12-001", "mind3", "aiframe"],
+    "a3-800t": ["gy004", "gy005"]
+  },
+  "Ascend/transformer": {
+    "a3-800i": ["cn12-001", "mind3", "aiframe"]
+  },
+  "vllm-project/vllm-omni": {
+    "a2b3": ["hk001"],
+    "a3": ["cn12-001"]
+  }
+}

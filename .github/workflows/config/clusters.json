@@ -1,0 +1,65 @@
+{
+  "hk001": {
+    "machine": "a2",
+    "runner": "model-sync-hk001",
+    "caches": {
+      "huggingface": "/opt/vllm-ci/ascend-ci-share/huggingface",
+      "modelscope": "/opt/vllm-ci/ascend-ci-share-nv-sync-tools/modelscope"
+    },
+    "note": "ecs-sync 直连 GitHub，共享盘 /opt/vllm-ci (SFS 24dd126e)"
+  },
+  "cn12-001": {
+    "machine": "a3-800i",
+    "runner": "model-sync-cn12001",
+    "caches": {
+      "huggingface": "/mnt/sfs_turbo/ascend-ci-share/huggingface",
+      "modelscope": "/mnt/sfs_turbo/modelscope"
+    },
+    "note": "ecs-for-data-rsync (113.46.27.144)，SFS 8258ca0d/37cbefa6"
+  },
+  "mind3": {
+    "machine": "a3-800i",
+    "runner": "model-sync-mind3",
+    "caches": {
+      "huggingface": "/mnt/sfs_mind/huggingface",
+      "modelscope": "/mnt/sfs_mind/modelscope"
+    },
+    "note": "同一台 ecs-for-data-rsync 上的第二 runner 实例，共享盘 cc8060b8（同机不同盘）"
+  },
+  "aiframe": {
+    "machine": "a3",
+    "runner": "model-sync-hb3",
+    "caches": {
+      "huggingface": "/opt/vllm-ci/huggingface",
+      "modelscope": "/opt/vllm-ci/modelscope"
+    },
+    "note": "ecs-21cc (113.46.1.251)，共享盘 /opt/vllm-ci (SFS c461cb6e)"
+  },
+  "guiyang": {
+    "machine": "a3",
+    "runner": "linux-aarch64-sync-gy001",
+    "caches": {
+      "huggingface": "/mnt/sfs_turbo/ascend-ci-share-nv-action-vllm-benchmarks/huggingface",
+      "modelscope": "/mnt/sfs_turbo/ascend-ci-share-nv-sync-tools/modelscope"
+    },
+    "note": "gy001 ECS 无法直连 GitHub，走线下集群 ARC runner（TODO: runner 尚未创建）"
+  },
+  "gy004": {
+    "machine": "a3-800t",
+    "runner": "model-sync-gy004",
+    "caches": {
+      "huggingface": "/mnt/sfs_gy004/ascend-ci-share-pkking-sglang/huggingface",
+      "modelscope": "/mnt/sfs_gy004/ascend-ci-share-pkking-sglang/modelscope"
+    },
+    "note": "与 gy005 同一台机器不同共享盘：SFS 1b51fb58，仅 guiyang VPC 内可达，需线下 runner（TODO: 机器上需挂 NFS 到 /mnt/sfs_gy004）"
+  },
+  "gy005": {
+    "machine": "a3-800t",
+    "runner": "model-sync-gy005",
+    "caches": {
+      "huggingface": "/mnt/sfs_gy005/vllm-ascend-az5/huggingface",
+      "modelscope": "/mnt/sfs_gy005/vllm-ascend-az5/modelscope"
+    },
+    "note": "与 gy004 同一台机器不同共享盘：SFS b46afb97，仅 guiyang VPC 内可达，需线下 runner（TODO）"
+  }
+}

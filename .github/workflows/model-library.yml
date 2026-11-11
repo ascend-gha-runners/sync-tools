@@ -1,0 +1,171 @@
+name: model library
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "业务仓库（需在 config/repos.json 中登记）"
+        required: true
+        default: "vllm-project/vllm-ascend"
+      machine:
+        description: "机器型号：a2 / a3 / a3-800i / a3-800t（决定下载到哪几个集群）"
+        required: true
+        default: "a3-800i"
+      platform:
+        description: "下载源"
+        type: choice
+        required: true
+        default: modelscope
+        options: [modelscope, huggingface]
+      organization:
+        description: "模型组织，如 Qwen / vllm-sr"
+        required: true
+      model_name:
+        description: "模型名，如 d3-edge"
+        required: true
+      revision:
+        description: "分支/commit（留空=默认）"
+        required: false
+        default: ""
+      flatten_legacy:
+        description: "modelscope：额外平铺到 hub/models/<org>/<name> 旧布局"
+        type: boolean
+        required: false
+        default: true
+      requires_auth:
+        description: "私有模型：使用仓库 secrets 中的 HF_TOKEN / MODELSCOPE_SDK_TOKEN"
+        type: boolean
+        required: false
+        default: false
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/libraries/**"
+      - ".github/workflows/config/clusters.json"
+      - ".github/workflows/config/repos.json"
+      - ".github/workflows/model-library.yml"
+      - ".github/scripts/lib-build-matrix.sh"
+      - ".github/scripts/download-json-models.sh"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: model-library-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || format('dispatch-{0}-{1}', inputs.repo, inputs.model_name) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  plan:
+    # Self-hosted runners must never execute code from fork PRs.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build matrix
+        id: gen
+        env:
+          INPUT_REPO: ${{ inputs.repo }}
+          INPUT_MACHINE: ${{ inputs.machine }}
+        run: bash .github/scripts/lib-build-matrix.sh
+
+  download:
+    needs: plan
+    if: needs.plan.result == 'success' && needs.plan.outputs.matrix != '[]'
+    permissions:
+      contents: write
+    name: ${{ inputs.model_name || matrix.cluster }} -> ${{ matrix.cluster }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure host tooling
+        run: |
+          command -v jq >/dev/null || { apt-get update -q && apt-get install -y -q jq; }
+          command -v hf >/dev/null || pip3 install --break-system-packages -q -U huggingface_hub
+          command -v modelscope >/dev/null || pip3 install --break-system-packages -q -U modelscope
+
+      - name: Prepare entries
+        run: |
+          if [ -n '${{ matrix.library }}' ]; then
+            CFG='${{ github.workspace }}/${{ matrix.library }}'
+            jq '.models   // []' "$CFG" > /tmp/models.json
+            jq '.datasets // []' "$CFG" > /tmp/datasets.json
+          else
+            jq -n \
+              --arg platform "${{ inputs.platform }}" \
+              --arg org "${{ inputs.organization }}" \
+              --arg name "${{ inputs.model_name }}" \
+              --arg rev "${{ inputs.revision }}" \
+              --argjson legacy "${{ inputs.flatten_legacy || 'false' }}" \
+              '{models: [({platform: $platform, organization: $org, model_name: $name}
+                          + (if $rev == "" then {} else {revision: $rev} end)
+                          + (if $platform == "modelscope" and $legacy then {legacy_layout: true} else {} end))],
+                datasets: []}' > /tmp/all.json
+            jq '.models'   /tmp/all.json > /tmp/models.json
+            jq '.datasets' /tmp/all.json > /tmp/datasets.json
+          fi
+          echo "models: $(jq length /tmp/models.json), datasets: $(jq length /tmp/datasets.json)"
+
+      - name: Download models
+        env:
+          MODELSCOPE_CACHE: ${{ matrix.ms_cache }}
+          HF_HOME: ${{ matrix.hf_cache }}
+          HUGGINGFACE_HUB_CACHE: ${{ matrix.hf_cache }}/hub
+          HF_TOKEN: ${{ github.event.inputs.requires_auth == 'true' && secrets.HF_TOKEN || '' }}
+          MODELSCOPE_SDK_TOKEN: ${{ github.event.inputs.requires_auth == 'true' && secrets.MODELSCOPE_SDK_TOKEN || '' }}
+        run: |
+          if [ "$(jq length /tmp/models.json)" -gt 0 ]; then
+            bash .github/scripts/download-json-models.sh /tmp/models.json model
+          fi
+
+      - name: Download datasets
+        env:
+          MODELSCOPE_CACHE: ${{ matrix.ms_cache }}
+          HF_HOME: ${{ matrix.hf_cache }}
+          HUGGINGFACE_HUB_CACHE: ${{ matrix.hf_cache }}/hub
+          HF_TOKEN: ${{ github.event.inputs.requires_auth == 'true' && secrets.HF_TOKEN || '' }}
+          MODELSCOPE_SDK_TOKEN: ${{ github.event.inputs.requires_auth == 'true' && secrets.MODELSCOPE_SDK_TOKEN || '' }}
+        run: |
+          if [ "$(jq length /tmp/datasets.json)" -gt 0 ]; then
+            bash .github/scripts/download-json-models.sh /tmp/datasets.json dataset
+          fi
+
+      - name: Record dispatch entry for the library PR
+        if: github.event_name == 'workflow_dispatch' && always()
+        run: |
+          {
+            echo "#### ${{ matrix.cluster }}"
+            echo
+            echo '下载条目（已自动登记进模型库台账）：'
+            echo '```json'
+            jq -c '.[]' /tmp/models.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit entry into library registry
+        if: github.event_name == 'workflow_dispatch' && success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LIB=".github/workflows/config/libraries/${{ matrix.cluster }}.json"
+          mkdir -p "$(dirname "$LIB")"
+          [ -f "$LIB" ] || printf '{"models": [], "datasets": []}\n' > "$LIB"
+          jq --slurpfile new /tmp/models.json \
+            '.models = ((.models + $new[0]) | unique_by(.platform + "/" + .organization + "/" + .model_name))' \
+            "$LIB" > /tmp/lib.new.json
+          if cmp -s /tmp/lib.new.json "$LIB"; then echo "already registered"; exit 0; fi
+          mv /tmp/lib.new.json "$LIB"
+          git config user.name "model-library-bot"
+          git config user.email "model-library-bot@users.noreply.github.com"
+          git add "$LIB"
+          git commit -m "library(${{ matrix.cluster }}): register $(jq -r '.[0].organization + "/" + .[0].model_name' /tmp/models.json)"
+          git push origin "HEAD:${{ github.ref_name }}"

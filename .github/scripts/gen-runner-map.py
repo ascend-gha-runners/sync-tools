@@ -1,116 +1,148 @@
 #!/usr/bin/env python3
-"""Generate model-library/runner-map.json from ascend-ci-deployment ground truth.
+"""Generate model-library/runner-map.json — purely from ascend-ci-deployment code:
 
-Sources scanned (repo = ascend-ci-deployment checkout):
-  argocd/clusters/*/ + Application spec.destination.name / source.path ->
-  runner charts (linux-* releaseName/path basename) give the authoritative
-  (host-cluster, repo, runner-label) triples.
-
-Mapping policy (confirmed by owners):
-  *800i*   -> disk clusters: cn12-001 + mind3 + aiframe (800i hardware pool)
-  *800t*   -> gy004 + gy005                              (800t hardware pool)
-  a3/other -> from label suffix: -gy004 -> gy004, -cn12-001 -> cn12-001,
-              -aiframe -> aiframe, -gy005 -> gy005, hk/a2 -> hk001, 310p -> gy003;
-              no cluster suffix -> host cluster of the Application.
-Outputs exact "label -> [clusters]" map + rule fallback file.
+  1. runner chart values.yaml  -> nodeSelector liqo.io/remote-cluster-id=X (硬落点)
+     or hostname=X (钉节点)
+  2. karmada  manifests/arc-fedsched/prod-cp-*/propagation-policies.yaml clusterNames
+     (a2 / a3-800i / a3-800t / a3-n 四组成员)
+  3. argocd Application destinations (chart 部署的 host 集群，无 selector 时落本地)
+  4. survey mounts/pvc  -> 每集群 cache 别名 -> 真实 export
+Output runner-map.json:
+  map:            label -> [clusters]                (全局并集)
+  map_by_repo:    repo -> {label -> [clusters]}
+  cluster_disks:  cluster -> {alias, export, write}  (业务可读：盘在哪、谁能写)
 """
-import yaml, glob, os, re, json, sys
+import yaml, glob, os, re, json, collections, argparse
 
-ROOT = os.environ.get("ACD_ROOT", ".")
-DEST2CLUSTER = {
-    "ascend-cn12-001-cluster": "cn12-001",
-    "ascend-hk-001-cluster": "hk001",
-    "openmerlin-guiyang-004-cluster": "gy004",
-    "openmerlin-guiyang-005-cluster": "gy005",
-    "openmerlin-guiyang-003-cluster": "gy003",
-    "ascend-aiframework": "aiframe",
-    "ascend-mind-third-ci": "mind3",
+ap = argparse.ArgumentParser(); ap.add_argument("--acd", default=".")
+a = ap.parse_args(); ACD = a.acd
+
+CN = {"aiframework": "aiframe", "mind-third-ci": "mind3", "openmerlin-guiyang-004": "gy004",
+      "openmerlin-guiyang-005": "gy005", "openmerlin-guiyang-001": "gy001", "gy-001": "gy001",
+      "gy-004": "gy004", "gy-005": "gy005", "ascend-hk-001": "hk001", "cn12-001": "cn12-001",
+      "wlcb-001": "wlcb001", "gluster": None}
+def norm(c): return CN.get(c, c)
+PLACEMENT = {  # karmada 组 -> 成员（去掉 karc 控制面），来源 prod-cp-*/propagation-policies.yaml
 }
-SUFFIX = {  # label token -> disk cluster (a3 等无 800 标记时)
-    "cn12": "cn12-001", "gy004": "gy004", "gy005": "gy005",
-    "gy003": "gy003", "aiframe": "aiframe", "hk": "hk001",
-}
+for f in glob.glob(f"{ACD}/manifests/arc-fedsched/prod-cp-*/propagation-policies.yaml"):
+    grp = os.path.basename(os.path.dirname(f)).replace("prod-cp-", "")
+    txt = open(f).read()
+    members = set()
+    for m in re.finditer(r"clusterNames:\s*\n((?:\s+-\s+\S+\n)+)", txt):
+        for line in m.group(1).splitlines():
+            c = line.strip("- ").strip()
+            if c and c != "karc":
+                members.add(c)
+    PLACEMENT[grp] = sorted({norm(m) for m in members if norm(m)})
 
-# 物理实证（runner pod 的 /root/.cache hostPath 在各 provider 节点的实际 export）：
-#   vllm-ascend 800i fed  -> cn12(37cbefa6:/ascend-ci-share) + mind3(cc8060b8:/) + aiframe(c461cb6e:/)
-#   vllm-ascend 800t      -> pod 实测跑在 gy005 节点(b46afb97 benchmark 盘)；namespace 在 cn12
-#   sglang 系 800i/800t   -> gy004(1b51fb58 pkking 盘) + gy005
-REPO_RULES = {
-    "vllm-project/vllm-ascend": {"800i": ["cn12-001", "mind3", "aiframe"], "800t": ["cn12-001", "gy005"]},
-    "sgl-project/sglang":       {"800i": ["cn12-001", "mind3", "aiframe", "gy004"], "800t": ["gy004", "gy005"]},
-    "Ascend/sglang":            {"800i": ["cn12-001", "mind3", "aiframe", "gy004"], "800t": ["gy004", "gy005"]},
-    "sgl-project/sgl-kernel-npu": {"800i": ["gy004"], "800t": ["gy004", "gy005"]},
-}
 
-# repo -> cluster set, authoritative source: disk-map.json (built from full
-# ci-deployment survey: argocd apps + liqo providers + node alias mounts)
-_DISK = {}
-try:
-    _DM = os.path.join(os.path.dirname(__file__), "..", "..", "model-library", "disk-map.json")
-    _DISK = json.load(open(_DM))
-except Exception:
-    pass
+# ---- 1: chart selectors ----
+SEL = {}   # (repo,label) -> clusters
+for f in sorted(glob.glob(f"{ACD}/projects/*/*/linux-*/values.yaml") + glob.glob(f"{ACD}/other/*/*/linux-*/values.yaml")):
+    rel = os.path.relpath(f, ACD).split("/")
+    repo, lbl = "/".join(rel[1:3]), rel[3]
+    try: v = yaml.safe_load(open(f))
+    except Exception: continue
+    found = []
+    def deep(x):
+        if isinstance(x, dict):
+            ns = x.get("nodeSelector")
+            if isinstance(ns, dict):
+                for k, val in ns.items():
+                    if "remote-cluster-id" in k: found.append(norm(str(val)))
+                    elif "hostname" in k: found.append(f"host:{val}")
+            for y in x.values(): deep(y)
+        elif isinstance(x, list):
+            for y in x: deep(y)
+    deep(v)
+    if found:
+        SEL[(repo, lbl)] = [x for x in dict.fromkeys(found) if x]
 
-def map_label(label, host_cluster, repo=""):
-    l = label.lower()
-    # per-repo physical clusters win
-    if repo in _DISK:
-        lc = _DISK[repo].get("label_clusters", {})
-        key = re.sub(r"-[0-9]+$", "", label) if label.endswith(tuple("0123456789")) else label
-        for cand in (label, key, os.path.basename(label)):
-            if cand in lc:
-                return [c for c in lc[cand] if c not in ("sh001", "sh002")] or list(lc[cand])
-        cl = _DISK[repo]["clusters"]
-        return [c for c in cl if c not in ("sh001", "sh002")] or cl
-    rr = REPO_RULES.get(repo, {})
-    if "800i" in l and "800i" in rr:
-        return rr["800i"]
-    if "800t" in l and "800t" in rr:
-        return rr["800t"]
-    if "800i" in l:
-        return ["cn12-001", "mind3", "aiframe"]
-    if "800t" in l:
-        return ["gy004", "gy005"]
-    for tok, c in SUFFIX.items():
-        if re.search(rf"(^|-){tok}", l):
-            return [c]
-    if "310p" in l:
-        return ["gy003"]
-    if re.search(r"(-|^)a2(b\d)?(-|$)", l):
-        return ["hk001"]
-    if "hk" in l:
-        return ["hk001"]
-    return [host_cluster] if host_cluster else []
+# ---- 2: fed groups by label pattern ----
+def fed_clusters(lbl):
+    l = lbl.lower()
+    if "800i" in l: g = "a3-800i"
+    elif "800t" in l: g = "a3-800t"
+    elif re.search(r"a2b|910b|-a2|-cpu", l): g = "a2"
+    elif re.search(r"a3-n|ascend-910c", l): g = "a3-n"
+    elif "a3" in l: g = "a3-800i"
+    else: return []
+    return PLACEMENT.get(g, [])
 
-out = {}          # label -> set(clusters)
-out_repo = {}     # repo -> {label -> set(clusters)}
-for app in sorted(glob.glob(f"{ROOT}/argocd/clusters/*/*.yaml")):
-    try:
-        docs = list(yaml.safe_load_all(open(app)))
-    except Exception:
-        continue
-    for d in docs:
-        if not isinstance(d, dict) or d.get("kind") != "Application":
-            continue
-        spec = d.get("spec", {})
-        host = DEST2CLUSTER.get((spec.get("destination") or {}).get("name") or "")
-        srcs = ([spec.get("source")] if spec.get("source") else []) + (spec.get("sources") or [])
+# ---- 3: argocd hosts per (repo,label) ----
+HOSTS = collections.defaultdict(set)
+DEST = {"ascend-cn12-001-cluster": "cn12-001", "ascend-hk-001-cluster": "hk001",
+        "openmerlin-guiyang-003-cluster": "gy003", "openmerlin-guiyang-004-cluster": "gy004",
+        "openmerlin-guiyang-005-cluster": "gy005", "ascend-aiframework": "aiframe",
+        "ascend-mind-third-ci": "mind3", "ascend-infra-guiyang-cluster-001": "gy001",
+        "ascend-infra-wlcb-cluster-001": "wlcb001"}
+for app in glob.glob(f"{ACD}/argocd/clusters/*/*.yaml"):
+    for d in (yaml.safe_load_all(open(app)) or []):
+        if not isinstance(d, dict) or d.get("kind") != "Application": continue
+        sp = d.get("spec", {})
+        dst = norm(DEST.get((sp.get("destination") or {}).get("name", ""), ""))
+        if not dst: continue
+        srcs = ([sp.get("source")] if sp.get("source") else []) + (sp.get("sources") or [])
         for src in srcs:
             path = (src or {}).get("path") or ""
-            label = ((src or {}).get("helm") or {}).get("releaseName") or os.path.basename(path)
-            if not label.startswith("linux-") or "/linux-" not in "/" + path:
-                continue
-            # normalize repo for non-projects paths (other/ascend-gha-runners/<x>)
-            parts = path.split("/")
-            repo = "/".join(parts[1:3]) if parts[0] in ("projects", "other") and len(parts) > 3 else "?"
-            clusters = map_label(label, host, repo)
-            # (repo 变量在 map_label 调用前已解析，见下)
-            if not clusters:
-                continue
-            out.setdefault(label, set()).update(clusters)
-            out_repo.setdefault(repo, {}).setdefault(label, set()).update(clusters)
+            p = path.split("/")
+            if len(p) < 4 or p[0] not in ("projects", "other"): continue  # path 本身是相对路径
+            lbl = (src.get("helm") or {}).get("releaseName") or os.path.basename(path)
+            if lbl.startswith("linux-"):
+                HOSTS[("/".join(p[1:3]), lbl)].add(dst)
 
-merged = {k: sorted(v) for k, v in sorted(out.items())}
-merged_repo = {r: {k: sorted(v) for k, v in sorted(ls.items())} for r, ls in sorted(out_repo.items())}
-print(json.dumps({"_generated": "from ascend-ci-deployment argocd apps (gen-runner-map.py)",
-                  "count": len(merged), "map": merged, "map_by_repo": merged_repo}, ensure_ascii=False, indent=1))
+# ---- 4: cluster disk table ----
+CLUSTER_FIX = {"ascend-cn12-001-cluster": "cn12-001", "openmerlin-guiyang-003-cluster": "gy003",
+               "openmerlin-guiyang-004-cluster": "gy004", "openmerlin-guiyang-005-cluster": "gy005",
+               "ascend-mind-third-ci": "mind3", "aiframework": "aiframe",
+               "ascend-infra-wlcb-cluster-001": "wlcb001"}
+SURVEY = os.path.join(os.path.dirname(__file__), "survey")
+disk = {}
+for f in glob.glob(f"{SURVEY}/*.mounts"):
+    cl = CLUSTER_FIX.get(os.path.basename(f)[:-7], os.path.basename(f)[:-7])
+    for line in open(f):
+        m = re.match(r"(\S+)\s+=>\s+(\S+)", line)
+        if not m or m.group(1).startswith("pvc:"): continue
+        al, ex = m.group(1), m.group(2)
+        cur = disk.get(cl)
+        if al.startswith("/mnt/") or al in ("sysfs","rpc_pipefs"): continue
+        if al in ("vllm-ascend-az5", "ascend-ci-share-nv-action-vllm-benchmarks", "ascend-ci-share") or not cur:
+            disk[cl] = {"alias": al, "export": ex}
+
+WRITE = {"cn12-001": "cn12-ecs 113.46.27.144:/mnt/sfs_turbo", "mind3": "mind3-ecs 113.46.31.157:/mnt/sfs_turbo",
+         "aiframe": "hb3-ecs 113.46.1.251:/opt/vllm-ci", "hk001": "hk-ecs 159.138.152.35:/opt/vllm-ci",
+         "gy004": "guiyang-ecs 101.245.82.28:/mnt/sfs_turbo2", "gy005": "guiyang-ecs 101.245.82.28:/mnt/sfs_turbo",
+         "gy001": "TODO(集群侧)", "wlcb001": "TODO(集群内 pod)", "gy003": "TODO(集群侧)", "szlab": "TODO(无 kubeconfig)"}
+
+# ---- assemble ----
+repos = {r for r, _ in HOSTS} | {r for r, _ in SEL}
+map_by_repo, gmap = {}, collections.defaultdict(set)
+for repo in sorted(repos):
+    labels = {}
+    for (r, lbl) in list(HOSTS) + list(SEL):
+        if r != repo: continue
+        if SEL.get((r, lbl)):
+            cl = [c for c in SEL[(r, lbl)] if not c.startswith("host:")]
+            if not cl:
+                cl = sorted(HOSTS.get((r, lbl), []))
+        else:
+            base = sorted(HOSTS.get((r, lbl), []))
+            grp = "a3-800i" if "800i" in lbl else "a3-800t" if "800t" in lbl \
+                  else "a2" if re.search(r"a2b|910b|-a2", lbl) else None
+            if "fed" in lbl and grp:
+                cl = fed_clusters(lbl) or base
+            elif grp and base:
+                # karmada 组成员并入 host（800i: cn12+ aiframe+mind3；a2: hk001+gy001+wlcb001）
+                cl = sorted(set(base) | {c for c in fed_clusters(lbl) if c})
+            else:
+                cl = base
+        if not cl: continue
+        labels[lbl] = sorted(set(cl))
+        for c in cl: gmap[lbl].add(c)
+    if labels: map_by_repo[repo] = labels
+
+out = {"_generated_by": "gen-runner-map.py (chart nodeSelector + karmada placement + argocd dest)",
+       "map": {k: sorted(v) for k, v in sorted(gmap.items())},
+       "map_by_repo": map_by_repo,
+       "cluster_disks": {c: {**d, "write": WRITE.get(c, "TODO")} for c, d in sorted(disk.items())}}
+print(json.dumps(out, ensure_ascii=False, indent=1))

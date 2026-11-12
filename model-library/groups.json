@@ -1,0 +1,113 @@
+{
+  "_comment": "兜底规则（runner-map.json 未覆盖的标签才用）；主映射见 RUNNERS.md / runner-map.json（源=ascend-ci-deployment chart 硬落点）",
+  "label_rules": [
+    [
+      "model-sync-mind3",
+      "mind3"
+    ],
+    [
+      "sync-mind3",
+      "mind3"
+    ],
+    [
+      "model-sync-cn12001",
+      "cn12-001"
+    ],
+    [
+      "sync-cn12001",
+      "cn12-001"
+    ],
+    [
+      "model-sync-hb3",
+      "aiframe"
+    ],
+    [
+      "sync-hb3",
+      "aiframe"
+    ],
+    [
+      "model-sync-hk001",
+      "hk001"
+    ],
+    [
+      "sync-hk001",
+      "hk001"
+    ],
+    [
+      "800i",
+      "a3-800i"
+    ],
+    [
+      "800t",
+      "a3-800t"
+    ],
+    [
+      "310p",
+      "310p"
+    ],
+    [
+      "910b",
+      "a2"
+    ],
+    [
+      "a2b[0-9]|(^|-)a2(-|$)",
+      "a2"
+    ],
+    [
+      "(^|-)hk-?0*1",
+      "a2"
+    ],
+    [
+      "gy004",
+      "gy004"
+    ],
+    [
+      "gy005",
+      "gy005"
+    ],
+    [
+      "(^|-)a3(-|$)",
+      "a3"
+    ]
+  ],
+  "groups": {
+    "a3-800i": [
+      "cn12-001",
+      "mind3",
+      "aiframe"
+    ],
+    "a3-800t": [
+      "gy004",
+      "gy005"
+    ],
+    "a2": [
+      "hk001"
+    ],
+    "310p": [
+      "gy003"
+    ],
+    "mind3": [
+      "mind3"
+    ],
+    "cn12-001": [
+      "cn12-001"
+    ],
+    "aiframe": [
+      "aiframe"
+    ],
+    "hk001": [
+      "hk001"
+    ],
+    "a3": [
+      "cn12-001",
+      "gy004",
+      "gy005"
+    ],
+    "gy004": [
+      "gy004"
+    ],
+    "gy005": [
+      "gy005"
+    ]
+  }
+}

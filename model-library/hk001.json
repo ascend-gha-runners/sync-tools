@@ -1,0 +1,25 @@
+{
+  "models": [
+    {
+      "platform": "huggingface",
+      "organization": "OpenMOSS-Team",
+      "model_name": "MOSS-Image-Base"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "OpenMOSS-Team",
+      "model_name": "MOSS-Image-SFT"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen-Image-2.1-Turbo"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "robbyant",
+      "model_name": "lingbot-world-v2-14b-causal-fast-diffusers"
+    }
+  ],
+  "datasets": []
+}

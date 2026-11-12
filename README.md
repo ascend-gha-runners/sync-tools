@@ -113,10 +113,31 @@ workflow 根据域名自动匹配认证信息，目前支持的源/目标 regist
 - `platform`：`modelscope` 或 `huggingface`
 - `organization` + `model_name` / `dataset_name`：仓库名
 - `local_dir`（可选）：自定义下载路径；为空或缺失时由 SDK 走自身默认 cache（`huggingface_hub` → `~/.cache/huggingface`，`modelscope` → `~/.cache/modelscope`）
+- `revision`（可选）：分支 / commit / 版本
+- `legacy_layout`（可选，仅 modelscope 且未设 `local_dir`）：modelscope 新版 SDK 把内容写到 `models/<org>--<name>/snapshots/<rev>`；置 `true` 时下载完成后额外平铺复制一份到旧布局 `hub/models/<org>/<name>/`，供仍按旧路径读取的消费者使用
 
 `models` 或 `datasets` 任一为空数组都可以，对应类型会被跳过。
 
 > **持久化**：ARC runner pod 在 `/root/.cache` 挂载了持久化卷，所以 SDK 默认 cache 路径下的内容会跨任务保留，相同 revision 不会重复下载。
+
+### 触发方式
+
+- **提 PR 即下载（推荐）**：修改 `config/projects/<project>.json` 或 `projects-clusters.json` 并开 PR，`sync models and datasets` 会在 PR 上按 diff 只跑变更项目（下载结果与失败明细见 PR checks 的 job summary；任一条目失败则 check 变红），合入 main 后再兜底重跑一次。fork PR 不执行（self-hosted runner 安全策略），请基于本仓库分支开 PR。
+- `workflow_dispatch`：手动单项目或全量。
+- push 到 main：自动只重跑变更项目。
+
+### 集群 runner 与机器 runner
+
+`clusters` 中以 `model-sync-` 前缀的 label 是**专用同步 ECS 机器**上的 self-hosted runner：job 裸机执行、直接写该机器挂载的共享盘，不占用线上集群带宽，也不依赖 docker；其余 label 走集群内 ARC runner 的 `sync-tools` 容器。机器上的缓存位置由该机 `/etc/profile.d/model-tools.sh`（`HF_HOME` / `MODELSCOPE_CACHE`）决定，workflow 自动读取。当前机器：
+
+| label | 机器 | MODELSCOPE_CACHE / HF_HOME |
+|---|---|---|
+| `model-sync-hk001` | ecs-sync (159.138.152.35) | `/opt/vllm-ci/ascend-ci-share-nv-sync-tools/modelscope` · `/opt/vllm-ci/ascend-ci-share/huggingface` |
+| `model-sync-cn12001` | ecs-for-data-rsync (113.46.27.144) | `/mnt/sfs_turbo/modelscope` · `/mnt/sfs_turbo/ascend-ci-share/huggingface` |
+| `model-sync-hb3` | ecs-21cc (113.46.1.251) | `/opt/vllm-ci/modelscope` · `/opt/vllm-ci/huggingface` |
+| `model-sync-mind3` | ecs-for-data-rsync (113.46.27.144) 第二 runner 实例 | `/mnt/sfs_mind/modelscope` · `/mnt/sfs_mind/huggingface` |
+
+gy001 的 ECS 机器无法直连 GitHub，需走线下集群 ARC runner label 接入（待补）。
 
 [vllm](.github/workflows/config/projects/vllm.json) ·
 [sglang](.github/workflows/config/projects/sglang.json) ·
@@ -188,6 +209,58 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 - **同步失败**: 检查网络连通性、凭证有效性以及源仓库的可访问性。
 - **镜像同步超时**: 可适当调整 `skopeo` 的超时和重试参数。
 - **模型下载失败**: 确认模型名称是否正确，以及是否有访问权限。
+
+## 模型下载：两个入口，一种请求
+
+统一由 **(repo, runner 标签) 二元组自动路由**：标签先归一化出机型（`groups.json.label_rules`，substring 匹配，**GHA 日志里的 pod/runner 名带 `-6b8f4d9c7t-qr9wk` hash 后缀也能识别**），再查 `repos.json[repo][机型] → 集群列表`（同一标签在不同仓库下 provider 集群不同，如 800t：sglang 多落 gy004、vllm 恰好三集群），仓库未登记时用 `groups.json.groups` 兜底。业务方不需要知道集群概念。
+
+- `vllm-project/vllm-ascend` + `*800i*` → **cn12-001 + mind3 + aiframe**（恰好三个，绝不外溢）
+- `sgl-project/sglang` + `*800t*` → cn12-001 + mind3 + aiframe + gy004
+- 未接 runner 的集群自动跳过并 WARN；不想推断可在请求里显式写 `"clusters": ["cn12-001","mind3"]`（可填多个，含未注册集群会直接报错）
+
+请求要素：`repo（业务仓库）+ runner_label（你的 runs-on）+ models[]/datasets[]（platform/organization/model_name[/revision/legacy_layout]）+ auth_secret（可选）`。
+
+### 入口一：手动触发（Actions → model library → Run workflow）
+
+填表单即完成一次请求下载。**权限**：仅 write（committer）及以上可触发（plan 显式校验）。
+
+### 入口二：业务提 PR，管理员打标签放行
+
+1. 业务方在**唯一入口文件** `model-requests/requests.json`（数组）里**追加一个对象**：
+
+```json
+{
+  "repo": "vllm-project/vllm-ascend",
+  "runner_label": "linux-aarch64-a3-800i-8-cn12-001",
+  "auth_secret": "none",
+  "models": [
+    { "platform": "modelscope", "organization": "vllm-sr", "model_name": "d3-edge", "legacy_layout": true }
+  ],
+  "datasets": []
+}
+```
+
+2. 提 PR（本仓库分支，fork 不跑）；**无任何下载**，直到管理员加 `model-download` 标签 → 流水线只对 diff 中**新增的条目**下载（历史条目不重跑，老模型天然幂等秒过）
+3. 下载完成后 bot 把条目自动回写进 PR 分支的 `model-library/<cluster>.json` 台账，随 PR 一起合入 —— 合入即完成登记
+
+### Token 安全
+
+`auth_secret` 只允许 `none | hf | modelscope`，实际 token 存仓库 secrets（`HF_TOKEN`/`MODELSCOPE_SDK_TOKEN`），**请求文件与表单里绝不出现明文**。特殊团队的私有 token 请管理员另建 secret 后扩枚举值。
+
+### 模型库台账
+
+`model-library/<cluster>.json` 记录每个集群已下载过的 models/datasets（自动回写，`unique_by` 去重）；`clusters.json` 是集群注册表（runner、共享盘缓存路径、endpoint、探针 share_ids）；未接 runner 的集群（gy001/gy003/gy004/gy005）路由时自动跳过并 WARN。
+
+### 机器 ↔ 共享盘对照
+
+| runner label | 机器 | 共享盘 |
+|---|---|---|
+| model-sync-hk001 | ecs-sync 159.138.152.35 | /opt/vllm-ci（24dd126e） |
+| model-sync-cn12001 | ecs-for-data-rsync 113.46.27.144 | /mnt/sfs_turbo（8258ca0d/37cbefa6） |
+| model-sync-mind3 | ecs-data-sync **113.46.31.157**（arm64 EulerOS） | /mnt/sfs_turbo（cc8060b8, 44T 生产盘；注意 cn12 机上同名域是 9.6T autotest 盘，勿混） |
+| model-sync-hb3 | ecs-21cc 113.46.1.251 | /opt/vllm-ci（c461cb6e） |
+
+modelscope 固定 1.37.0（最后一个 `hub/models/<org>/<name>` 原生布局版本，MODELSCOPE_CACHE 已指到 `<盘>/modelscope/hub`）；1.38+ 才有 `models/<org>--<name>/snapshots` 布局，容器镜像路径用 `legacy_layout` 兜底。
 
 ## 相关文档
 

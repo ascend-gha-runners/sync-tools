@@ -1,0 +1,213 @@
+name: model library
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "业务仓库（记录用，如 vllm-project/vllm-ascend）"
+        required: true
+        default: "vllm-project/vllm-ascend"
+      runner_label:
+        description: "你的 runner 标签（runs-on 那一行）——自动路由集群，如 *800i* → cn12+mind3+aiframe"
+        required: true
+      platform:
+        description: "下载源"
+        type: choice
+        required: true
+        default: modelscope
+        options: [modelscope, huggingface]
+      organization:
+        description: "模型组织，如 Qwen / vllm-sr"
+        required: true
+      model_name:
+        description: "模型名，如 d3-edge"
+        required: true
+      revision:
+        description: "分支/commit（留空=默认）"
+        required: false
+        default: ""
+      legacy_layout:
+        description: "modelscope：额外平铺到 hub/models/<org>/<name> 旧布局"
+        type: boolean
+        required: false
+        default: true
+      auth_secret:
+        description: "私有模型凭证（token 本身不填这里，引用仓库 secrets）"
+        type: choice
+        required: false
+        default: none
+        options: [none, hf, modelscope]
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    branches:
+      - main
+    paths:
+      - "model-requests/requests.json"
+      - ".github/scripts/lib-extract-new-requests.py"
+      - "model-library/**"
+      - ".github/workflows/model-library.yml"
+      - ".github/scripts/lib-build-matrix.sh"
+      - ".github/scripts/lib-resolve.sh"
+      - ".github/scripts/download-json-models.sh"
+
+concurrency:
+  group: model-library-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || format('dispatch-{0}-{1}-{2}', inputs.runner_label, inputs.organization, inputs.model_name) }}
+  cancel-in-progress: false  # review: 下载任务不可取消，中途 cancel 会留下半截共享盘文件
+
+jobs:
+  plan:
+    # PR: needs "model-download" label (approver gate), same-repo only.
+    # Dispatch: actor must hold write (committer) or higher on this repo.
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       contains(github.event.pull_request.labels.*.name, 'model-download'))
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - name: Authorize dispatch (repo write/committer level required)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          lvl=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission" | jq -r '.permission // "none"')
+          case "$lvl" in admin|maintain|write) echo "dispatch allowed: ${{ github.actor }} ($lvl)" ;;
+            *) echo "::error::需要 write（committer）及以上权限才能手动触发下载（${{ github.actor }}: $lvl）"; exit 1 ;;
+          esac
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build matrix
+        id: gen
+        env:
+          INPUT_REPO: ${{ inputs.repo }}
+          INPUT_RUNNER_LABEL: ${{ inputs.runner_label }}
+          INPUT_PLATFORM: ${{ inputs.platform }}
+          INPUT_ORGANIZATION: ${{ inputs.organization }}
+          INPUT_MODEL_NAME: ${{ inputs.model_name }}
+          INPUT_REVISION: ${{ inputs.revision }}
+          INPUT_FLATTEN_LEGACY: ${{ inputs.legacy_layout || 'false' }}
+          INPUT_AUTH_SECRET: ${{ inputs.auth_secret || 'none' }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: bash .github/scripts/lib-build-matrix.sh
+
+  download:
+    needs: plan
+    if: needs.plan.result == 'success' && needs.plan.outputs.matrix != '[]'
+    name: ${{ matrix.cluster }} <- ${{ matrix.request }}
+    runs-on: ${{ matrix.runner }}
+    # 同一台同步机上的下载串行排队（共享盘 cache/blobs 不可并发写），不同机器并行
+    concurrency:
+      group: model-lib-dl-${{ matrix.runner }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.plan.outputs.matrix) }}
+    env:
+      MODELSCOPE_CACHE: ${{ matrix.ms_cache }}
+      HF_HOME: ${{ matrix.hf_cache }}
+      HUGGINGFACE_HUB_CACHE: ${{ matrix.hf_cache }}/hub
+      HF_ENDPOINT: ${{ matrix.hf_endpoint }}
+      HF_TOKEN: ${{ matrix.auth == 'hf' && secrets.HF_TOKEN || '' }}
+      MODELSCOPE_SDK_TOKEN: ${{ matrix.auth == 'modelscope' && secrets.MODELSCOPE_SDK_TOKEN || '' }}
+    steps:
+      - name: Fetch repo snapshot via codeload (mainland-safe, no github.com git)
+        run: |
+          SHA='${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}'
+          curl -fsSL --retry 4 --retry-delay 5 -m 600 \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -o /tmp/repo.tgz "https://codeload.github.com/${{ github.repository }}/tar.gz/$SHA"
+          mkdir -p "$GITHUB_WORKSPACE"
+          tar xzf /tmp/repo.tgz -C "$GITHUB_WORKSPACE" --strip-components=1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure host tooling
+        run: |
+          if ! command -v jq >/dev/null; then
+            if command -v apt-get >/dev/null; then apt-get update -q && apt-get install -y -q jq
+            elif command -v dnf >/dev/null; then dnf install -y -q jq
+            else yum install -y -q jq; fi
+          fi
+          PIPFLAGS=""
+          pip3 install --help 2>/dev/null | grep -q break-system-packages && PIPFLAGS="--break-system-packages"
+          command -v hf >/dev/null || pip3 install -q $PIPFLAGS -i https://mirrors.huaweicloud.com/repository/pypi/simple -U huggingface_hub
+          command -v modelscope >/dev/null || pip3 install -q $PIPFLAGS -i https://mirrors.huaweicloud.com/repository/pypi/simple "modelscope==1.37.0"
+
+      - name: Prepare entries
+        run: |
+          cat > /tmp/req.json <<'REQEOF'
+          ${{ matrix.payload }}
+          REQEOF
+          jq '.models   // []' /tmp/req.json > /tmp/models.json
+          jq '.datasets // []' /tmp/req.json > /tmp/datasets.json
+          echo "models: $(jq length /tmp/models.json), datasets: $(jq length /tmp/datasets.json)"
+
+      - name: Download models
+        run: |
+          if [ "$(jq length /tmp/models.json)" -gt 0 ]; then
+            bash .github/scripts/download-json-models.sh /tmp/models.json model
+          fi
+
+      - name: Download datasets
+        run: |
+          if [ "$(jq length /tmp/datasets.json)" -gt 0 ]; then
+            bash .github/scripts/download-json-models.sh /tmp/datasets.json dataset
+          fi
+
+      - name: Upload ledger patch
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ledger-patch-${{ strategy.job-index }}-${{ matrix.cluster }}
+          path: /tmp/models.json
+          if-no-files-found: ignore
+
+  # Single writer: merges every downloaded entry into model-library/<cluster>.json.
+  # dispatch -> pushes to the workflow branch (main); PR -> pushes onto the PR
+  # head branch so the ledger lands together with the merge.
+  ledger:
+    needs: [plan, download]
+    if: needs.download.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.number) || github.sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "ledger-patch-*"
+          path: /tmp/patches
+          merge-multiple: false
+      - name: Apply patches and push
+        run: |
+          changed=0
+          for d in /tmp/patches/ledger-patch-*; do
+            cluster=$(basename "$d" | sed 's/^ledger-patch-[0-9]*-//')
+            LIB="model-library/$cluster.json"
+            mkdir -p "$(dirname "$LIB")"
+            [ -f "$LIB" ] || printf '{"models": [], "datasets": []}\n' > "$LIB"
+            jq --slurpfile new "$d/models.json" \
+              '.models = ((.models + $new[0]) | unique_by(.platform + "/" + .organization + "/" + .model_name))' \
+              "$LIB" > /tmp/l.json
+            cmp -s /tmp/l.json "$LIB" || { mv /tmp/l.json "$LIB"; changed=1; }
+          done
+          [ "$changed" = 1 ] || { echo "no ledger changes"; exit 0; }
+          git config user.name "model-library-bot"
+          git config user.email "model-library-bot@users.noreply.github.com"
+          git add model-library/
+          git commit -m "library: record downloads from ${{ github.event_name }} (${{ inputs.organization || github.actor }})"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            HEAD_REF='${{ github.event.pull_request.head.ref }}'
+            git push origin "HEAD:${HEAD_REF}"
+          else
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi

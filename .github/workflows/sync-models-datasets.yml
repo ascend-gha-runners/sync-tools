@@ -7,6 +7,16 @@ on:
         description: "只同步指定项目（留空=全部）"
         required: false
         default: ""
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/projects-clusters.json"
+      - ".github/workflows/config/projects/**"
+      - ".github/workflows/sync-models-datasets.yml"
+      - ".github/scripts/build-sync-matrix.sh"
+      - ".github/scripts/download-json-models.sh"
   push:
     branches:
       - main
@@ -18,37 +28,147 @@ on:
       - ".github/scripts/download-json-models.sh"
 
 concurrency:
-  group: sync-models-datasets-${{ github.ref }}
-  cancel-in-progress: false
+  group: sync-models-datasets-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || github.ref }}
+  cancel-in-progress: false  # review: 下载任务不可取消，中途 cancel 会留下半截共享盘文件
 
 jobs:
   prepare:
+    # PRs must carry the "model-download" label to trigger downloads;
+    # fork PRs are skipped (self-hosted runners must not run fork code).
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       contains(github.event.pull_request.labels.*.name, 'model-download'))
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.gen.outputs.matrix }}
+      arc-matrix: ${{ steps.split.outputs.arc-matrix }}
+      host-matrix: ${{ steps.split.outputs.host-matrix }}
     steps:
+      - name: Authorize dispatch (repo write/committer level required)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          lvl=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission" | jq -r '.permission // "none"')
+          case "$lvl" in admin|maintain|write) echo "dispatch allowed: ${{ github.actor }} ($lvl)" ;;
+            *) echo "::error::需要 write（committer）及以上权限才能手动触发下载（${{ github.actor }}: $lvl）"; exit 1 ;;
+          esac
+
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '2' }}
       - name: Build matrix
         id: gen
         env:
           INPUT_PROJECT: ${{ inputs.project }}
-        run: bash .github/scripts/build-sync-matrix.sh
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: bash .github/scripts/build-sync-matrix.sh | tee /tmp/matrix.log
+
+      - name: Split cluster/machine runners
+        id: split
+        run: |
+          MATRIX='${{ steps.gen.outputs.matrix }}'
+          echo "$MATRIX" | jq -c '[.[] | select(.cluster | startswith("model-sync-") | not)]' > /tmp/arc.json
+          echo "$MATRIX" | jq -c '[.[] | select(.cluster | startswith("model-sync-"))]' > /tmp/host.json
+          echo "arc-matrix=$(cat /tmp/arc.json)" >> "$GITHUB_OUTPUT"
+          echo "host-matrix=$(cat /tmp/host.json)" >> "$GITHUB_OUTPUT"
+          {
+            echo "#### Selected sync targets"
+            echo '```json'
+            jq . /tmp/matrix.log 2>/dev/null || cat /tmp/matrix.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   sync:
     needs: prepare
-    if: ${{ needs.prepare.outputs.matrix != '[]' }}
+    if: needs.prepare.result == 'success' && needs.prepare.outputs.arc-matrix != '[]'
     name: sync ${{ matrix.project }} to ${{ matrix.cluster }}
     runs-on: ${{ matrix.cluster }}
+    # 同 runner 串行，避免并发写同一持久缓存
+    concurrency:
+      group: sync-dl-${{ matrix.cluster }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.prepare.outputs.matrix) }}
+        include: ${{ fromJson(needs.prepare.outputs.arc-matrix) }}
     container:
       image: swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/sync-tools:latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Split project config into models/datasets
+        run: |
+          CFG=".github/workflows/config/projects/${{ matrix.project }}.json"
+          jq '.models   // []' "$CFG" > /tmp/models.json
+          jq '.datasets // []' "$CFG" > /tmp/datasets.json
+          echo "models count: $(jq 'length' /tmp/models.json)"
+          echo "datasets count: $(jq 'length' /tmp/datasets.json)"
+
+      - name: Download models
+        run: |
+          if [ "$(jq 'length' /tmp/models.json)" -gt 0 ]; then
+            bash .github/scripts/download-json-models.sh /tmp/models.json model
+          else
+            echo "No models for ${{ matrix.project }}, skip"
+          fi
+
+      - name: Download datasets
+        run: |
+          if [ "$(jq 'length' /tmp/datasets.json)" -gt 0 ]; then
+            bash .github/scripts/download-json-models.sh /tmp/datasets.json dataset
+          else
+            echo "No datasets for ${{ matrix.project }}, skip"
+          fi
+
+  # model-sync-* labels are dedicated rsync/sync ECS machines (no docker, no
+  # cluster network contention). Jobs run directly on the host; per-machine
+  # cache locations come from /etc/profile.d/model-tools.sh on each box.
+  sync-host:
+    needs: prepare
+    if: needs.prepare.result == 'success' && needs.prepare.outputs.host-matrix != '[]'
+    name: sync ${{ matrix.project }} on ${{ matrix.cluster }}
+    runs-on: ${{ matrix.cluster }}
+    # 同 runner 串行，避免并发写同一共享盘
+    concurrency:
+      group: sync-dl-${{ matrix.cluster }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare.outputs.host-matrix) }}
+    steps:
+      - name: Fetch repo snapshot via codeload (mainland-safe, no github.com git)
+        run: |
+          SHA='${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}'
+          curl -fsSL --retry 4 --retry-delay 5 -m 600 \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -o /tmp/repo.tgz "https://codeload.github.com/${{ github.repository }}/tar.gz/$SHA"
+          mkdir -p "$GITHUB_WORKSPACE"
+          tar xzf /tmp/repo.tgz -C "$GITHUB_WORKSPACE" --strip-components=1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure host tooling
+        run: |
+          if ! command -v jq >/dev/null; then
+            if command -v apt-get >/dev/null; then apt-get update -q && apt-get install -y -q jq
+            elif command -v dnf >/dev/null; then dnf install -y -q jq
+            else yum install -y -q jq; fi
+          fi
+          PIPFLAGS=""
+          pip3 install --help 2>/dev/null | grep -q break-system-packages && PIPFLAGS="--break-system-packages"
+          command -v hf >/dev/null || pip3 install -q $PIPFLAGS -i https://mirrors.huaweicloud.com/repository/pypi/simple -U huggingface_hub
+          command -v modelscope >/dev/null || pip3 install -q $PIPFLAGS -i https://mirrors.huaweicloud.com/repository/pypi/simple "modelscope==1.37.0"  # last classic hub/models layout release
+
+      - name: Resolve cache env from host profile
+        run: |
+          # Per-label profile fragments let one machine serve several cluster
+          # shares: /etc/profile.d/model-tools-<suffix>.sh overrides the
+          # machine default (/etc/profile.d/model-tools.sh) when present.
+          SUFFIX='${{ matrix.cluster }}'; SUFFIX="${SUFFIX#model-sync-}"
+          bash -lc ". /etc/profile.d/model-tools.sh 2>/dev/null; [ -f /etc/profile.d/model-tools-$SUFFIX.sh ] && . /etc/profile.d/model-tools-$SUFFIX.sh; env | grep -E '^(HF_|HUGGINGFACE_|MODELSCOPE_)'" | tee -a "$GITHUB_ENV"
 
       - name: Split project config into models/datasets
         run: |

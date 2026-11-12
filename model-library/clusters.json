@@ -1,0 +1,177 @@
+{
+  "hk001": {
+    "machine": "a2",
+    "runner": "model-sync-hk001",
+    "caches": {
+      "huggingface": "/opt/vllm-ci/ascend-ci-share/huggingface",
+      "modelscope": "/opt/vllm-ci/ascend-ci-share-nv-sync-tools/modelscope/hub"
+    },
+    "note": "ecs-sync 直连 GitHub，共享盘 /opt/vllm-ci (SFS 24dd126e)",
+    "endpoint": "https://huggingface.co",
+    "match": {
+      "label_regex": "(hk.?001|a2b[0-9])",
+      "share_ids": [
+        "24dd126e",
+        "fef36441"
+      ]
+    },
+    "share": "24dd126e (/opt/vllm-ci)",
+    "node_cache": {
+      "alias": "pvc:ascend-ci-share-nv-action-vllm-benchmarks",
+      "export": "24dd126e:/ascend-ci-share-nv-action-vllm-benchmarks",
+      "write": "hk-ecs 159.138.152.35:/opt/vllm-ci"
+    }
+  },
+  "cn12-001": {
+    "machine": "a3-800i",
+    "runner": "model-sync-cn12001",
+    "caches": {
+      "huggingface": "/mnt/sfs_turbo/ascend-ci-share/huggingface",
+      "modelscope": "/mnt/sfs_turbo/ascend-ci-share/modelscope/hub"
+    },
+    "note": "runner job cache 实证: /mnt/sfs-local/vllm-ascend-az5 == 37cbefa6:/ascend-ci-share（subPath huggingface/modelscope）；根下 :/modelscope 非 CI 路径",
+    "endpoint": "https://hf-mirror.com",
+    "match": {
+      "label_regex": "(cn12|800i|800t)",
+      "share_ids": [
+        "8258ca0d",
+        "37cbefa6"
+      ]
+    },
+    "share": "37cbefa6 (/mnt/sfs_turbo 生效挂载; 同机叠挂的 8258ca0d 集群不可见, 勿用)",
+    "node_cache": {
+      "alias": "vllm-ascend-az5",
+      "export": "37cbefa6:/ascend-ci-share",
+      "write": "cn12-ecs 113.46.27.144:/mnt/sfs_turbo"
+    }
+  },
+  "mind3": {
+    "machine": "a3-800i",
+    "runner": "model-sync-mind3",
+    "caches": {
+      "huggingface": "/mnt/sfs_turbo/huggingface",
+      "modelscope": "/mnt/sfs_turbo/modelscope/hub"
+    },
+    "note": "ecs-data-sync (113.46.31.157, aarch64)，独立机器，盘 cc8060b8(44T)；cn12 机上同名域挂载是另一块 autotest 盘，勿混 | az5别名目录=cc8060b8:/ 根, caches 在盘根",
+    "endpoint": "https://hf-mirror.com",
+    "match": {
+      "label_regex": "mind",
+      "share_ids": [
+        "cc8060b8"
+      ]
+    },
+    "share": "cc8060b8 (/mnt/sfs_turbo, 44T)",
+    "node_cache": {
+      "alias": "vllm-ascend-az5",
+      "export": "cc8060b8:/",
+      "write": "mind3-ecs 113.46.31.157:/mnt/sfs_turbo"
+    }
+  },
+  "aiframe": {
+    "machine": "a3",
+    "runner": "model-sync-hb3",
+    "caches": {
+      "huggingface": "/opt/vllm-ci/huggingface",
+      "modelscope": "/opt/vllm-ci/modelscope/hub"
+    },
+    "note": "az5别名目录=c461cb6e:/ 根, caches 在盘根; hb3机器即写入口",
+    "endpoint": "https://hf-mirror.com",
+    "match": {
+      "label_regex": "(aiframe|hb3|380|华北)",
+      "share_ids": [
+        "c461cb6e"
+      ]
+    },
+    "share": "c461cb6e (/opt/vllm-ci)",
+    "node_cache": {
+      "alias": "vllm-ascend-az5",
+      "export": "c461cb6e:/",
+      "write": "hb3-ecs 113.46.1.251:/opt/vllm-ci"
+    }
+  },
+  "guiyang": {
+    "machine": "a3",
+    "runner": null,
+    "caches": {
+      "huggingface": "/mnt/sfs_turbo/ascend-ci-share-nv-action-vllm-benchmarks/huggingface",
+      "modelscope": "/mnt/sfs_turbo/ascend-ci-share-nv-sync-tools/modelscope/hub"
+    },
+    "note": "gy001 ECS 无法直连 GitHub，走线下集群 ARC runner（TODO: runner 尚未创建）",
+    "endpoint": "https://hf-mirror.com",
+    "match": {
+      "label_regex": "gy001",
+      "share_ids": [
+        "b46afb97",
+        "1b51fb58"
+      ]
+    },
+    "_planned_runner": "linux-aarch64-sync-gy001",
+    "share": "b46afb97 (/mnt/sfs_turbo)"
+  },
+  "gy004": {
+    "machine": "a3-800t",
+    "runner": null,
+    "caches": {
+      "huggingface": "/mnt/sfs_gy004/ascend-ci-share-pkking-sglang/huggingface",
+      "modelscope": "/mnt/sfs_gy004/ascend-ci-share-pkking-sglang/modelscope/hub"
+    },
+    "note": "与 gy005 同一台机器不同共享盘：SFS 1b51fb58，仅 guiyang VPC 内可达，需线下 runner（TODO: 机器上需挂 NFS 到 /mnt/sfs_gy004） （runner 未注册，接入后把 _planned_runner 挪回 runner）",
+    "endpoint": "https://hf-mirror.com",
+    "match": {
+      "label_regex": "gy004",
+      "share_ids": [
+        "1b51fb58"
+      ]
+    },
+    "_planned_runner": "model-sync-gy004",
+    "share": "1b51fb58 (runner 实证: /mnt/sfs-local/ascend-ci-share-pkking-sglang)",
+    "node_cache": {
+      "alias": "ascend-ci-share",
+      "export": "1b51fb58:/ascend-ci-share-pkking-sglang",
+      "write": "guiyang-ecs 101.245.82.28:/mnt/sfs_turbo2"
+    }
+  },
+  "gy005": {
+    "machine": "a3-800t",
+    "runner": null,
+    "caches": {
+      "huggingface": "/mnt/sfs_gy005_b46afb97/ascend-ci-share-nv-action-vllm-benchmarks/huggingface",
+      "modelscope": "/mnt/sfs_gy005_b46afb97/ascend-ci-share-nv-action-vllm-benchmarks/modelscope/hub"
+    },
+    "note": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks；**gy005 节点上的 az5 别名即此目录**；写入口=guiyang 机器 /mnt/sfs_turbo/ascend-ci-share-nv-action-vllm-benchmarks（该机无 GitHub，暂由 ssh 直写，runner 待接入）",
+    "endpoint": "https://hf-mirror.com",
+    "match": {
+      "label_regex": "gy005",
+      "share_ids": [
+        "b46afb97"
+      ]
+    },
+    "_planned_runner": "model-sync-gy005",
+    "share": "TODO-gy005-az5-vllm-ascend-v2 (runner 实证 hostPath, export 待查)",
+    "node_cache": {
+      "alias": "vllm-ascend-az5",
+      "export": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks",
+      "write": "guiyang-ecs 101.245.82.28:/mnt/sfs_turbo"
+    }
+  },
+  "gy003": {
+    "machine": "310p",
+    "runner": null,
+    "note": "TODO: 线下集群 runner 未接入；310p 共享盘路径待文档确认",
+    "endpoint": "https://hf-mirror.com",
+    "caches": {
+      "huggingface": "TODO",
+      "modelscope": "TODO"
+    },
+    "match": {
+      "label_regex": "(gy003|310p)",
+      "share_ids": []
+    },
+    "share": "TODO-310p",
+    "node_cache": {
+      "alias": "ascend-ci-share-nv-action-vllm-benchmarks",
+      "export": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks",
+      "write": "TODO(集群侧)"
+    }
+  }
+}

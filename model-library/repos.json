@@ -1,63 +1,172 @@
 {
   "vllm-project/vllm-ascend": {
-    "a2b1": ["hk001"],
-    "a2b3": ["hk001"],
-    "a2b4": ["hk001"],
-    "910b": ["hk001"],
-    "a3-800i": ["cn12-001", "aiframe", "mind3", "gy005"],
-    "a3-800t": ["cn12-001", "aiframe", "mind3", "gy005"],
-    "310p": ["gy003"]
+    "a2": [
+      "hk001"
+    ],
+    "a3-800i": [
+      "cn12-001",
+      "mind3",
+      "aiframe"
+    ],
+    "a3-800t": [
+      "cn12-001",
+      "mind3",
+      "aiframe"
+    ],
+    "a3": [
+      "aiframe"
+    ],
+    "310p": [
+      "gy003"
+    ]
   },
   "vllm-project/vllm-omni": {
-    "a2b3": ["hk001"],
-    "a3-800i": ["cn12-001", "aiframe", "mind3"],
-    "a3-800t": ["cn12-001", "aiframe", "mind3"],
-    "310p": ["gy003"]
+    "a2": [
+      "hk001"
+    ],
+    "a3-800i": [
+      "cn12-001",
+      "mind3",
+      "aiframe"
+    ],
+    "a3-800t": [
+      "cn12-001",
+      "mind3",
+      "aiframe"
+    ],
+    "310p": [
+      "gy003"
+    ]
   },
   "sgl-project/sglang": {
-    "a2b3": ["hk001"],
-    "a3": ["cn12-001", "aiframe", "mind3", "gy004"],
-    "a3-800i": ["cn12-001", "aiframe", "mind3", "gy004"],
-    "a3-800t": ["cn12-001", "aiframe", "mind3", "gy004"]
+    "a2": [
+      "hk001"
+    ],
+    "a3": [
+      "cn12-001",
+      "mind3",
+      "aiframe",
+      "gy004"
+    ],
+    "a3-800i": [
+      "cn12-001",
+      "mind3",
+      "aiframe",
+      "gy004"
+    ],
+    "a3-800t": [
+      "cn12-001",
+      "mind3",
+      "aiframe",
+      "gy004"
+    ]
   },
   "Ascend/sglang": {
-    "a2b3": ["hk001"],
-    "a3-800i": ["cn12-001", "aiframe", "mind3", "gy004"],
-    "a3-800t": ["cn12-001", "aiframe", "mind3", "gy004"]
+    "a2": [
+      "hk001"
+    ],
+    "a3": [
+      "cn12-001",
+      "mind3",
+      "aiframe",
+      "gy004"
+    ],
+    "a3-800i": [
+      "cn12-001",
+      "mind3",
+      "aiframe",
+      "gy004"
+    ],
+    "a3-800t": [
+      "cn12-001",
+      "mind3",
+      "aiframe",
+      "gy004"
+    ]
   },
   "sgl-project/sgl-kernel-npu": {
-    "a3-800i": ["cn12-001", "aiframe", "mind3", "gy004"],
-    "a3-800t": ["cn12-001", "aiframe", "mind3", "gy004"]
+    "a3-800i": [
+      "cn12-001",
+      "mind3",
+      "aiframe",
+      "gy004"
+    ],
+    "a3-800t": [
+      "cn12-001",
+      "mind3",
+      "aiframe",
+      "gy004"
+    ],
+    "a3": [
+      "gy004"
+    ]
   },
   "Ascend/pytorch": {
-    "a3": ["aiframe", "mind3"]
+    "a3": [
+      "aiframe",
+      "mind3"
+    ]
   },
   "Ascend/triton-ascend": {
-    "a2b3": ["hk001"],
-    "a3": ["aiframe", "mind3"]
+    "a2": [
+      "hk001"
+    ],
+    "a3": [
+      "aiframe",
+      "mind3"
+    ]
   },
   "tile-ai/tilelang-ascend": {
-    "a3": ["aiframe", "mind3"]
+    "a3": [
+      "aiframe",
+      "mind3"
+    ]
   },
   "verl-project/verl": {
-    "a3": ["aiframe", "mind3"]
+    "a3": [
+      "aiframe",
+      "mind3"
+    ]
   },
   "areal-project/areal": {
-    "a3": ["aiframe", "mind3"]
+    "a3": [
+      "aiframe",
+      "mind3"
+    ]
   },
   "nv-action/vllm-benchmarks": {
-    "a3-800i": ["cn12-001", "mind3", "gy005"],
-    "a3-800t": ["cn12-001", "mind3", "gy005"],
-    "310p": ["gy003"],
-    "910b": ["hk001"]
+    "a3-800i": [
+      "cn12-001",
+      "mind3",
+      "gy005"
+    ],
+    "a3-800t": [
+      "cn12-001",
+      "mind3",
+      "gy005"
+    ],
+    "310p": [
+      "gy003"
+    ],
+    "a2": [
+      "hk001"
+    ]
   },
   "hiyouga/LLaMA-Factory": {
-    "a2b3": ["hk001"]
+    "a2b3": [
+      "hk001"
+    ]
   },
   "modelscope/ms-swift": {
-    "a2b3": ["hk001"]
+    "a2b3": [
+      "hk001"
+    ]
   },
   "Ascend/transformer": {
-    "a3-800i": ["cn12-001", "aiframe", "mind3"]
+    "a3-800i": [
+      "cn12-001",
+      "aiframe",
+      "mind3"
+    ]
   }
 }

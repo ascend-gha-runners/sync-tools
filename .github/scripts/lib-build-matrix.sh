@@ -32,12 +32,20 @@ entry_for() {  # $1 cluster, $2 request-source, $3 payload, $4 auth-secret-mode
 }
 
 emit_for_request() {  # $1 source-desc, $2 request-json, $3 payload(for dispatch only)
-  local src=$1 reqjson=$2 payload=$3 label clusters bad
-  label=$(echo "$reqjson" | jq -r '.runner_label // empty')
-  [ -n "$label" ] || { echo "ERROR: $src missing runner_label" >&2; return 1; }
+  local src=$1 reqjson=$2 payload=$3 label repo clusters
   echo "$reqjson" | jq -e '(.models // []) | length > 0 or ((.datasets // []) | length > 0)' >/dev/null || {
     echo "ERROR: $src has no models/datasets" >&2; return 1; }
-  clusters=$(bash "$RESOLVE" "$label") || return 1
+  label=$(echo "$reqjson" | jq -r '.runner_label // empty')
+  repo=$(echo "$reqjson" | jq -r '.repo // empty')
+  if echo "$reqjson" | jq -e '(.clusters // []) | length > 0' >/dev/null; then
+    clusters=$(echo "$reqjson" | jq -c '.clusters')
+    for c in $(echo "$clusters" | jq -r '.[]'); do
+      [ -n "$(jq -r --arg c "$c" '.[$c].runner // empty' "$CLUSTERS")" ] || { echo "ERROR: $src requests unregistered/unready cluster '$c'" >&2; return 1; }
+    done
+  else
+    [ -n "$label" ] || { echo "ERROR: $src needs runner_label (or explicit clusters)" >&2; return 1; }
+    clusters=$(bash "$RESOLVE" "$label" "$repo") || return 1
+  fi
   auth=$(echo "$reqjson" | jq -r '.auth_secret // "none"')
   case "$auth" in none|hf|modelscope) ;; *) echo "ERROR: $src auth_secret must be none|hf|modelscope" >&2; return 1;; esac
   for c in $(echo "$clusters" | jq -r '.[]'); do

@@ -149,16 +149,24 @@ jobs:
           echo "models: $(jq length /tmp/models.json), datasets: $(jq length /tmp/datasets.json)"
 
       - name: Download models
+        if: github.event_name != 'push'
         run: |
           if [ "$(jq length /tmp/models.json)" -gt 0 ]; then
             bash .github/scripts/download-json-models.sh /tmp/models.json model
           fi
 
       - name: Download datasets
+        if: github.event_name != 'push'
         run: |
           if [ "$(jq length /tmp/datasets.json)" -gt 0 ]; then
             bash .github/scripts/download-json-models.sh /tmp/datasets.json dataset
           fi
+
+      # push(merge 后)只做审计：确认台账里的模型确实躺在本集群共享盘，
+      # 绝不重下（PR 阶段已下载；重下会堵死按 runner 串行的队列）。
+      - name: Audit landed models
+        if: github.event_name == 'push'
+        run: bash .github/scripts/audit-landed.sh
 
       - name: Upload ledger patch
         if: success()

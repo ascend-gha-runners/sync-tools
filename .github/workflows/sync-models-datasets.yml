@@ -107,6 +107,7 @@ jobs:
           echo "datasets count: $(jq 'length' /tmp/datasets.json)"
 
       - name: Download models
+        if: github.event_name != 'push'
         run: |
           if [ "$(jq 'length' /tmp/models.json)" -gt 0 ]; then
             bash .github/scripts/download-json-models.sh /tmp/models.json model
@@ -115,12 +116,17 @@ jobs:
           fi
 
       - name: Download datasets
+        if: github.event_name != 'push'
         run: |
           if [ "$(jq 'length' /tmp/datasets.json)" -gt 0 ]; then
             bash .github/scripts/download-json-models.sh /tmp/datasets.json dataset
           else
             echo "No datasets for ${{ matrix.project }}, skip"
           fi
+
+      - name: Audit landed models (push = verify only, never re-download)
+        if: github.event_name == 'push'
+        run: bash .github/scripts/audit-landed.sh
 
   # model-sync-* labels are dedicated rsync/sync ECS machines (no docker, no
   # cluster network contention). Jobs run directly on the host; per-machine
@@ -179,6 +185,7 @@ jobs:
           echo "datasets count: $(jq 'length' /tmp/datasets.json)"
 
       - name: Download models
+        if: github.event_name != 'push'
         run: |
           if [ "$(jq 'length' /tmp/models.json)" -gt 0 ]; then
             bash .github/scripts/download-json-models.sh /tmp/models.json model
@@ -187,9 +194,14 @@ jobs:
           fi
 
       - name: Download datasets
+        if: github.event_name != 'push'
         run: |
           if [ "$(jq 'length' /tmp/datasets.json)" -gt 0 ]; then
             bash .github/scripts/download-json-models.sh /tmp/datasets.json dataset
           else
             echo "No datasets for ${{ matrix.project }}, skip"
           fi
+
+      - name: Audit landed models (push = verify only, never re-download)
+        if: github.event_name == 'push'
+        run: bash .github/scripts/audit-landed.sh

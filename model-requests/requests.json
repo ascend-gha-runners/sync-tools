@@ -25,5 +25,18 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "nv-action/vllm-benchmarks",
+    "runner_label": "model-sync-cn12001",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "Qwen",
+        "model_name": "Qwen2-0.5B-Instruct"
+      }
+    ],
+    "datasets": []
   }
 ]

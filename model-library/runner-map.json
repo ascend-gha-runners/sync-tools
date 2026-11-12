@@ -2160,11 +2160,6 @@
    "alias": "vllm-ascend-az5",
    "export": "cc8060b8:/",
    "write": "mind3-ecs 113.46.31.157:/mnt/sfs_turbo"
-  },
-  "wlcb001": {
-   "alias": "pvc:vllm-ascend-a2-fed-cache",
-   "export": "fef36441:/ascend-ci-share-nv-action-vllm-benchmarks",
-   "write": "TODO(集群内 pod)"
   }
  }
 }

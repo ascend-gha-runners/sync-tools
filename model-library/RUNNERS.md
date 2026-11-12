@@ -1,10 +1,10 @@
 # 业务对照表：runner 标签 → 集群 → 共享盘
 
-由 `.github/scripts/gen-runner-map.py` 从 ascend-ci-deployment 生成，证据链三级：**chart nodeSelector 硬落点**（如 `liqo.io/remote-cluster-id: gy005`）> **karmada propagation 组成员**（prod-cp-a3-800i: cn12-001/aiframework/mind-third-ci）> **argocd dest**。集群盘位来自节点 mount 表 + PV csi 实证。勿手改。
+由 `.github/scripts/gen-runner-map.py` 从 ascend-ci-deployment 生成，证据链：**chart nodeSelector 硬落点** > **karmada propagation 组成员** > **argocd dest**；盘位在 `model-library/clusters.json` 的 node_cache。业务只需要看这张表 + 各集群台账 `<cluster>.json`。
 
-## 集群盘位（cache 别名 → 真实 export → 写入口）
+## 集群盘位
 
-| 集群 | 别名/claim | 真实 export | 机器写入口 |
+| 集群 | 节点 cache 别名/claim | 真实 export | 写入口 |
 |--|--|--|--|
 | aiframe | `vllm-ascend-az5` | `c461cb6e:/` | hb3-ecs 113.46.1.251:/opt/vllm-ci |
 | cn12-001 | `vllm-ascend-az5` | `37cbefa6:/ascend-ci-share` | cn12-ecs 113.46.27.144:/mnt/sfs_turbo |
@@ -13,7 +13,6 @@
 | gy005 | `vllm-ascend-az5` | `b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks` | guiyang-ecs 101.245.82.28:/mnt/sfs_turbo |
 | hk001 | `pvc:ascend-ci-share-nv-action-vllm-benchmarks` | `24dd126e:/ascend-ci-share-nv-action-vllm-benchmarks` | hk-ecs 159.138.152.35:/opt/vllm-ci |
 | mind3 | `vllm-ascend-az5` | `cc8060b8:/` | mind3-ecs 113.46.31.157:/mnt/sfs_turbo |
-| wlcb001 | `pvc:vllm-ascend-a2-fed-cache` | `fef36441:/ascend-ci-share-nv-action-vllm-benchmarks` | TODO(集群内 pod) |
 
 ## 仓库 × 机型族 → 落点集群
 

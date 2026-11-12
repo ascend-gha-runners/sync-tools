@@ -15,7 +15,12 @@
         "fef36441"
       ]
     },
-    "share": "24dd126e (/opt/vllm-ci)"
+    "share": "24dd126e (/opt/vllm-ci)",
+    "node_cache": {
+      "alias": "pvc:ascend-ci-share-nv-action-vllm-benchmarks",
+      "export": "24dd126e:/ascend-ci-share-nv-action-vllm-benchmarks",
+      "write": "hk-ecs 159.138.152.35:/opt/vllm-ci"
+    }
   },
   "cn12-001": {
     "machine": "a3-800i",
@@ -33,7 +38,12 @@
         "37cbefa6"
       ]
     },
-    "share": "37cbefa6 (/mnt/sfs_turbo 生效挂载; 同机叠挂的 8258ca0d 集群不可见, 勿用)"
+    "share": "37cbefa6 (/mnt/sfs_turbo 生效挂载; 同机叠挂的 8258ca0d 集群不可见, 勿用)",
+    "node_cache": {
+      "alias": "vllm-ascend-az5",
+      "export": "37cbefa6:/ascend-ci-share",
+      "write": "cn12-ecs 113.46.27.144:/mnt/sfs_turbo"
+    }
   },
   "mind3": {
     "machine": "a3-800i",
@@ -50,7 +60,12 @@
         "cc8060b8"
       ]
     },
-    "share": "cc8060b8 (/mnt/sfs_turbo, 44T)"
+    "share": "cc8060b8 (/mnt/sfs_turbo, 44T)",
+    "node_cache": {
+      "alias": "vllm-ascend-az5",
+      "export": "cc8060b8:/",
+      "write": "mind3-ecs 113.46.31.157:/mnt/sfs_turbo"
+    }
   },
   "aiframe": {
     "machine": "a3",
@@ -67,7 +82,12 @@
         "c461cb6e"
       ]
     },
-    "share": "c461cb6e (/opt/vllm-ci)"
+    "share": "c461cb6e (/opt/vllm-ci)",
+    "node_cache": {
+      "alias": "vllm-ascend-az5",
+      "export": "c461cb6e:/",
+      "write": "hb3-ecs 113.46.1.251:/opt/vllm-ci"
+    }
   },
   "guiyang": {
     "machine": "a3",
@@ -104,7 +124,12 @@
       ]
     },
     "_planned_runner": "model-sync-gy004",
-    "share": "1b51fb58 (runner 实证: /mnt/sfs-local/ascend-ci-share-pkking-sglang)"
+    "share": "1b51fb58 (runner 实证: /mnt/sfs-local/ascend-ci-share-pkking-sglang)",
+    "node_cache": {
+      "alias": "ascend-ci-share",
+      "export": "1b51fb58:/ascend-ci-share-pkking-sglang",
+      "write": "guiyang-ecs 101.245.82.28:/mnt/sfs_turbo2"
+    }
   },
   "gy005": {
     "machine": "a3-800t",
@@ -122,7 +147,12 @@
       ]
     },
     "_planned_runner": "model-sync-gy005",
-    "share": "TODO-gy005-az5-vllm-ascend-v2 (runner 实证 hostPath, export 待查)"
+    "share": "TODO-gy005-az5-vllm-ascend-v2 (runner 实证 hostPath, export 待查)",
+    "node_cache": {
+      "alias": "vllm-ascend-az5",
+      "export": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks",
+      "write": "guiyang-ecs 101.245.82.28:/mnt/sfs_turbo"
+    }
   },
   "gy003": {
     "machine": "310p",
@@ -137,6 +167,11 @@
       "label_regex": "(gy003|310p)",
       "share_ids": []
     },
-    "share": "TODO-310p"
+    "share": "TODO-310p",
+    "node_cache": {
+      "alias": "ascend-ci-share-nv-action-vllm-benchmarks",
+      "export": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks",
+      "write": "TODO(集群侧)"
+    }
   }
 }

@@ -95,32 +95,12 @@ for app in glob.glob(f"{ACD}/argocd/clusters/*/*.yaml"):
 CLUSTER_FIX = {"ascend-cn12-001-cluster": "cn12-001", "openmerlin-guiyang-003-cluster": "gy003",
                "openmerlin-guiyang-004-cluster": "gy004", "openmerlin-guiyang-005-cluster": "gy005",
                "ascend-mind-third-ci": "mind3", "aiframework": "aiframe",
-               "ascend-infra-wlcb-cluster-001": "wlcb001", "ascend-hk-001-cluster": "hk001"}
-SURVEY = os.path.join(os.path.dirname(__file__), "survey")
-PREF = ("vllm-ascend-az5", "ascend-ci-share-nv-action-vllm-benchmarks", "pvc:ascend-ci-share-nv-action-vllm-benchmarks", "pvc:vllm-ascend", "ascend-ci-share")
-disk = {}
-lines = collections.defaultdict(list)
-for f in glob.glob(f"{SURVEY}/*.mounts"):
-    cl = CLUSTER_FIX.get(os.path.basename(f)[:-7], os.path.basename(f)[:-7])
-    for line in open(f):
-        m = re.match(r"(\S+)\s+=>\s+(\S+)", line)
-        if m: lines[cl].append((m.group(1), m.group(2)))
-for cl, tab in lines.items():
-    best = None
-    for pfx in PREF:
-        for al, ex in tab:
-            if (al == pfx or al.startswith(pfx) or pfx in al) and "/" not in al.replace("pvc:", "").replace(".", ""):
-                best = {"alias": al, "export": ex}; break
-        if best: break
-    if not best:
-        for al, ex in tab:
-            if "/" not in al: best = {"alias": al, "export": ex}; break
-    if best: disk[cl] = best
-
-WRITE = {"cn12-001": "cn12-ecs 113.46.27.144:/mnt/sfs_turbo", "mind3": "mind3-ecs 113.46.31.157:/mnt/sfs_turbo",
-         "aiframe": "hb3-ecs 113.46.1.251:/opt/vllm-ci", "hk001": "hk-ecs 159.138.152.35:/opt/vllm-ci",
-         "gy004": "guiyang-ecs 101.245.82.28:/mnt/sfs_turbo2", "gy005": "guiyang-ecs 101.245.82.28:/mnt/sfs_turbo",
-         "gy001": "TODO(集群侧)", "wlcb001": "TODO(集群内 pod)", "gy003": "TODO(集群侧)", "szlab": "TODO(无 kubeconfig)"}
+               "ascend-infra-wlcb-cluster-001": "wlcb001", "ascend-hk-001-cluster": "hk001",
+               "ascend-infra-guiyang-cluster-001": "gy001"}
+# disk table lives in model-library/clusters.json -> node_cache (single source)
+disk = {c: v["node_cache"] for c, v in json.load(open(os.path.join(
+    os.path.dirname(__file__), "..", "..", "model-library", "clusters.json"))).items()
+    if v.get("node_cache")}
 
 # ---- assemble ----
 repos = {r for r, _ in HOSTS} | {r for r, _ in SEL}
@@ -152,5 +132,5 @@ for repo in sorted(repos):
 out = {"_generated_by": "gen-runner-map.py (chart nodeSelector + karmada placement + argocd dest)",
        "map": {k: sorted(v) for k, v in sorted(gmap.items())},
        "map_by_repo": map_by_repo,
-       "cluster_disks": {c: {**d, "write": WRITE.get(c, "TODO")} for c, d in sorted(disk.items())}}
+       "cluster_disks": {c: disk[c] for c in sorted(disk)}}
 print(json.dumps(out, ensure_ascii=False, indent=1))

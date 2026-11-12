@@ -63,14 +63,14 @@ case "${GITHUB_EVENT_NAME:-}" in
   workflow_dispatch)
     REQ=$(jq -n \
       --arg repo "${INPUT_REPO:-}" \
-      --arg label "${INPUT_RUNNER_LABEL:-}" \
+      --arg lbl "${INPUT_RUNNER_LABEL:-}" \
       --arg platform "${INPUT_PLATFORM:-modelscope}" \
       --arg org "${INPUT_ORGANIZATION:-}" \
       --arg name "${INPUT_MODEL_NAME:-}" \
       --arg rev "${INPUT_REVISION:-}" \
       --argjson legacy "${INPUT_FLATTEN_LEGACY:-false}" \
       --arg auth "${INPUT_AUTH_SECRET:-none}" \
-      '{repo:$repo, runner_label:$label, auth_secret:$auth,
+      '{repo:$repo, runner_label:$lbl, auth_secret:$auth,
         models: [({platform:$platform, organization:$org, model_name:$name}
                   + (if $rev == "" then {} else {revision:$rev} end)
                   + (if $platform == "modelscope" and $legacy then {legacy_layout:true} else {} end))],

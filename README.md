@@ -210,39 +210,53 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 - **镜像同步超时**: 可适当调整 `skopeo` 的超时和重试参数。
 - **模型下载失败**: 确认模型名称是否正确，以及是否有访问权限。
 
-## 模型库与手动下载表单
+## 模型下载：两个入口，一种请求
 
-`model-library/` 目录是三份一一对应的注册表：
+统一由 **runner 标签自动路由集群**（`model-library/groups.json`：标签→机型组→集群列表），业务方**不需要知道集群概念**。例如 `linux-aarch64-a3-800i-*` 自动展开为 **cn12-001 + mind3 + aiframe** 三集群并行下载，绝不会落到 hk001 等无关集群。
 
-| 文件 | 作用 |
-|---|---|
-| `clusters.json` | 集群 → runner label + 该集群共享盘缓存路径（`caches.modelscope` / `caches.huggingface`，即把 `root/.cache` 替换成机器实际共享盘后的位置）+ `endpoint`（HK 直连 huggingface.co，大陆走 hf-mirror） |
-| `repos.json` | 业务仓库 × 机器型号（a2 / a3 / a3-800i / a3-800t）→ 集群列表。如 `vllm-project/vllm-ascend` + `a3-800i` = [cn12-001, mind3, aiframe] |
-| `<cluster>.json` | 该集群的模型台账（期望存在的 models/datasets） |
+请求要素：`repo（业务仓库）+ runner_label（你的 runs-on）+ models[]/datasets[]（platform/organization/model_name[/revision/legacy_layout]）+ auth_secret（可选）`。
 
-同一物理机挂不同共享盘的集群（mind3/cn12-001 同在 ecs-for-data-rsync；gy004/gy005 同机不同盘）用**两个 runner 实例 + 两个 label** 区分；缓存路径由注册表注入 job env，保证机器-盘-仓库一一对应。
+### 入口一：手动触发（Actions → model library → Run workflow）
 
-### 用法一：手动表单（Actions → model library → Run workflow）
+填表单即完成一次请求下载。**权限**：仅 write（committer）及以上可触发（plan 显式校验）。
 
-> **权限**：手动触发要求触发者对 sync-tools 有 **write（committer）及以上**角色（admin/maintain/write），否则 plan 阶段直接失败。GitHub 本身也只允许 write+ 用户点 Run workflow，这里再做一次显式校验。
+### 入口二：业务提 PR，管理员打标签放行
 
-业务同学填表触发：repo（需在 repos.json 登记）+ machine（a2/a3/a3-800i/a3-800t）+ platform（modelscope/huggingface）+ organization + model_name（可选 revision、flatten_legacy、requires_auth）。流水线自动解析该机型对应的**全部集群**并行下载，成功后把条目**自动写回** `model-library/<cluster>.json` 台账。
+1. 业务方在 `model-requests/` 新建一个 json（命名建议 `日期-仓库-模型.json`，参考 `model-requests/2026-11-12-vllm-d3-edge.json`）：
 
-例：vllm 同学在 a3-800i 机型下 `modelscope vllm-sr/d3-edge` → 自动落 cn12-001、mind3、aiframe 三块共享盘。
+```json
+{
+  "repo": "vllm-project/vllm-ascend",
+  "runner_label": "linux-aarch64-a3-800i-8-cn12-001",
+  "auth_secret": "none",
+  "models": [
+    { "platform": "modelscope", "organization": "vllm-sr", "model_name": "d3-edge", "legacy_layout": true }
+  ],
+  "datasets": []
+}
+```
 
-### 用法二：编辑模型库提 PR
+2. 提 PR（本仓库分支，fork 不跑）；**无任何下载**，直到管理员加 `model-download` 标签 → 触发流水线按 diff 的请求文件下载
+3. 下载完成后 bot 把条目自动回写进 PR 分支的 `model-library/<cluster>.json` 台账，随 PR 一起合入 —— 合入即完成登记
 
-直接改/建 `model-library/<cluster>.json` 的 `models` 数组并提 PR：**给 PR 打上 `model-download` 标签**（打开 PR 后补打也会触发），check 里该集群的 job 立即按列表下载（幂等，已有资源秒过），合入即完成台账登记。无标签的 PR 只跑配置校验（test.yml），不占同步机带宽。新增集群/机器需先在 `clusters.json` 登记 runner label 与缓存路径。
+### Token 安全
 
-### 用法三：只贴你的 runner 标签（不知道集群也能下载）
+`auth_secret` 只允许 `none | hf | modelscope`，实际 token 存仓库 secrets（`HF_TOKEN`/`MODELSCOPE_SDK_TOKEN`），**请求文件与表单里绝不出现明文**。特殊团队的私有 token 请管理员另建 secret 后扩枚举值。
 
-不关心中文"集群"的业务同学，从自己 workflow 的 `runs-on:` 抄一行标签（如 `linux-aarch64-a3-800i-16-cn12-001`）填到 `runner_label` 即可：
+### 模型库台账
 
-1. `label-guard`：标签必须匹配 `clusters.json` 里某个集群的 `match.label_regex`（白名单，防止任意调度）
-2. `identify`：**直接在你要的那个 runner 上跑探针**，读 `/proc/mounts` 里的 SFS Turbo share id，反查注册表 → 自动得出集群（如 c461cb6e → aiframe）
-3. 下载目标 = 探针结果 ∪ 标签正则结果；`organization/model_name` 留空时自动改为**整本台账同步**（把 `model-library/<cluster>.json` 的模型全部落到识别出的盘上）
+`model-library/<cluster>.json` 记录每个集群已下载过的 models/datasets（自动回写，`unique_by` 去重）；`clusters.json` 是集群注册表（runner、共享盘缓存路径、endpoint、探针 share_ids）；未接 runner 的集群（gy001/gy003/gy004/gy005）路由时自动跳过并 WARN。
 
-维护者义务：新集群接入时把它的 runner 标签正则与 SFS share id 填进 `clusters.json` 的 `match` 字段即可支持此模式。
+### 机器 ↔ 共享盘对照
+
+| runner label | 机器 | 共享盘 |
+|---|---|---|
+| model-sync-hk001 | ecs-sync 159.138.152.35 | /opt/vllm-ci（24dd126e） |
+| model-sync-cn12001 | ecs-for-data-rsync 113.46.27.144 | /mnt/sfs_turbo（8258ca0d/37cbefa6） |
+| model-sync-mind3 | ecs-data-sync **113.46.31.157**（arm64 EulerOS） | /mnt/sfs_turbo（cc8060b8, 44T 生产盘；注意 cn12 机上同名域是 9.6T autotest 盘，勿混） |
+| model-sync-hb3 | ecs-21cc 113.46.1.251 | /opt/vllm-ci（c461cb6e） |
+
+modelscope 固定 1.37.0（最后一个 `hub/models/<org>/<name>` 原生布局版本，MODELSCOPE_CACHE 已指到 `<盘>/modelscope/hub`）；1.38+ 才有 `models/<org>--<name>/snapshots` 布局，容器镜像路径用 `legacy_layout` 兜底。
 
 ## 相关文档
 

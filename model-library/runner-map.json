@@ -2151,11 +2151,6 @@
    "export": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks",
    "write": "guiyang-ecs 101.245.82.28:/mnt/sfs_turbo"
   },
-  "hk001": {
-   "alias": "/opt/c5803d39-6bf4-46dd-b6ad-983e0631cb8e",
-   "export": "c5803d39:/",
-   "write": "hk-ecs 159.138.152.35:/opt/vllm-ci"
-  },
   "mind3": {
    "alias": "vllm-ascend-az5",
    "export": "cc8060b8:/",

@@ -105,7 +105,7 @@ for f in glob.glob(f"{SURVEY}/*.mounts"):
         if not m or m.group(1).startswith("pvc:"): continue
         al, ex = m.group(1), m.group(2)
         cur = disk.get(cl)
-        if al.startswith("/mnt/") or al in ("sysfs","rpc_pipefs"): continue
+        if "/" in al or al in ("sysfs", "rpc_pipefs"): continue
         if al in ("vllm-ascend-az5", "ascend-ci-share-nv-action-vllm-benchmarks", "ascend-ci-share") or not cur:
             disk[cl] = {"alias": al, "export": ex}
 

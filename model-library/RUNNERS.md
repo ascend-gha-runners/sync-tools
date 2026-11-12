@@ -11,7 +11,6 @@
 | gy003 | ascend-ci-share-nv-action-vllm-benchmarks → b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks | TODO(集群侧) |
 | gy004 | ascend-ci-share → 1b51fb58:/ascend-ci-share-pkking-sglang | guiyang-ecs 101.245.82.28:/mnt/sfs_turbo2 |
 | gy005 | vllm-ascend-az5 → b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks | guiyang-ecs 101.245.82.28:/mnt/sfs_turbo |
-| hk001 | /opt/c5803d39-6bf4-46dd-b6ad-983e0631cb8e → c5803d39:/ | hk-ecs 159.138.152.35:/opt/vllm-ci |
 | mind3 | vllm-ascend-az5 → cc8060b8:/ | mind3-ecs 113.46.31.157:/mnt/sfs_turbo |
 
 ## 仓库 × 机型 → 落点集群

@@ -226,7 +226,7 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 
 ### 入口二：业务提 PR，管理员打标签放行
 
-1. 业务方在 `model-requests/` 新建一个 json（命名建议 `日期-仓库-模型.json`，参考 `model-requests/2026-11-12-vllm-d3-edge.json`）：
+1. 业务方在**唯一入口文件** `model-requests/requests.json`（数组）里**追加一个对象**：
 
 ```json
 {
@@ -240,7 +240,7 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 }
 ```
 
-2. 提 PR（本仓库分支，fork 不跑）；**无任何下载**，直到管理员加 `model-download` 标签 → 触发流水线按 diff 的请求文件下载
+2. 提 PR（本仓库分支，fork 不跑）；**无任何下载**，直到管理员加 `model-download` 标签 → 流水线只对 diff 中**新增的条目**下载（历史条目不重跑，老模型天然幂等秒过）
 3. 下载完成后 bot 把条目自动回写进 PR 分支的 `model-library/<cluster>.json` 台账，随 PR 一起合入 —— 合入即完成登记
 
 ### Token 安全

@@ -1,0 +1,9 @@
+{
+  "repo": "vllm-project/vllm-ascend",
+  "runner_label": "model-sync-hb3",
+  "auth_secret": "none",
+  "models": [
+    { "platform": "huggingface", "organization": "Qwen", "model_name": "Qwen2.5-0.5B-Instruct" }
+  ],
+  "datasets": []
+}

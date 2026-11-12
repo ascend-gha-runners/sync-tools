@@ -1,6 +1,6 @@
 {
  "_generated": "from ascend-ci-deployment argocd apps (gen-runner-map.py)",
- "count": 190,
+ "count": 233,
  "map": {
   "linux-aarch64-310p": [
    "gy003"
@@ -21,16 +21,28 @@
    "gy003"
   ],
   "linux-aarch64-910b-1": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-910b-2": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-910b-4": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-910b-8": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2-0": [
    "hk001"
@@ -42,7 +54,10 @@
    "hk001"
   ],
   "linux-aarch64-a2-1-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2-16": [
    "hk001"
@@ -51,127 +66,322 @@
    "hk001"
   ],
   "linux-aarch64-a2-2-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2-4": [
    "hk001"
   ],
   "linux-aarch64-a2-4-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2-8": [
    "hk001"
   ],
   "linux-aarch64-a2-8-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2-fed-1": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2-fed-2": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2-fed-4": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2-fed-8": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2-test-8": [
    "hk001"
   ],
   "linux-aarch64-a2b1-1": [
-   "hk001"
+   "gy001"
   ],
   "linux-aarch64-a2b1-1-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b1-2": [
-   "hk001"
+   "gy001"
   ],
   "linux-aarch64-a2b1-2-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b1-4": [
-   "hk001"
+   "gy001"
   ],
   "linux-aarch64-a2b1-4-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b1-8": [
-   "hk001"
+   "gy001"
   ],
   "linux-aarch64-a2b1-8-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b1-fed-1": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b1-fed-2": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b1-fed-4": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b1-fed-8": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b1b3-1-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b1b3-2-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b1b3-4-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b1b3-8-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
+  ],
+  "linux-aarch64-a2b1b3-fed-1": [
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
+  ],
+  "linux-aarch64-a2b1b3-fed-2": [
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
+  ],
+  "linux-aarch64-a2b1b3-fed-4": [
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
+  ],
+  "linux-aarch64-a2b1b3-fed-8": [
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b1b3-test-8-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b3": [
    "hk001"
   ],
   "linux-aarch64-a2b3-0": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b3-1": [
-   "hk001"
+   "ARGOCD-HOST",
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b3-1-hk-001": [
    "hk001"
   ],
   "linux-aarch64-a2b3-2": [
-   "hk001"
+   "ARGOCD-HOST",
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b3-2-hk-001": [
    "hk001"
   ],
   "linux-aarch64-a2b3-4": [
-   "hk001"
+   "ARGOCD-HOST",
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b3-4-hk-001": [
    "hk001"
   ],
   "linux-aarch64-a2b3-8": [
-   "hk001"
+   "ARGOCD-HOST",
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b3-8-hk-001": [
    "hk001"
   ],
   "linux-aarch64-a2b3-fed-1": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b3-fed-2": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b3-fed-4": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b3-fed-8": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b3-v-half": [
    "hk001"
@@ -180,76 +390,157 @@
    "hk001"
   ],
   "linux-aarch64-a2b4-0": [
-   "hk001"
+   "gy001"
   ],
   "linux-aarch64-a2b4-1": [
-   "hk001"
+   "gy001"
   ],
   "linux-aarch64-a2b4-1-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b4-2": [
-   "hk001"
+   "gy001"
   ],
   "linux-aarch64-a2b4-2-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b4-4": [
-   "hk001"
+   "gy001"
   ],
   "linux-aarch64-a2b4-4-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b4-8": [
-   "hk001"
+   "gy001"
   ],
   "linux-aarch64-a2b4-8-hk-001": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b4-fed-1": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b4-fed-2": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b4-fed-4": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a2b4-fed-8": [
-   "hk001"
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a3": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "mind3"
   ],
   "linux-aarch64-a3-0-cn12-001": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "gy004",
+   "mind3"
+  ],
+  "linux-aarch64-a3-0-for-hidevlab-k8s": [
+   "cn12-001",
+   "hk001"
   ],
   "linux-aarch64-a3-0-sgl": [
    "cn12-001"
   ],
+  "linux-aarch64-a3-0-sh-001": [
+   "sh001"
+  ],
   "linux-aarch64-a3-1": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "gy005",
+   "mind3"
   ],
   "linux-aarch64-a3-16": [
+   "aiframe",
    "cn12-001",
-   "gy004"
+   "gy004",
+   "gy005",
+   "mind3"
   ],
   "linux-aarch64-a3-16-cn12-001": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "gy004",
+   "mind3"
+  ],
+  "linux-aarch64-a3-16-for-hidevlab-k8s": [
+   "cn12-001",
+   "hk001"
   ],
   "linux-aarch64-a3-16-sgl": [
    "cn12-001"
   ],
+  "linux-aarch64-a3-16-sh-001": [
+   "sh001"
+  ],
   "linux-aarch64-a3-2": [
+   "aiframe",
    "cn12-001",
    "gy004",
-   "gy005"
+   "gy005",
+   "mind3"
   ],
   "linux-aarch64-a3-2-aiframe": [
    "aiframe"
   ],
   "linux-aarch64-a3-2-cn12-001": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "gy004",
+   "mind3"
+  ],
+  "linux-aarch64-a3-2-for-hidevlab-k8s": [
+   "cn12-001",
+   "hk001"
   ],
   "linux-aarch64-a3-2-gy004": [
    "gy004"
@@ -263,31 +554,57 @@
   "linux-aarch64-a3-2-sgl": [
    "cn12-001"
   ],
+  "linux-aarch64-a3-2-sh-001": [
+   "sh001"
+  ],
   "linux-aarch64-a3-4": [
+   "aiframe",
    "cn12-001",
    "gy004",
-   "gy005"
+   "gy005",
+   "mind3"
   ],
   "linux-aarch64-a3-4-cn12-001": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "gy004",
+   "mind3"
+  ],
+  "linux-aarch64-a3-4-for-hidevlab-k8s": [
+   "cn12-001",
+   "hk001"
   ],
   "linux-aarch64-a3-4-sgl": [
    "cn12-001"
   ],
+  "linux-aarch64-a3-4-sh-001": [
+   "sh001"
+  ],
   "linux-aarch64-a3-8": [
+   "aiframe",
    "cn12-001",
-   "gy004"
+   "gy004",
+   "gy005",
+   "mind3"
   ],
   "linux-aarch64-a3-8-cn12-001": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "gy004",
+   "mind3"
+  ],
+  "linux-aarch64-a3-8-for-hidevlab-k8s": [
+   "cn12-001",
+   "hk001"
   ],
   "linux-aarch64-a3-8-sgl": [
    "cn12-001"
   ],
+  "linux-aarch64-a3-8-sh-001": [
+   "sh001"
+  ],
   "linux-aarch64-a3-800i-0-cn12-001": [
-   "aiframe",
-   "cn12-001",
-   "mind3"
+   "cn12-001"
   ],
   "linux-aarch64-a3-800i-16": [
    "aiframe",
@@ -298,12 +615,11 @@
    "aiframe",
    "cn12-001",
    "gy004",
+   "gy005",
    "mind3"
   ],
   "linux-aarch64-a3-800i-16-memclean-cn12-001": [
-   "aiframe",
-   "cn12-001",
-   "mind3"
+   "cn12-001"
   ],
   "linux-aarch64-a3-800i-2": [
    "aiframe",
@@ -314,6 +630,7 @@
    "aiframe",
    "cn12-001",
    "gy004",
+   "gy005",
    "mind3"
   ],
   "linux-aarch64-a3-800i-4": [
@@ -325,6 +642,7 @@
    "aiframe",
    "cn12-001",
    "gy004",
+   "gy005",
    "mind3"
   ],
   "linux-aarch64-a3-800i-8": [
@@ -336,160 +654,273 @@
    "aiframe",
    "cn12-001",
    "gy004",
+   "gy005",
    "mind3"
   ],
   "linux-aarch64-a3-800i-fed-16": [
    "aiframe",
    "cn12-001",
-   "mind3"
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a3-800i-fed-2": [
    "aiframe",
    "cn12-001",
-   "mind3"
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a3-800i-fed-4": [
    "aiframe",
    "cn12-001",
-   "mind3"
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a3-800i-fed-8": [
    "aiframe",
    "cn12-001",
-   "mind3"
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a3-800i-test-16-cn12-001": [
    "aiframe",
    "cn12-001",
+   "gy005",
    "mind3"
   ],
   "linux-aarch64-a3-800t-0": [
+   "aiframe",
    "cn12-001",
-   "gy004",
-   "gy005"
+   "gy005",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-16": [
+   "aiframe",
    "cn12-001",
-   "gy004",
-   "gy005"
+   "gy005",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-16-cn12-001": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "mind3"
   ],
   "linux-aarch64-a3-800t-2": [
+   "aiframe",
    "cn12-001",
-   "gy004",
-   "gy005"
+   "gy005",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-2-cn12-001": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "mind3"
   ],
   "linux-aarch64-a3-800t-4": [
+   "aiframe",
    "cn12-001",
-   "gy004",
-   "gy005"
+   "gy005",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-4-cn12-001": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "mind3"
   ],
   "linux-aarch64-a3-800t-8": [
+   "aiframe",
    "cn12-001",
-   "gy004",
-   "gy005"
+   "gy005",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-8-cn12-001": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "mind3"
   ],
   "linux-aarch64-a3-800t-ascend-sglang-fed-16": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "hk001",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-ascend-sglang-fed-2": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "hk001",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-ascend-sglang-fed-4": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "hk001",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-ascend-sglang-fed-8": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "hk001",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-sgl-kernel-fed-16": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "hk001",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-sgl-kernel-fed-2": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "hk001",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-sgl-kernel-fed-4": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "hk001",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-sgl-kernel-fed-8": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "hk001",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-sglang-fed-16": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "hk001",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-sglang-fed-2": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "hk001",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-sglang-fed-4": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "hk001",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-sglang-fed-8": [
+   "aiframe",
+   "cn12-001",
    "gy004",
-   "gy005"
+   "hk001",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-test-0-cn12-001": [
+   "aiframe",
    "cn12-001",
-   "gy005"
+   "gy005",
+   "mind3"
   ],
   "linux-aarch64-a3-800t-test-16-cn12-001": [
-   "gy004",
-   "gy005"
+   "cn12-001",
+   "gy004"
   ],
   "linux-aarch64-a3-800t-vllm-ascend-fed-16": [
+   "aiframe",
    "cn12-001",
-   "gy005"
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a3-800t-vllm-ascend-fed-2": [
+   "aiframe",
    "cn12-001",
-   "gy005"
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a3-800t-vllm-ascend-fed-4": [
+   "aiframe",
    "cn12-001",
-   "gy005"
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a3-800t-vllm-ascend-fed-8": [
+   "aiframe",
    "cn12-001",
-   "gy005"
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
   ],
   "linux-aarch64-a3-offload": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "mind3"
   ],
   "linux-aarch64-a3-offload-test": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "mind3"
   ],
   "linux-aarch64-a3-test-0-cn12-001": [
    "cn12-001"
   ],
   "linux-aarch64-a3-test-16-cn12-001": [
-   "cn12-001"
+   "cn12-001",
+   "gy004"
   ],
   "linux-aarch64-a3-test-16-gy005": [
    "gy005"
+  ],
+  "linux-aarch64-a3-test-16-sh-001": [
+   "sh001"
   ],
   "linux-aarch64-a3-test-2-cn12-001": [
    "cn12-001"
@@ -499,6 +930,68 @@
   ],
   "linux-aarch64-a3-test-8-cn12-001": [
    "cn12-001"
+  ],
+  "linux-aarch64-a3-vllm-ascend-fed-16": [
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
+  ],
+  "linux-aarch64-a3-vllm-ascend-fed-2": [
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
+  ],
+  "linux-aarch64-a3-vllm-ascend-fed-4": [
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
+  ],
+  "linux-aarch64-a3-vllm-ascend-fed-8": [
+   "aiframe",
+   "cn12-001",
+   "gy001",
+   "gy003",
+   "gy005",
+   "hk001",
+   "mind3",
+   "szlab",
+   "wlcb001"
+  ],
+  "linux-aarch64-a5": [
+   "sh001"
+  ],
+  "linux-aarch64-a5-0": [
+   "sh001"
+  ],
+  "linux-aarch64-a5-1": [
+   "sh001"
+  ],
+  "linux-aarch64-a5-2": [
+   "sh001"
+  ],
+  "linux-aarch64-a5-4": [
+   "sh001"
+  ],
+  "linux-aarch64-a5-8": [
+   "sh001"
   ],
   "linux-aarch64-cpu-1": [
    "gy005"
@@ -516,7 +1009,13 @@
    "cn12-001"
   ],
   "linux-aarch64-cpu-4-cn12-001": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "gy005",
+   "mind3"
+  ],
+  "linux-aarch64-cpu-4-gy006": [
+   "gy006"
   ],
   "linux-aarch64-cpu-8": [
    "gy005"
@@ -557,11 +1056,62 @@
   "linux-aarch64-nightly-a3-8": [
    "gy005"
   ],
+  "linux-aarch64-nightly-a5-0": [
+   "sh001"
+  ],
+  "linux-aarch64-nightly-a5-2": [
+   "sh001"
+  ],
+  "linux-aarch64-nightly-a5-4": [
+   "sh001"
+  ],
+  "linux-aarch64-nightly-a5-8": [
+   "sh001"
+  ],
+  "linux-amd64-a5-1": [
+   "sh002"
+  ],
+  "linux-amd64-a5-1-ascend-ci": [
+   "sh002"
+  ],
+  "linux-amd64-a5-1-sh-002": [
+   "sh002"
+  ],
+  "linux-amd64-a5-2": [
+   "sh002"
+  ],
+  "linux-amd64-a5-2-ascend-ci": [
+   "sh002"
+  ],
+  "linux-amd64-a5-2-sh-002": [
+   "sh002"
+  ],
+  "linux-amd64-a5-4": [
+   "sh002"
+  ],
+  "linux-amd64-a5-4-ascend-ci": [
+   "sh002"
+  ],
+  "linux-amd64-a5-4-sh-002": [
+   "sh002"
+  ],
+  "linux-amd64-a5-8": [
+   "sh002"
+  ],
+  "linux-amd64-a5-8-ascend-ci": [
+   "sh002"
+  ],
+  "linux-amd64-a5-8-sh-002": [
+   "sh002"
+  ],
   "linux-amd64-cpu-16": [
    "gy005"
   ],
   "linux-amd64-cpu-16-hk": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-amd64-cpu-2": [
    "gy004"
@@ -573,13 +1123,19 @@
    "gy003"
   ],
   "linux-amd64-cpu-2-hk": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-amd64-cpu-2-mind-third": [
    "mind3"
   ],
   "linux-amd64-cpu-32-hk": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-amd64-cpu-4": [
    "gy004",
@@ -589,13 +1145,22 @@
    "cn12-001"
   ],
   "linux-amd64-cpu-4-cn12-001": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "gy005",
+   "mind3"
   ],
   "linux-amd64-cpu-4-gy004": [
    "gy004"
   ],
+  "linux-amd64-cpu-4-gy006": [
+   "gy006"
+  ],
   "linux-amd64-cpu-4-hk": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-amd64-cpu-8": [
    "gy004",
@@ -605,7 +1170,10 @@
    "gy005"
   ],
   "linux-amd64-cpu-8-hk": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-amd64-cpu-test-8": [
    "gy004"
@@ -629,7 +1197,10 @@
    "gy005"
   ],
   "linux-arm64-cpu-32-hk": [
-   "hk001"
+   "gy001",
+   "hk001",
+   "szlab",
+   "wlcb001"
   ],
   "linux-arm64-cpu-8": [
    "gy005"
@@ -745,6 +1316,18 @@
    ],
    "linux-aarch64-a2-8": [
     "hk001"
+   ],
+   "linux-amd64-a5-1-ascend-ci": [
+    "sh002"
+   ],
+   "linux-amd64-a5-2-ascend-ci": [
+    "sh002"
+   ],
+   "linux-amd64-a5-4-ascend-ci": [
+    "sh002"
+   ],
+   "linux-amd64-a5-8-ascend-ci": [
+    "sh002"
    ]
   },
   "Ascend/cann-container-image": {
@@ -810,6 +1393,15 @@
    ],
    "linux-aarch64-cpu-24": [
     "gy005"
+   ],
+   "linux-amd64-a5-2": [
+    "sh002"
+   ],
+   "linux-amd64-a5-4": [
+    "sh002"
+   ],
+   "linux-amd64-a5-8": [
+    "sh002"
    ]
   },
   "Ascend/ray-ascend": {
@@ -831,19 +1423,34 @@
     "hk001"
    ],
    "linux-aarch64-a3-0-cn12-001": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-16-cn12-001": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-2-cn12-001": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-4-cn12-001": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-8-cn12-001": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-800i-16-cn12-001": [
     "aiframe",
@@ -870,36 +1477,68 @@
     "mind3"
    ],
    "linux-aarch64-a3-800t-16-cn12-001": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "mind3"
    ],
    "linux-aarch64-a3-800t-2-cn12-001": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "mind3"
    ],
    "linux-aarch64-a3-800t-4-cn12-001": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "mind3"
    ],
    "linux-aarch64-a3-800t-8-cn12-001": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "mind3"
    ],
    "linux-aarch64-a3-800t-ascend-sglang-fed-16": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "hk001",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-ascend-sglang-fed-2": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "hk001",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-ascend-sglang-fed-4": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "hk001",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-ascend-sglang-fed-8": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "hk001",
+    "mind3"
+   ],
+   "linux-amd64-a5-1": [
+    "sh002"
+   ],
+   "linux-amd64-a5-2": [
+    "sh002"
+   ],
+   "linux-amd64-a5-4": [
+    "sh002"
+   ],
+   "linux-amd64-a5-8": [
+    "sh002"
    ],
    "linux-amd64-cpu-2": [
     "gy004"
@@ -967,46 +1606,30 @@
     "hk001"
    ],
    "linux-aarch64-a3-800i-16-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-2-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-4-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-8-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ]
   },
   "alibaba/ROLL": {
    "linux-aarch64-a3-800i-16-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-2-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-4-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-8-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ]
   },
   "areal-project/AReaL": {
@@ -1123,6 +1746,26 @@
    "linux-aarch64-a2-2-hk-001": [
     "hk001"
    ],
+   "linux-aarch64-a3-0-for-hidevlab-k8s": [
+    "cn12-001",
+    "hk001"
+   ],
+   "linux-aarch64-a3-16-for-hidevlab-k8s": [
+    "cn12-001",
+    "hk001"
+   ],
+   "linux-aarch64-a3-2-for-hidevlab-k8s": [
+    "cn12-001",
+    "hk001"
+   ],
+   "linux-aarch64-a3-4-for-hidevlab-k8s": [
+    "cn12-001",
+    "hk001"
+   ],
+   "linux-aarch64-a3-8-for-hidevlab-k8s": [
+    "cn12-001",
+    "hk001"
+   ],
    "linux-aarch64-a3-test-0-cn12-001": [
     "cn12-001"
    ],
@@ -1137,6 +1780,15 @@
    ],
    "linux-aarch64-a3-test-8-cn12-001": [
     "cn12-001"
+   ],
+   "linux-amd64-a5-2": [
+    "sh002"
+   ],
+   "linux-amd64-a5-4": [
+    "sh002"
+   ],
+   "linux-amd64-a5-8": [
+    "sh002"
    ]
   },
   "fla-org/flash-linear-attention": {
@@ -1238,16 +1890,16 @@
     "hk001"
    ],
    "linux-aarch64-a2b1-1": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b1-2": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b1-4": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b1-8": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b3-0": [
     "hk001"
@@ -1282,57 +1934,74 @@
    "linux-aarch64-a2b4-8-hk-001": [
     "hk001"
    ],
+   "linux-aarch64-a3-0-sh-001": [
+    "sh001"
+   ],
    "linux-aarch64-a3-16": [
     "cn12-001"
+   ],
+   "linux-aarch64-a3-16-sh-001": [
+    "sh001"
    ],
    "linux-aarch64-a3-2": [
     "cn12-001"
    ],
+   "linux-aarch64-a3-2-sh-001": [
+    "sh001"
+   ],
    "linux-aarch64-a3-4": [
     "cn12-001"
+   ],
+   "linux-aarch64-a3-4-sh-001": [
+    "sh001"
    ],
    "linux-aarch64-a3-8": [
     "cn12-001"
    ],
+   "linux-aarch64-a3-8-sh-001": [
+    "sh001"
+   ],
    "linux-aarch64-a3-800i-16-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-2-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-4-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-8-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800t-0": [
-    "gy004",
-    "gy005"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800t-16": [
-    "gy004",
-    "gy005"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800t-2": [
-    "gy004",
-    "gy005"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800t-4": [
-    "gy004",
-    "gy005"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800t-8": [
-    "gy004",
-    "gy005"
+    "cn12-001"
+   ],
+   "linux-aarch64-a5-0": [
+    "sh001"
+   ],
+   "linux-aarch64-a5-2": [
+    "sh001"
+   ],
+   "linux-aarch64-a5-4": [
+    "sh001"
+   ],
+   "linux-aarch64-a5-8": [
+    "sh001"
+   ],
+   "linux-aarch64-cpu-4-gy006": [
+    "gy006"
    ],
    "linux-aarch64-nightly-310p-1": [
     "gy003"
@@ -1367,6 +2036,18 @@
    "linux-aarch64-nightly-a3-8": [
     "gy005"
    ],
+   "linux-aarch64-nightly-a5-0": [
+    "sh001"
+   ],
+   "linux-aarch64-nightly-a5-2": [
+    "sh001"
+   ],
+   "linux-aarch64-nightly-a5-4": [
+    "sh001"
+   ],
+   "linux-aarch64-nightly-a5-8": [
+    "sh001"
+   ],
    "linux-amd64-cpu-16-hk": [
     "hk001"
    ],
@@ -1375,6 +2056,9 @@
    ],
    "linux-amd64-cpu-32-hk": [
     "hk001"
+   ],
+   "linux-amd64-cpu-4-gy006": [
+    "gy006"
    ],
    "linux-amd64-cpu-4-hk": [
     "hk001"
@@ -1423,60 +2107,116 @@
     "hk001"
    ],
    "linux-aarch64-a3-16-cn12-001": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-2-cn12-001": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-4-cn12-001": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-8-cn12-001": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-800i-16-cn12-001": [
-    "gy004"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-800i-2-cn12-001": [
-    "gy004"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-800i-4-cn12-001": [
-    "gy004"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-800i-8-cn12-001": [
-    "gy004"
+    "aiframe",
+    "cn12-001",
+    "gy004",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-16-cn12-001": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "mind3"
    ],
    "linux-aarch64-a3-800t-2-cn12-001": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "mind3"
    ],
    "linux-aarch64-a3-800t-4-cn12-001": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "mind3"
    ],
    "linux-aarch64-a3-800t-8-cn12-001": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "mind3"
    ],
    "linux-aarch64-a3-800t-sgl-kernel-fed-16": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "hk001",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-sgl-kernel-fed-2": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "hk001",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-sgl-kernel-fed-4": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "hk001",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-sgl-kernel-fed-8": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "hk001",
+    "mind3"
+   ],
+   "linux-amd64-a5-1": [
+    "sh002"
+   ],
+   "linux-amd64-a5-2": [
+    "sh002"
+   ],
+   "linux-amd64-a5-4": [
+    "sh002"
+   ],
+   "linux-amd64-a5-8": [
+    "sh002"
    ]
   },
   "sgl-project/sglang": {
@@ -1496,64 +2236,93 @@
     "gy004"
    ],
    "linux-aarch64-a3-16-cn12-001": [
-    "cn12-001"
+    "cn12-001",
+    "gy004"
    ],
    "linux-aarch64-a3-2": [
     "gy004"
    ],
    "linux-aarch64-a3-2-cn12-001": [
-    "cn12-001"
+    "cn12-001",
+    "gy004"
    ],
    "linux-aarch64-a3-4": [
     "gy004"
    ],
    "linux-aarch64-a3-4-cn12-001": [
-    "cn12-001"
+    "cn12-001",
+    "gy004"
    ],
    "linux-aarch64-a3-8": [
     "gy004"
    ],
    "linux-aarch64-a3-8-cn12-001": [
-    "cn12-001"
+    "cn12-001",
+    "gy004"
    ],
    "linux-aarch64-a3-800t-16-cn12-001": [
-    "gy004",
-    "gy005"
+    "cn12-001",
+    "gy004"
    ],
    "linux-aarch64-a3-800t-2-cn12-001": [
-    "gy004",
-    "gy005"
+    "cn12-001",
+    "gy004"
    ],
    "linux-aarch64-a3-800t-4-cn12-001": [
-    "gy004",
-    "gy005"
+    "cn12-001",
+    "gy004"
    ],
    "linux-aarch64-a3-800t-8-cn12-001": [
-    "gy004",
-    "gy005"
+    "cn12-001",
+    "gy004"
    ],
    "linux-aarch64-a3-800t-sglang-fed-16": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "hk001",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-sglang-fed-2": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "hk001",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-sglang-fed-4": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "hk001",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-sglang-fed-8": [
+    "aiframe",
+    "cn12-001",
     "gy004",
-    "gy005"
+    "hk001",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-test-16-cn12-001": [
-    "gy004",
-    "gy005"
+    "cn12-001",
+    "gy004"
    ],
    "linux-aarch64-a3-test-16-cn12-001": [
-    "cn12-001"
+    "cn12-001",
+    "gy004"
+   ],
+   "linux-amd64-a5-1": [
+    "sh002"
+   ],
+   "linux-amd64-a5-2": [
+    "sh002"
+   ],
+   "linux-amd64-a5-4": [
+    "sh002"
+   ],
+   "linux-amd64-a5-8": [
+    "sh002"
    ],
    "linux-amd64-cpu-2": [
     "gy004"
@@ -1582,60 +2351,70 @@
     "hk001"
    ]
   },
+  "tile-ai/tilelang": {
+   "linux-amd64-a5-1-sh-002": [
+    "sh002"
+   ],
+   "linux-amd64-a5-2-sh-002": [
+    "sh002"
+   ],
+   "linux-amd64-a5-4-sh-002": [
+    "sh002"
+   ],
+   "linux-amd64-a5-8-sh-002": [
+    "sh002"
+   ]
+  },
   "tile-ai/tilelang-mlir-ascend": {
    "linux-aarch64-a3-800i-16-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-2-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-4-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-8-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
+   ],
+   "linux-amd64-a5-1-sh-002": [
+    "sh002"
+   ],
+   "linux-amd64-a5-2-sh-002": [
+    "sh002"
+   ],
+   "linux-amd64-a5-4-sh-002": [
+    "sh002"
+   ],
+   "linux-amd64-a5-8-sh-002": [
+    "sh002"
    ]
   },
   "triton-lang/triton-ascend": {
    "linux-aarch64-a2b1-1": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b1-2": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b1-4": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b1-8": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a3-800i-16-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-2-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-4-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-8-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-cpu-1": [
     "gy005"
@@ -1651,6 +2430,15 @@
    ],
    "linux-aarch64-cpu-8": [
     "gy005"
+   ],
+   "linux-amd64-a5-2": [
+    "sh002"
+   ],
+   "linux-amd64-a5-4": [
+    "sh002"
+   ],
+   "linux-amd64-a5-8": [
+    "sh002"
    ],
    "linux-amd64-cpu-16": [
     "gy005"
@@ -1683,6 +2471,9 @@
    ],
    "linux-aarch64-a3-2": [
     "gy005"
+   ],
+   "linux-aarch64-a5-2": [
+    "sh001"
    ]
   },
   "vllm-ascend/main2main-automator": {
@@ -1709,19 +2500,19 @@
   },
   "vllm-ascend/vllm-ascend-recipes": {
    "linux-aarch64-a2b4-0": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b4-1": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b4-2": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b4-4": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b4-8": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a3-800i-16-cn12-001": [
     "aiframe",
@@ -1742,6 +2533,18 @@
     "aiframe",
     "cn12-001",
     "mind3"
+   ],
+   "linux-aarch64-a5-0": [
+    "sh001"
+   ],
+   "linux-aarch64-a5-2": [
+    "sh001"
+   ],
+   "linux-aarch64-a5-4": [
+    "sh001"
+   ],
+   "linux-aarch64-a5-8": [
+    "sh001"
    ]
   },
   "vllm-project/vllm-ascend": {
@@ -1761,248 +2564,662 @@
     "gy003"
    ],
    "linux-aarch64-910b-1": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-910b-2": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-910b-4": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-910b-8": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2-1-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2-2-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2-4-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2-8-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2-fed-1": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2-fed-2": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2-fed-4": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2-fed-8": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1-1": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b1-1-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1-2": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b1-2-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1-4": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b1-4-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1-8": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b1-8-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1-fed-1": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1-fed-2": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1-fed-4": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1-fed-8": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1b3-1-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1b3-2-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1b3-4-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1b3-8-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
+   ],
+   "linux-aarch64-a2b1b3-fed-1": [
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
+   ],
+   "linux-aarch64-a2b1b3-fed-2": [
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
+   ],
+   "linux-aarch64-a2b1b3-fed-4": [
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
+   ],
+   "linux-aarch64-a2b1b3-fed-8": [
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b1b3-test-8-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b3-0": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b3-1": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b3-2": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b3-4": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b3-8": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b3-fed-1": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b3-fed-2": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b3-fed-4": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b3-fed-8": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b4-1-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b4-2-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b4-4-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b4-8-hk-001": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b4-fed-1": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b4-fed-2": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b4-fed-4": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a2b4-fed-8": [
-    "hk001"
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
+   ],
+   "linux-aarch64-a3-0-sh-001": [
+    "sh001"
    ],
    "linux-aarch64-a3-1": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy005",
+    "mind3"
    ],
    "linux-aarch64-a3-16": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy005",
+    "mind3"
+   ],
+   "linux-aarch64-a3-16-sh-001": [
+    "sh001"
    ],
    "linux-aarch64-a3-2": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy005",
+    "mind3"
+   ],
+   "linux-aarch64-a3-2-sh-001": [
+    "sh001"
    ],
    "linux-aarch64-a3-4": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy005",
+    "mind3"
+   ],
+   "linux-aarch64-a3-4-sh-001": [
+    "sh001"
    ],
    "linux-aarch64-a3-8": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy005",
+    "mind3"
+   ],
+   "linux-aarch64-a3-8-sh-001": [
+    "sh001"
    ],
    "linux-aarch64-a3-800i-16-cn12-001": [
     "aiframe",
     "cn12-001",
+    "gy005",
     "mind3"
    ],
    "linux-aarch64-a3-800i-2-cn12-001": [
     "aiframe",
     "cn12-001",
+    "gy005",
     "mind3"
    ],
    "linux-aarch64-a3-800i-4-cn12-001": [
     "aiframe",
     "cn12-001",
+    "gy005",
     "mind3"
    ],
    "linux-aarch64-a3-800i-8-cn12-001": [
     "aiframe",
     "cn12-001",
+    "gy005",
     "mind3"
    ],
    "linux-aarch64-a3-800i-fed-16": [
     "aiframe",
     "cn12-001",
-    "mind3"
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a3-800i-fed-2": [
     "aiframe",
     "cn12-001",
-    "mind3"
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a3-800i-fed-4": [
     "aiframe",
     "cn12-001",
-    "mind3"
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a3-800i-fed-8": [
     "aiframe",
     "cn12-001",
-    "mind3"
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a3-800i-test-16-cn12-001": [
     "aiframe",
     "cn12-001",
+    "gy005",
     "mind3"
    ],
    "linux-aarch64-a3-800t-0": [
+    "aiframe",
     "cn12-001",
-    "gy005"
+    "gy005",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-16": [
+    "aiframe",
     "cn12-001",
-    "gy005"
+    "gy005",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-2": [
+    "aiframe",
     "cn12-001",
-    "gy005"
+    "gy005",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-4": [
+    "aiframe",
     "cn12-001",
-    "gy005"
+    "gy005",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-8": [
+    "aiframe",
     "cn12-001",
-    "gy005"
+    "gy005",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-test-0-cn12-001": [
+    "aiframe",
     "cn12-001",
-    "gy005"
+    "gy005",
+    "mind3"
    ],
    "linux-aarch64-a3-800t-vllm-ascend-fed-16": [
+    "aiframe",
     "cn12-001",
-    "gy005"
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a3-800t-vllm-ascend-fed-2": [
+    "aiframe",
     "cn12-001",
-    "gy005"
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a3-800t-vllm-ascend-fed-4": [
+    "aiframe",
     "cn12-001",
-    "gy005"
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a3-800t-vllm-ascend-fed-8": [
+    "aiframe",
     "cn12-001",
-    "gy005"
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
    ],
    "linux-aarch64-a3-test-16-gy005": [
     "gy005"
    ],
+   "linux-aarch64-a3-test-16-sh-001": [
+    "sh001"
+   ],
+   "linux-aarch64-a3-vllm-ascend-fed-16": [
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
+   ],
+   "linux-aarch64-a3-vllm-ascend-fed-2": [
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
+   ],
+   "linux-aarch64-a3-vllm-ascend-fed-4": [
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
+   ],
+   "linux-aarch64-a3-vllm-ascend-fed-8": [
+    "aiframe",
+    "cn12-001",
+    "gy001",
+    "gy003",
+    "gy005",
+    "hk001",
+    "mind3",
+    "szlab",
+    "wlcb001"
+   ],
+   "linux-aarch64-a5-0": [
+    "sh001"
+   ],
+   "linux-aarch64-a5-1": [
+    "sh001"
+   ],
+   "linux-aarch64-a5-2": [
+    "sh001"
+   ],
+   "linux-aarch64-a5-4": [
+    "sh001"
+   ],
+   "linux-aarch64-a5-8": [
+    "sh001"
+   ],
    "linux-aarch64-cpu-4-cn12-001": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy005",
+    "mind3"
    ],
    "linux-aarch64-nightly-a3-16": [
     "gy005"
@@ -2017,28 +3234,49 @@
     "gy005"
    ],
    "linux-amd64-cpu-16-hk": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-amd64-cpu-2-hk": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-amd64-cpu-32-hk": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-amd64-cpu-4-cn12-001": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "gy005",
+    "mind3"
    ],
    "linux-amd64-cpu-4-hk": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-amd64-cpu-8-hk": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-arm64-cpu-16": [
     "gy005"
    ],
    "linux-arm64-cpu-32-hk": [
-    "hk001"
+    "gy001",
+    "hk001",
+    "szlab",
+    "wlcb001"
    ],
    "linux-arm64-cpu-8": [
     "gy005"
@@ -2052,13 +3290,22 @@
     "hk001"
    ],
    "linux-aarch64-a3": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "mind3"
    ],
    "linux-aarch64-a3-offload": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "mind3"
    ],
    "linux-aarch64-a3-offload-test": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "mind3"
+   ],
+   "linux-aarch64-a5": [
+    "sh001"
    ]
   },
   "volcengine/uni-agent": {
@@ -2095,51 +3342,37 @@
     "hk001"
    ],
    "linux-aarch64-a2b3-1": [
-    "hk001"
+    "ARGOCD-HOST"
    ],
    "linux-aarch64-a2b3-2": [
-    "hk001"
+    "ARGOCD-HOST"
    ],
    "linux-aarch64-a2b3-4": [
-    "hk001"
+    "ARGOCD-HOST"
    ],
    "linux-aarch64-a2b3-8": [
-    "hk001"
+    "ARGOCD-HOST"
    ],
    "linux-aarch64-a3-800i-0-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-16-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-16-memclean-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-2-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-4-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-8-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ],
    "linux-aarch64-a3-800i-test-16-cn12-001": [
-    "aiframe",
-    "cn12-001",
-    "mind3"
+    "cn12-001"
    ]
   },
   "volcengine/verl-SpeCo": {
@@ -2152,13 +3385,13 @@
   },
   "volcengine/verl-omni": {
    "linux-aarch64-a2b4-2": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b4-4": [
-    "hk001"
+    "gy001"
    ],
    "linux-aarch64-a2b4-8": [
-    "hk001"
+    "gy001"
    ]
   },
   "xuedinge233/triton-ascend": {

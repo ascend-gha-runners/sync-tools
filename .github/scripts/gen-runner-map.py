@@ -42,8 +42,26 @@ REPO_RULES = {
     "sgl-project/sgl-kernel-npu": {"800i": ["gy004"], "800t": ["gy004", "gy005"]},
 }
 
+# repo -> cluster set, authoritative source: disk-map.json (built from full
+# ci-deployment survey: argocd apps + liqo providers + node alias mounts)
+_DISK = {}
+try:
+    _DM = os.path.join(os.path.dirname(__file__), "..", "..", "model-library", "disk-map.json")
+    _DISK = json.load(open(_DM))
+except Exception:
+    pass
+
 def map_label(label, host_cluster, repo=""):
     l = label.lower()
+    # per-repo physical clusters win
+    if repo in _DISK:
+        lc = _DISK[repo].get("label_clusters", {})
+        key = re.sub(r"-[0-9]+$", "", label) if label.endswith(tuple("0123456789")) else label
+        for cand in (label, key, os.path.basename(label)):
+            if cand in lc:
+                return [c for c in lc[cand] if c not in ("sh001", "sh002")] or list(lc[cand])
+        cl = _DISK[repo]["clusters"]
+        return [c for c in cl if c not in ("sh001", "sh002")] or cl
     rr = REPO_RULES.get(repo, {})
     if "800i" in l and "800i" in rr:
         return rr["800i"]

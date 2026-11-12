@@ -61,12 +61,19 @@ case "${GITHUB_EVENT_NAME:-}" in
     if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
       BASE=$(git merge-base "origin/${GITHUB_BASE_REF:-main}" HEAD 2>/dev/null || echo HEAD~1)
     fi
-    FILES=$(git diff --name-only --diff-filter=ACM "$BASE"..HEAD -- "$REQUESTS_DIR/" || true)
-    [ -n "$FILES" ] || { echo "no request files changed"; echo "matrix=[]" >> "${GITHUB_OUTPUT:-/dev/null}"; exit 0; }
-    for f in $FILES; do
-      echo "== request file: $f"
-      ENTRIES="$ENTRIES$(emit_for_request "$f" "$(cat "$f")" "")"$'\n'
-    done
+    REQFILE="$REQUESTS_DIR/requests.json"
+    if ! git diff --name-only --diff-filter=ACM "$BASE"..HEAD -- "$REQFILE" | grep -q .; then
+      echo "no changes to $REQFILE"; echo "matrix=[]" >> "${GITHUB_OUTPUT:-/dev/null}"; exit 0
+    fi
+    git show "$BASE:$REQFILE" > /tmp/requests-base.json 2>/dev/null || echo '[]' > /tmp/requests-base.json
+    python3 "$ROOT/.github/scripts/lib-extract-new-requests.py" /tmp/requests-base.json "$REQFILE" > /tmp/new-requests.jsonl
+    n=0
+    while IFS= read -r req; do
+      [ -n "$req" ] || continue
+      n=$((n+1))
+      echo "== new request #$n: $(echo "$req" | jq -r '.repo + " @ " + .runner_label') (+$(echo "$req" | jq -r '((.models|length)+(.datasets|length))')) entries"
+      ENTRIES="$ENTRIES$(emit_for_request "requests.json#$n" "$req" "")"$'\n'
+    done < /tmp/new-requests.jsonl
     ;;
   workflow_dispatch)
     REQ=$(jq -n \

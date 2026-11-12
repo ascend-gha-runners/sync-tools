@@ -1,90 +1,89 @@
 #!/bin/bash
 # Build the download matrix for the model-library workflow.
 #
-# Sources of truth (one-to-one registry, all under model-library/):
-#   model-library/clusters.json        cluster -> runner + disk caches + endpoint
-#   model-library/repos.json           business repo -> machine type -> [clusters]
-#   model-library/<cluster>.json       desired model/dataset list per cluster (ledger)
+# A "request" is the single unit of work, provided by either entry:
+#   - pull_request : files under model-requests/*.json (repo + runner_label +
+#                    models[]/datasets[] + optional auth_secret)
+#   - dispatch     : form fields (repo, runner_label, platform, org, name...)
 #
-# Selection rules:
-#   pull_request  -> one entry per changed model-library/<cluster>.json
-#   dispatch      -> clusters resolved from repos.json [repo][machine]
+# Routing is automatic: runner_label -> model-library/groups.json -> cluster
+# list (e.g. "*800i*" -> cn12-001 + mind3 + aiframe), clusters without a
+# registered runner are skipped with a warning.
 #
-# Output: matrix=[{cluster, runner, library, hf_cache, ms_cache}, ...] to
-# $GITHUB_OUTPUT, plus a human-readable summary step.
+# Matrix element: {cluster, runner, hf_cache, ms_cache, hf_endpoint,
+#                  request: "<file path>" or "dispatch", payload: "<json>"}
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
 CFG="$ROOT/model-library"
 CLUSTERS="$CFG/clusters.json"
+REQUESTS_DIR="model-requests"
+RESOLVE="$ROOT/.github/scripts/lib-resolve.sh"
 
-entry_for() {  # $1 cluster, $2 library path ("" for dispatch single model)
-  local c=$1 lib=$2 runner hf ms ep
+entry_for() {  # $1 cluster, $2 request-source, $3 payload, $4 auth-secret-mode
+  local c=$1 req=$2 payload=$3 auth=${4:-none} runner hf ms ep
   runner=$(jq -r --arg c "$c" '.[$c].runner // empty' "$CLUSTERS")
   hf=$(jq -r --arg c "$c" '.[$c].caches.huggingface // empty' "$CLUSTERS")
   ms=$(jq -r --arg c "$c" '.[$c].caches.modelscope // empty' "$CLUSTERS")
   ep=$(jq -r --arg c "$c" '.[$c].endpoint // "https://hf-mirror.com"' "$CLUSTERS")
-  if [ -z "$runner" ] || [ -z "$hf" ] || [ -z "$ms" ]; then
-    echo "ERROR: cluster '$c' has no runner or cache paths in clusters.json" >&2
-    return 1
-  fi
-  jq -cn --arg c "$c" --arg r "$runner" --arg l "$lib" --arg hf "$hf" --arg ms "$ms" --arg ep "$ep" \
-    '{cluster:$c, runner:$r, library:$l, hf_cache:$hf, ms_cache:$ms, hf_endpoint:$ep}'
+  [ -n "$runner" ] && [ -n "$hf" ] && [ -n "$ms" ] || { echo "ERROR: cluster '$c' incomplete in clusters.json" >&2; return 1; }
+  jq -cn --arg c "$c" --arg r "$runner" --arg req "$req" --arg hf "$hf" --arg ms "$ms" --arg ep "$ep" --arg p "$payload" --arg a "$auth" \
+    '{cluster:$c, runner:$r, request:$req, hf_cache:$hf, ms_cache:$ms, hf_endpoint:$ep, payload:$p, auth:$a}'
 }
 
+emit_for_request() {  # $1 source-desc, $2 request-json, $3 payload(for dispatch only)
+  local src=$1 reqjson=$2 payload=$3 label clusters bad
+  label=$(echo "$reqjson" | jq -r '.runner_label // empty')
+  [ -n "$label" ] || { echo "ERROR: $src missing runner_label" >&2; return 1; }
+  echo "$reqjson" | jq -e '(.models // []) | length > 0 or ((.datasets // []) | length > 0)' >/dev/null || {
+    echo "ERROR: $src has no models/datasets" >&2; return 1; }
+  clusters=$(bash "$RESOLVE" "$label") || return 1
+  auth=$(echo "$reqjson" | jq -r '.auth_secret // "none"')
+  case "$auth" in none|hf|modelscope) ;; *) echo "ERROR: $src auth_secret must be none|hf|modelscope" >&2; return 1;; esac
+  for c in $(echo "$clusters" | jq -r '.[]'); do
+    entry_for "$c" "$src" "$payload" "$auth" || return 1
+    printf '\n'
+  done
+}
+
+ENTRIES=""
 case "${GITHUB_EVENT_NAME:-}" in
   pull_request)
     BASE="${PR_BASE_SHA:-}"
     if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
       BASE=$(git merge-base "origin/${GITHUB_BASE_REF:-main}" HEAD 2>/dev/null || echo HEAD~1)
     fi
-    FILES=$(git diff --name-only "$BASE"..HEAD -- "$CFG/" | grep -vE '/(clusters|repos)\.json$' || true)
-    ENTRIES=""
+    FILES=$(git diff --name-only --diff-filter=ACM "$BASE"..HEAD -- "$REQUESTS_DIR/" || true)
+    [ -n "$FILES" ] || { echo "no request files changed"; echo "matrix=[]" >> "${GITHUB_OUTPUT:-/dev/null}"; exit 0; }
     for f in $FILES; do
-      c=$(basename "$f" .json)
-      entry=$(entry_for "$c" "$f") || exit 1
-      ENTRIES="$ENTRIES$entry"$'\n'
+      echo "== request file: $f"
+      ENTRIES="$ENTRIES$(emit_for_request "$f" "$(cat "$f")" "")"$'\n'
     done
     ;;
   workflow_dispatch)
-    ENTRIES=""
-    if [ -n "${INPUT_RUNNER_LABEL:-}" ]; then
-      # runner-label mode: union of probe-detected clusters and label-pattern
-      # matches from the registry; empty model name = sync whole ledger.
-      DETECTED="${INPUT_DETECTED:-[]}"
-      [ -z "$DETECTED" ] && DETECTED="[]"
-      CANDS=$(jq -rn --arg l "$INPUT_RUNNER_LABEL" --argjson d "$DETECTED" \
-        --slurpfile c "$CLUSTERS" '
-          ($d + [ $c[0] | to_entries[]
-                  | select(.value.match.label_regex as $re | $re != null and ($l | test($re)))
-                  | .key ]) | unique')
-      LIB_OR_EMPTY=""
-      [ -z "${INPUT_MODEL_NAME:-}" ] && LIB_OR_EMPTY="lib"
-      for c in $(echo "$CANDS" | jq -r '.[]'); do
-        if [ -n "$LIB_OR_EMPTY" ]; then
-          entry=$(entry_for "$c" "model-library/$c.json") || exit 1
-        else
-          entry=$(entry_for "$c" "") || exit 1
-        fi
-        ENTRIES="$ENTRIES$entry"$'\n'
-      done
-      [ -n "$ENTRIES" ] || { echo "ERROR: runner label '$INPUT_RUNNER_LABEL' 未匹配任何集群（探针也没识别到）。请改用 仓库+机型 模式或补 registry。" >&2; exit 1; }
-    else
-      REPO="$INPUT_REPO"; MACHINE="$INPUT_MACHINE"
-      CS=$(jq -r --arg r "$REPO" --arg m "$MACHINE" '.[$r][$m] // empty | .[]' "$CFG/repos.json")
-      [ -n "$CS" ] || { echo "ERROR: repos.json has no clusters for repo=$REPO machine=$MACHINE" >&2; exit 1; }
-      for c in $CS; do
-        entry=$(entry_for "$c" "") || exit 1
-        ENTRIES="$ENTRIES$entry"$'\n'
-      done
-    fi
+    REQ=$(jq -n \
+      --arg repo "${INPUT_REPO:-}" \
+      --arg label "${INPUT_RUNNER_LABEL:-}" \
+      --arg platform "${INPUT_PLATFORM:-modelscope}" \
+      --arg org "${INPUT_ORGANIZATION:-}" \
+      --arg name "${INPUT_MODEL_NAME:-}" \
+      --arg rev "${INPUT_REVISION:-}" \
+      --argjson legacy "${INPUT_FLATTEN_LEGACY:-false}" \
+      --arg auth "${INPUT_AUTH_SECRET:-none}" \
+      '{repo:$repo, runner_label:$label, auth_secret:$auth,
+        models: [({platform:$platform, organization:$org, model_name:$name}
+                  + (if $rev == "" then {} else {revision:$rev} end)
+                  + (if $platform == "modelscope" and $legacy then {legacy_layout:true} else {} end))],
+        datasets: []}')
+    ENTRIES="$(emit_for_request "dispatch" "$REQ" "$(echo "$REQ" | jq -c '.models')")"$'\n'
     ;;
   *)
     echo "ERROR: unsupported event ${GITHUB_EVENT_NAME}" >&2; exit 1
     ;;
 esac
 
-MATRIX=$(printf '%s' "$ENTRIES" | sed '/^$/d' | jq -sc 'if length==0 then [] else . end')
+MATRIX=$(printf '%s' "$ENTRIES" | sed '/^$/d' | jq -sc '.')
+echo "Selected requests:"; echo "$ENTRIES" | sed '/^$/d' | jq -r '.cluster + " <- " + .request' 2>/dev/null || true
 echo "Matrix: $MATRIX"
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"

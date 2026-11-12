@@ -1,0 +1,27 @@
+{
+  "_comment": "runner 标签 -> 机型组 -> 集群列表。label_rules 自上而下首个匹配生效；groups 里的集群必须在 clusters.json 注册且有可用 runner。",
+  "label_rules": [
+    ["model-sync-mind3", "mind3-own"],
+    ["model-sync-cn12001", "cn12-own"],
+    ["model-sync-hb3", "aiframe-own"],
+    ["model-sync-hk001", "hk001-own"],
+    ["800i", "a3-800i"],
+    ["800t", "a3-800t"],
+    ["310p", "310p"],
+    ["(a2b[0-9]|-a2-|-a2$|a2-[0-9]|hk)", "a2"],
+    ["gy004", "gy004"],
+    ["gy005", "gy005"]
+  ],
+  "groups": {
+    "a3-800i": ["cn12-001", "mind3", "aiframe"],
+    "a3-800t": ["cn12-001", "mind3", "aiframe"],
+    "a2": ["hk001"],
+    "310p": ["gy003"],
+    "mind3-own": ["mind3"],
+    "cn12-own": ["cn12-001"],
+    "aiframe-own": ["aiframe"],
+    "hk001-own": ["hk001"],
+    "gy004": ["gy004"],
+    "gy005": ["gy005"]
+  }
+}

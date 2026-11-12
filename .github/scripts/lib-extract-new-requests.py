@@ -24,7 +24,8 @@ def load(p):
 base, head = load(sys.argv[1]), load(sys.argv[2])
 
 def group(req):
-    return (req.get("repo", ""), req.get("runner_label", req.get("clusters") and ",".join(req["clusters"]) or "", req.get("auth_secret", "none")))
+    label = req.get("runner_label") or (",".join(req["clusters"]) if req.get("clusters") else "")
+    return (req.get("repo", ""), label, req.get("auth_secret", "none"))
 
 old = {}
 for r in base:

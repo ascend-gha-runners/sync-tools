@@ -67,7 +67,7 @@
   },
   "guiyang": {
     "machine": "a3",
-    "runner": "linux-aarch64-sync-gy001",
+    "runner": null,
     "caches": {
       "huggingface": "/mnt/sfs_turbo/ascend-ci-share-nv-action-vllm-benchmarks/huggingface",
       "modelscope": "/mnt/sfs_turbo/ascend-ci-share-nv-sync-tools/modelscope/hub"
@@ -80,7 +80,8 @@
         "b46afb97",
         "1b51fb58"
       ]
-    }
+    },
+    "_planned_runner": "linux-aarch64-sync-gy001"
   },
   "gy004": {
     "machine": "a3-800t",

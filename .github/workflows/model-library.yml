@@ -137,16 +137,11 @@ jobs:
 
       - name: Prepare entries
         run: |
-          if [ '${{ matrix.request }}' = 'dispatch' ]; then
-            echo '${{ matrix.payload }}' > /tmp/models.json
-          else
-            jq '.models   // []' '${{ github.workspace }}/${{ matrix.request }}' > /tmp/models.json
-          fi
-          if [ '${{ matrix.request }}' = 'dispatch' ]; then
-            echo '[]' > /tmp/datasets.json
-          else
-            jq '.datasets // []' '${{ github.workspace }}/${{ matrix.request }}' > /tmp/datasets.json
-          fi
+          cat > /tmp/req.json <<'REQEOF'
+          ${{ matrix.payload }}
+          REQEOF
+          jq '.models   // []' /tmp/req.json > /tmp/models.json
+          jq '.datasets // []' /tmp/req.json > /tmp/datasets.json
           echo "models: $(jq length /tmp/models.json), datasets: $(jq length /tmp/datasets.json)"
 
       - name: Download models

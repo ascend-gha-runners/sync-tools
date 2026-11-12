@@ -72,7 +72,7 @@ case "${GITHUB_EVENT_NAME:-}" in
       [ -n "$req" ] || continue
       n=$((n+1))
       echo "== new request #$n: $(echo "$req" | jq -r '.repo + " @ " + .runner_label') (+$(echo "$req" | jq -r '((.models|length)+(.datasets|length))')) entries"
-      ENTRIES="$ENTRIES$(emit_for_request "requests.json#$n" "$req" "")"$'\n'
+      ENTRIES="$ENTRIES$(emit_for_request "requests.json#$n" "$req" "$req")"$'\n'
     done < /tmp/new-requests.jsonl
     ;;
   workflow_dispatch)
@@ -90,7 +90,7 @@ case "${GITHUB_EVENT_NAME:-}" in
                   + (if $rev == "" then {} else {revision:$rev} end)
                   + (if $platform == "modelscope" and $legacy then {legacy_layout:true} else {} end))],
         datasets: []}')
-    ENTRIES="$(emit_for_request "dispatch" "$REQ" "$(echo "$REQ" | jq -c '.models')")"$'\n'
+    ENTRIES="$(emit_for_request "dispatch" "$REQ" "$REQ")"$'\n'
     ;;
   *)
     echo "ERROR: unsupported event ${GITHUB_EVENT_NAME}" >&2; exit 1

@@ -14,7 +14,8 @@
         "24dd126e",
         "fef36441"
       ]
-    }
+    },
+    "share": "24dd126e (/opt/vllm-ci)"
   },
   "cn12-001": {
     "machine": "a3-800i",
@@ -31,7 +32,8 @@
         "8258ca0d",
         "37cbefa6"
       ]
-    }
+    },
+    "share": "37cbefa6 (/mnt/sfs_turbo 生效挂载; 同机叠挂的 8258ca0d 集群不可见, 勿用)"
   },
   "mind3": {
     "machine": "a3-800i",
@@ -47,7 +49,8 @@
       "share_ids": [
         "cc8060b8"
       ]
-    }
+    },
+    "share": "cc8060b8 (/mnt/sfs_turbo, 44T)"
   },
   "aiframe": {
     "machine": "a3",
@@ -63,7 +66,8 @@
       "share_ids": [
         "c461cb6e"
       ]
-    }
+    },
+    "share": "c461cb6e (/opt/vllm-ci)"
   },
   "guiyang": {
     "machine": "a3",
@@ -81,7 +85,8 @@
         "1b51fb58"
       ]
     },
-    "_planned_runner": "linux-aarch64-sync-gy001"
+    "_planned_runner": "linux-aarch64-sync-gy001",
+    "share": "b46afb97 (/mnt/sfs_turbo)"
   },
   "gy004": {
     "machine": "a3-800t",
@@ -98,7 +103,8 @@
         "1b51fb58"
       ]
     },
-    "_planned_runner": "model-sync-gy004"
+    "_planned_runner": "model-sync-gy004",
+    "share": "1b51fb58 (runner 实证: /mnt/sfs-local/ascend-ci-share-pkking-sglang)"
   },
   "gy005": {
     "machine": "a3-800t",
@@ -115,7 +121,8 @@
         "b46afb97"
       ]
     },
-    "_planned_runner": "model-sync-gy005"
+    "_planned_runner": "model-sync-gy005",
+    "share": "TODO-gy005-az5-vllm-ascend-v2 (runner 实证 hostPath, export 待查)"
   },
   "gy003": {
     "machine": "310p",
@@ -129,6 +136,7 @@
     "match": {
       "label_regex": "(gy003|310p)",
       "share_ids": []
-    }
+    },
+    "share": "TODO-310p"
   }
 }

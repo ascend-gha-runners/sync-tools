@@ -29,7 +29,7 @@ on:
 
 concurrency:
   group: sync-models-datasets-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false  # review: 下载任务不可取消，中途 cancel 会留下半截共享盘文件
 
 jobs:
   prepare:
@@ -85,6 +85,10 @@ jobs:
     if: needs.prepare.result == 'success' && needs.prepare.outputs.arc-matrix != '[]'
     name: sync ${{ matrix.project }} to ${{ matrix.cluster }}
     runs-on: ${{ matrix.cluster }}
+    # 同 runner 串行，避免并发写同一持久缓存
+    concurrency:
+      group: sync-dl-${{ matrix.cluster }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
@@ -126,6 +130,10 @@ jobs:
     if: needs.prepare.result == 'success' && needs.prepare.outputs.host-matrix != '[]'
     name: sync ${{ matrix.project }} on ${{ matrix.cluster }}
     runs-on: ${{ matrix.cluster }}
+    # 同 runner 串行，避免并发写同一共享盘
+    concurrency:
+      group: sync-dl-${{ matrix.cluster }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:

@@ -52,7 +52,7 @@ on:
 
 concurrency:
   group: model-library-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || format('dispatch-{0}-{1}-{2}', inputs.runner_label, inputs.organization, inputs.model_name) }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false  # review: 下载任务不可取消，中途 cancel 会留下半截共享盘文件
 
 jobs:
   plan:
@@ -100,6 +100,10 @@ jobs:
     if: needs.plan.result == 'success' && needs.plan.outputs.matrix != '[]'
     name: ${{ matrix.cluster }} <- ${{ matrix.request }}
     runs-on: ${{ matrix.runner }}
+    # 同一台同步机上的下载串行排队（共享盘 cache/blobs 不可并发写），不同机器并行
+    concurrency:
+      group: model-lib-dl-${{ matrix.runner }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:

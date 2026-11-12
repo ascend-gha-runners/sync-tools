@@ -1,35 +1,40 @@
 {
   "vllm": {
     "clusters": [
-      "linux-amd64-vllm-a2",
-      "linux-amd64-vllm-a3"
+      "model-sync-hk001",
+      "model-sync-cn12001",
+      "model-sync-mind3",
+      "model-sync-hb3"
     ]
   },
   "sglang": {
     "clusters": [
-      "linux-amd64-sglang-a2",
-      "linux-amd64-sglang-a3"
+      "model-sync-hk001",
+      "model-sync-cn12001",
+      "model-sync-mind3",
+      "model-sync-hb3"
     ]
   },
   "verl": {
     "clusters": [
-      "linux-amd64-verl-a3",
-      "linux-aarch64-sync-hk001"
+      "model-sync-hk001",
+      "model-sync-hb3"
     ]
   },
   "ms-swift": {
     "clusters": [
-      "linux-aarch64-sync-hk001"
+      "model-sync-hk001"
     ]
   },
   "llamafactory": {
     "clusters": [
-      "linux-aarch64-sync-hk001"
+      "model-sync-hk001"
     ]
   },
   "vllm-omni": {
     "clusters": [
-      "linux-amd64-hb003-omni"
+      "model-sync-hk001",
+      "model-sync-cn12001"
     ]
   },
   "model-sync-ecs": {

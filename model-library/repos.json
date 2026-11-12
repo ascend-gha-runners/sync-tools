@@ -18,7 +18,8 @@
     ],
     "310p": [
       "gy003"
-    ]
+    ],
+    "_note": "tsv 显示 vllm 800i/800t 也有 cn12001->gy005 offload 记录，gy005 runner 接入后需加进列表"
   },
   "vllm-project/vllm-omni": {
     "a2": [
@@ -51,8 +52,7 @@
     "a3-800i": [
       "cn12-001",
       "mind3",
-      "aiframe",
-      "gy004"
+      "aiframe"
     ],
     "a3-800t": [
       "cn12-001",
@@ -64,12 +64,6 @@
   "Ascend/sglang": {
     "a2": [
       "hk001"
-    ],
-    "a3": [
-      "cn12-001",
-      "mind3",
-      "aiframe",
-      "gy004"
     ],
     "a3-800i": [
       "cn12-001",

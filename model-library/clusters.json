@@ -23,7 +23,7 @@
       "huggingface": "/mnt/sfs_turbo/ascend-ci-share/huggingface",
       "modelscope": "/mnt/sfs_turbo/modelscope/hub"
     },
-    "note": "ecs-for-data-rsync (113.46.27.144)，SFS 8258ca0d/37cbefa6",
+    "note": "ecs-for-data-rsync (113.46.27.144)，SFS 8258ca0d/37cbefa6；机上另有 /mnt/sfs_mind=9.6T autotest 盘，非 mind3 生产盘",
     "endpoint": "https://hf-mirror.com",
     "match": {
       "label_regex": "(cn12|800i|800t)",
@@ -37,10 +37,10 @@
     "machine": "a3-800i",
     "runner": "model-sync-mind3",
     "caches": {
-      "huggingface": "/mnt/sfs_mind/huggingface",
-      "modelscope": "/mnt/sfs_mind/modelscope/hub"
+      "huggingface": "/mnt/sfs_turbo/huggingface",
+      "modelscope": "/mnt/sfs_turbo/modelscope/hub"
     },
-    "note": "同一台 ecs-for-data-rsync 上的第二 runner 实例，共享盘 cc8060b8（同机不同盘）",
+    "note": "ecs-data-sync (113.46.31.157, aarch64)，独立机器，盘 cc8060b8(44T)；cn12 机上同名域挂载是另一块 autotest 盘，勿混",
     "endpoint": "https://hf-mirror.com",
     "match": {
       "label_regex": "mind",

@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Generate model-library/runner-map.json from ascend-ci-deployment ground truth.
+
+Sources scanned (repo = ascend-ci-deployment checkout):
+  argocd/clusters/*/ + Application spec.destination.name / source.path ->
+  runner charts (linux-* releaseName/path basename) give the authoritative
+  (host-cluster, repo, runner-label) triples.
+
+Mapping policy (confirmed by owners):
+  *800i*   -> disk clusters: cn12-001 + mind3 + aiframe (800i hardware pool)
+  *800t*   -> gy004 + gy005                              (800t hardware pool)
+  a3/other -> from label suffix: -gy004 -> gy004, -cn12-001 -> cn12-001,
+              -aiframe -> aiframe, -gy005 -> gy005, hk/a2 -> hk001, 310p -> gy003;
+              no cluster suffix -> host cluster of the Application.
+Outputs exact "label -> [clusters]" map + rule fallback file.
+"""
+import yaml, glob, os, re, json, sys
+
+ROOT = os.environ.get("ACD_ROOT", ".")
+DEST2CLUSTER = {
+    "ascend-cn12-001-cluster": "cn12-001",
+    "ascend-hk-001-cluster": "hk001",
+    "openmerlin-guiyang-004-cluster": "gy004",
+    "openmerlin-guiyang-005-cluster": "gy005",
+    "openmerlin-guiyang-003-cluster": "gy003",
+    "ascend-aiframework": "aiframe",
+    "ascend-mind-third-ci": "mind3",
+}
+SUFFIX = {  # label token -> disk cluster (a3 等无 800 标记时)
+    "cn12": "cn12-001", "gy004": "gy004", "gy005": "gy005",
+    "gy003": "gy003", "aiframe": "aiframe", "hk": "hk001",
+}
+
+def map_label(label, host_cluster):
+    l = label.lower()
+    if "800i" in l:
+        return ["cn12-001", "mind3", "aiframe"]
+    if "800t" in l:
+        return ["gy004", "gy005"]
+    for tok, c in SUFFIX.items():
+        if re.search(rf"(^|-){tok}", l):
+            return [c]
+    if "310p" in l:
+        return ["gy003"]
+    if re.search(r"(-|^)a2(b\d)?(-|$)", l):
+        return ["hk001"]
+    if "hk" in l:
+        return ["hk001"]
+    return [host_cluster] if host_cluster else []
+
+out = {}          # label -> set(clusters)
+out_repo = {}     # repo -> {label -> set(clusters)}
+for app in sorted(glob.glob(f"{ROOT}/argocd/clusters/*/*.yaml")):
+    try:
+        docs = list(yaml.safe_load_all(open(app)))
+    except Exception:
+        continue
+    for d in docs:
+        if not isinstance(d, dict) or d.get("kind") != "Application":
+            continue
+        spec = d.get("spec", {})
+        host = DEST2CLUSTER.get((spec.get("destination") or {}).get("name") or "")
+        srcs = ([spec.get("source")] if spec.get("source") else []) + (spec.get("sources") or [])
+        for src in srcs:
+            path = (src or {}).get("path") or ""
+            label = ((src or {}).get("helm") or {}).get("releaseName") or os.path.basename(path)
+            if not label.startswith("linux-") or "/linux-" not in "/" + path:
+                continue
+            # normalize repo for non-projects paths (other/ascend-gha-runners/<x>)
+            parts = path.split("/")
+            repo = "/".join(parts[1:3]) if parts[0] in ("projects", "other") and len(parts) > 3 else "?"
+            clusters = map_label(label, host)
+            if not clusters:
+                continue
+            out.setdefault(label, set()).update(clusters)
+            out_repo.setdefault(repo, {}).setdefault(label, set()).update(clusters)
+
+merged = {k: sorted(v) for k, v in sorted(out.items())}
+merged_repo = {r: {k: sorted(v) for k, v in sorted(ls.items())} for r, ls in sorted(out_repo.items())}
+print(json.dumps({"_generated": "from ascend-ci-deployment argocd apps (gen-runner-map.py)",
+                  "count": len(merged), "map": merged, "map_by_repo": merged_repo}, ensure_ascii=False, indent=1))

@@ -212,7 +212,11 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 
 ## 模型下载：两个入口，一种请求
 
-统一由 **runner 标签自动路由集群**（`model-library/groups.json`：标签→机型组→集群列表），业务方**不需要知道集群概念**。例如 `linux-aarch64-a3-800i-*` 自动展开为 **cn12-001 + mind3 + aiframe** 三集群并行下载，绝不会落到 hk001 等无关集群。
+统一由 **(repo, runner 标签) 二元组自动路由**：标签先归一化出机型（`groups.json.label_rules`，substring 匹配，**GHA 日志里的 pod/runner 名带 `-6b8f4d9c7t-qr9wk` hash 后缀也能识别**），再查 `repos.json[repo][机型] → 集群列表`（同一标签在不同仓库下 provider 集群不同，如 800t：sglang 多落 gy004、vllm 恰好三集群），仓库未登记时用 `groups.json.groups` 兜底。业务方不需要知道集群概念。
+
+- `vllm-project/vllm-ascend` + `*800i*` → **cn12-001 + mind3 + aiframe**（恰好三个，绝不外溢）
+- `sgl-project/sglang` + `*800t*` → cn12-001 + mind3 + aiframe + gy004
+- 未接 runner 的集群自动跳过并 WARN；不想推断可在请求里显式写 `"clusters": ["cn12-001","mind3"]`（可填多个，含未注册集群会直接报错）
 
 请求要素：`repo（业务仓库）+ runner_label（你的 runs-on）+ models[]/datasets[]（platform/organization/model_name[/revision/legacy_layout]）+ auth_secret（可选）`。
 

@@ -22,9 +22,9 @@
     "runner": "model-sync-cn12001",
     "caches": {
       "huggingface": "/mnt/sfs_turbo/ascend-ci-share/huggingface",
-      "modelscope": "/mnt/sfs_turbo/modelscope/hub"
+      "modelscope": "/mnt/sfs_turbo/ascend-ci-share/modelscope/hub"
     },
-    "note": "ecs-for-data-rsync (113.46.27.144)，SFS 8258ca0d/37cbefa6；机上另有 /mnt/sfs_mind=9.6T autotest 盘，非 mind3 生产盘",
+    "note": "runner job cache 实证: /mnt/sfs-local/vllm-ascend-az5 == 37cbefa6:/ascend-ci-share（subPath huggingface/modelscope）；根下 :/modelscope 非 CI 路径",
     "endpoint": "https://hf-mirror.com",
     "match": {
       "label_regex": "(cn12|800i|800t)",
@@ -42,7 +42,7 @@
       "huggingface": "/mnt/sfs_turbo/huggingface",
       "modelscope": "/mnt/sfs_turbo/modelscope/hub"
     },
-    "note": "ecs-data-sync (113.46.31.157, aarch64)，独立机器，盘 cc8060b8(44T)；cn12 机上同名域挂载是另一块 autotest 盘，勿混",
+    "note": "ecs-data-sync (113.46.31.157, aarch64)，独立机器，盘 cc8060b8(44T)；cn12 机上同名域挂载是另一块 autotest 盘，勿混 | az5别名目录=cc8060b8:/ 根, caches 在盘根",
     "endpoint": "https://hf-mirror.com",
     "match": {
       "label_regex": "mind",
@@ -59,7 +59,7 @@
       "huggingface": "/opt/vllm-ci/huggingface",
       "modelscope": "/opt/vllm-ci/modelscope/hub"
     },
-    "note": "ecs-21cc (113.46.1.251)，共享盘 /opt/vllm-ci (SFS c461cb6e)",
+    "note": "az5别名目录=c461cb6e:/ 根, caches 在盘根; hb3机器即写入口",
     "endpoint": "https://hf-mirror.com",
     "match": {
       "label_regex": "(aiframe|hb3|380|华北)",
@@ -110,10 +110,10 @@
     "machine": "a3-800t",
     "runner": null,
     "caches": {
-      "huggingface": "/mnt/sfs_gy005/vllm-ascend-az5/huggingface",
-      "modelscope": "/mnt/sfs_gy005/vllm-ascend-az5/modelscope/hub"
+      "huggingface": "/mnt/sfs_gy005_b46afb97/ascend-ci-share-nv-action-vllm-benchmarks/huggingface",
+      "modelscope": "/mnt/sfs_gy005_b46afb97/ascend-ci-share-nv-action-vllm-benchmarks/modelscope/hub"
     },
-    "note": "与 gy004 同一台机器不同共享盘：SFS b46afb97，仅 guiyang VPC 内可达，需线下 runner（TODO） （runner 未注册，接入后把 _planned_runner 挪回 runner）",
+    "note": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks；**gy005 节点上的 az5 别名即此目录**；写入口=guiyang 机器 /mnt/sfs_turbo/ascend-ci-share-nv-action-vllm-benchmarks（该机无 GitHub，暂由 ssh 直写，runner 待接入）",
     "endpoint": "https://hf-mirror.com",
     "match": {
       "label_regex": "gy005",

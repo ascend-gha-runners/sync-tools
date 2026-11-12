@@ -31,8 +31,24 @@ SUFFIX = {  # label token -> disk cluster (a3 等无 800 标记时)
     "gy003": "gy003", "aiframe": "aiframe", "hk": "hk001",
 }
 
-def map_label(label, host_cluster):
+# 物理实证（runner pod 的 /root/.cache hostPath 在各 provider 节点的实际 export）：
+#   vllm-ascend 800i fed  -> cn12(37cbefa6:/ascend-ci-share) + mind3(cc8060b8:/) + aiframe(c461cb6e:/)
+#   vllm-ascend 800t      -> pod 实测跑在 gy005 节点(b46afb97 benchmark 盘)；namespace 在 cn12
+#   sglang 系 800i/800t   -> gy004(1b51fb58 pkking 盘) + gy005
+REPO_RULES = {
+    "vllm-project/vllm-ascend": {"800i": ["cn12-001", "mind3", "aiframe"], "800t": ["cn12-001", "gy005"]},
+    "sgl-project/sglang":       {"800i": ["cn12-001", "mind3", "aiframe", "gy004"], "800t": ["gy004", "gy005"]},
+    "Ascend/sglang":            {"800i": ["cn12-001", "mind3", "aiframe", "gy004"], "800t": ["gy004", "gy005"]},
+    "sgl-project/sgl-kernel-npu": {"800i": ["gy004"], "800t": ["gy004", "gy005"]},
+}
+
+def map_label(label, host_cluster, repo=""):
     l = label.lower()
+    rr = REPO_RULES.get(repo, {})
+    if "800i" in l and "800i" in rr:
+        return rr["800i"]
+    if "800t" in l and "800t" in rr:
+        return rr["800t"]
     if "800i" in l:
         return ["cn12-001", "mind3", "aiframe"]
     if "800t" in l:
@@ -69,7 +85,8 @@ for app in sorted(glob.glob(f"{ROOT}/argocd/clusters/*/*.yaml")):
             # normalize repo for non-projects paths (other/ascend-gha-runners/<x>)
             parts = path.split("/")
             repo = "/".join(parts[1:3]) if parts[0] in ("projects", "other") and len(parts) > 3 else "?"
-            clusters = map_label(label, host)
+            clusters = map_label(label, host, repo)
+            # (repo 变量在 map_label 调用前已解析，见下)
             if not clusters:
                 continue
             out.setdefault(label, set()).update(clusters)

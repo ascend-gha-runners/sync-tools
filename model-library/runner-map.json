@@ -22,7 +22,7 @@
   "linux-aarch64-910b-1": [
    "gy001",
    "hk001",
-   "sz-lab",
+   "szlab",
    "wlcb001"
   ],
   "linux-aarch64-910b-2": [
@@ -1744,7 +1744,7 @@
     "gy005"
    ],
    "linux-aarch64-910b-1": [
-    "sz-lab"
+    "szlab"
    ],
    "linux-aarch64-910b-2": [
     "gy001",
@@ -2151,10 +2151,20 @@
    "export": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks",
    "write": "guiyang-ecs 101.245.82.28:/mnt/sfs_turbo"
   },
+  "hk001": {
+   "alias": "pvc:ascend-ci-share-nv-action-vllm-benchmarks",
+   "export": "24dd126e:/ascend-ci-share-nv-action-vllm-benchmarks",
+   "write": "hk-ecs 159.138.152.35:/opt/vllm-ci"
+  },
   "mind3": {
    "alias": "vllm-ascend-az5",
    "export": "cc8060b8:/",
    "write": "mind3-ecs 113.46.31.157:/mnt/sfs_turbo"
+  },
+  "wlcb001": {
+   "alias": "pvc:vllm-ascend-a2-fed-cache",
+   "export": "fef36441:/ascend-ci-share-nv-action-vllm-benchmarks",
+   "write": "TODO(集群内 pod)"
   }
  }
 }

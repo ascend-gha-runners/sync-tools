@@ -20,7 +20,7 @@ a = ap.parse_args(); ACD = a.acd
 CN = {"aiframework": "aiframe", "mind-third-ci": "mind3", "openmerlin-guiyang-004": "gy004",
       "openmerlin-guiyang-005": "gy005", "openmerlin-guiyang-001": "gy001", "gy-001": "gy001",
       "gy-004": "gy004", "gy-005": "gy005", "ascend-hk-001": "hk001", "cn12-001": "cn12-001",
-      "wlcb-001": "wlcb001", "gluster": None}
+      "wlcb-001": "wlcb001", "sz-lab": "szlab", "gluster": None}
 def norm(c): return CN.get(c, c)
 PLACEMENT = {  # karmada 组 -> 成员（去掉 karc 控制面），来源 prod-cp-*/propagation-policies.yaml
 }
@@ -95,19 +95,27 @@ for app in glob.glob(f"{ACD}/argocd/clusters/*/*.yaml"):
 CLUSTER_FIX = {"ascend-cn12-001-cluster": "cn12-001", "openmerlin-guiyang-003-cluster": "gy003",
                "openmerlin-guiyang-004-cluster": "gy004", "openmerlin-guiyang-005-cluster": "gy005",
                "ascend-mind-third-ci": "mind3", "aiframework": "aiframe",
-               "ascend-infra-wlcb-cluster-001": "wlcb001"}
+               "ascend-infra-wlcb-cluster-001": "wlcb001", "ascend-hk-001-cluster": "hk001"}
 SURVEY = os.path.join(os.path.dirname(__file__), "survey")
+PREF = ("vllm-ascend-az5", "ascend-ci-share-nv-action-vllm-benchmarks", "pvc:ascend-ci-share-nv-action-vllm-benchmarks", "pvc:vllm-ascend", "ascend-ci-share")
 disk = {}
+lines = collections.defaultdict(list)
 for f in glob.glob(f"{SURVEY}/*.mounts"):
     cl = CLUSTER_FIX.get(os.path.basename(f)[:-7], os.path.basename(f)[:-7])
     for line in open(f):
         m = re.match(r"(\S+)\s+=>\s+(\S+)", line)
-        if not m or m.group(1).startswith("pvc:"): continue
-        al, ex = m.group(1), m.group(2)
-        cur = disk.get(cl)
-        if "/" in al or al in ("sysfs", "rpc_pipefs"): continue
-        if al in ("vllm-ascend-az5", "ascend-ci-share-nv-action-vllm-benchmarks", "ascend-ci-share") or not cur:
-            disk[cl] = {"alias": al, "export": ex}
+        if m: lines[cl].append((m.group(1), m.group(2)))
+for cl, tab in lines.items():
+    best = None
+    for pfx in PREF:
+        for al, ex in tab:
+            if (al == pfx or al.startswith(pfx) or pfx in al) and "/" not in al.replace("pvc:", "").replace(".", ""):
+                best = {"alias": al, "export": ex}; break
+        if best: break
+    if not best:
+        for al, ex in tab:
+            if "/" not in al: best = {"alias": al, "export": ex}; break
+    if best: disk[cl] = best
 
 WRITE = {"cn12-001": "cn12-ecs 113.46.27.144:/mnt/sfs_turbo", "mind3": "mind3-ecs 113.46.31.157:/mnt/sfs_turbo",
          "aiframe": "hb3-ecs 113.46.1.251:/opt/vllm-ci", "hk001": "hk-ecs 159.138.152.35:/opt/vllm-ci",

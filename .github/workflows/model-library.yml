@@ -160,9 +160,15 @@ jobs:
 
       - name: Ensure host tooling
         run: |
-          command -v jq >/dev/null || { apt-get update -q && apt-get install -y -q jq; }
-          command -v hf >/dev/null || pip3 install --break-system-packages -q -U huggingface_hub
-          command -v modelscope >/dev/null || pip3 install --break-system-packages -q "modelscope==1.37.0"  # last classic hub/models layout release; 1.38+ switched to models/<org>--<name>/snapshots
+          if ! command -v jq >/dev/null; then
+            if command -v apt-get >/dev/null; then apt-get update -q && apt-get install -y -q jq
+            elif command -v dnf >/dev/null; then dnf install -y -q jq
+            else yum install -y -q jq; fi
+          fi
+          PIPFLAGS=""
+          pip3 install --help 2>/dev/null | grep -q break-system-packages && PIPFLAGS="--break-system-packages"
+          command -v hf >/dev/null || pip3 install -q $PIPFLAGS -i https://mirrors.huaweicloud.com/repository/pypi/simple -U huggingface_hub
+          command -v modelscope >/dev/null || pip3 install -q $PIPFLAGS -i https://mirrors.huaweicloud.com/repository/pypi/simple "modelscope==1.37.0"  # last classic hub/models layout release; 1.38+ switched to models/<org>--<name>/snapshots
 
       - name: Prepare entries
         run: |

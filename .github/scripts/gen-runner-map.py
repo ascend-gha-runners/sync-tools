@@ -6,7 +6,7 @@
   2. karmada  manifests/arc-fedsched/prod-cp-*/propagation-policies.yaml clusterNames
      (a2 / a3-800i / a3-800t / a3-n 四组成员)
   3. argocd Application destinations (chart 部署的 host 集群，无 selector 时落本地)
-  4. survey mounts/pvc  -> 每集群 cache 别名 -> 真实 export
+  4. cluster_disks 读 model-library/clusters.json 的 node_cache
 Output runner-map.json:
   map:            label -> [clusters]                (全局并集)
   map_by_repo:    repo -> {label -> [clusters]}

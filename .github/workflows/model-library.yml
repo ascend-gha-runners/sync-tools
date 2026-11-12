@@ -181,7 +181,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.number) || '' }}
+          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.number) || github.sha }}
       - uses: actions/download-artifact@v4
         with:
           pattern: "ledger-patch-*"

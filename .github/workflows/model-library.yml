@@ -208,14 +208,34 @@ jobs:
               "$LIB" > /tmp/l.json
             cmp -s /tmp/l.json "$LIB" || { mv /tmp/l.json "$LIB"; changed=1; }
           done
+          TARGET_REF='${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}'
+          apply_patches() {
+            for d in /tmp/patches/ledger-patch-*; do
+              cluster=$(basename "$d" | sed 's/^ledger-patch-[0-9]*-//')
+              LIB="model-library/$cluster.json"
+              mkdir -p "$(dirname "$LIB")"
+              [ -f "$LIB" ] || printf '{"models": [], "datasets": []}\n' > "$LIB"
+              jq --slurpfile new "$d/models.json" \
+                '.models = ((.models + $new[0]) | unique_by(.platform + "/" + .organization + "/" + .model_name))' \
+                "$LIB" > /tmp/l.json && mv /tmp/l.json "$LIB"
+            done
+          }
           [ "$changed" = 1 ] || { echo "no ledger changes"; exit 0; }
           git config user.name "model-library-bot"
           git config user.email "model-library-bot@users.noreply.github.com"
           git add model-library/
           git commit -m "library: record downloads from ${{ github.event_name }} (${{ inputs.organization || github.actor }})"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            HEAD_REF='${{ github.event.pull_request.head.ref }}'
-            git push origin "HEAD:${HEAD_REF}"
-          else
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-          fi
+          # 并发 ledger：后推者 fetch+reset 后重放自己的 patches 再提，重试 5 次
+          for i in 1 2 3 4 5; do
+            git push -q origin "HEAD:$TARGET_REF" && exit 0
+            echo "push race (attempt $i), rebasing onto moved tip" >&2
+            git fetch -q origin "$TARGET_REF"
+            git reset -q --hard "origin/$TARGET_REF"
+            apply_patches
+            git add model-library/
+            if git diff --cached --quiet; then echo "entries already recorded by concurrent run"; exit 0; fi
+            git commit -m "library: merge ledger after push race"
+            sleep $((RANDOM % 4 + 2))
+          done
+          echo "ledger push failed after retries" >&2
+          exit 1

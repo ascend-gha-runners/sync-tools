@@ -208,35 +208,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          changed=0
-          for d in /tmp/patches/ledger-patch-*; do
-            cluster=$(basename "$d" | sed 's/^ledger-patch-[0-9]*-//')
-            LIB="model-library/$cluster.json"
-            mkdir -p "$(dirname "$LIB")"
-            [ -f "$LIB" ] || printf '{"models": [], "datasets": []}\n' > "$LIB"
-            jq --slurpfile new "$d/models.json" \
-              '.models = ((.models + $new[0]) | unique_by(.platform + "/" + .organization + "/" + .model_name))' \
-              "$LIB" > /tmp/l.json
-            cmp -s /tmp/l.json "$LIB" || { mv /tmp/l.json "$LIB"; changed=1; }
-          done
-          IS_FORK='${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository }}'
-          if [ "$IS_FORK" = "true" ]; then
-            # fork 无权限推其分支：把台账落到主仓库的 ledger/* 辅助分支并开 PR
-            BR="ledger/pr-${{ github.event.pull_request.number }}-${GITHUB_RUN_ID}"
-            git checkout -q -b "$BR"
-            git config user.name "model-library-bot"
-            git config user.email "model-library-bot@users.noreply.github.com"
-            git add model-library/
-            git commit -m "library: ledger for PR #${{ github.event.pull_request.number }} (fork)"
-            git push -q origin "HEAD:refs/heads/$BR"
-            curl -sf -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Content-Type: application/json" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/${{ github.repository }}/pulls" \
-              -d "{\"title\":\"library: ledger entries from PR #${{ github.event.pull_request.number }}\",\"head\":\"$BR\",\"base\":\"main\",\"body\":\"机器人补记 fork PR 的台账；与 #${{ github.event.pull_request.number }} 一起合入即可。\"}" >/dev/null
-            echo "ledger PR created from branch $BR"
-            exit 0
-          fi
-          TARGET_REF='${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.ref_name }}'
           apply_patches() {
             for d in /tmp/patches/ledger-patch-*; do
               cluster=$(basename "$d" | sed 's/^ledger-patch-[0-9]*-//')
@@ -248,12 +219,30 @@ jobs:
                 "$LIB" > /tmp/l.json && mv /tmp/l.json "$LIB"
             done
           }
-          [ "$changed" = 1 ] || { echo "no ledger changes"; exit 0; }
+          apply_patches
           git config user.name "model-library-bot"
           git config user.email "model-library-bot@users.noreply.github.com"
           git add model-library/
-          git commit -m "library: record downloads from ${{ github.event_name }} (${{ inputs.organization || github.actor }})"
-          # 并发 ledger：后推者 fetch+reset 后重放自己的 patches 再提，重试 5 次
+          if git diff --cached --quiet; then echo "no ledger changes"; exit 0; fi
+          git commit -qm "library: record downloads (${{ github.event_name }} ${{ inputs.organization || github.actor }})"
+
+          IS_FORK='${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository }}'
+          if [ "$IS_FORK" = "true" ]; then
+            # fork PR 无法回写其分支：推主仓库辅助分支并开台账 PR（失败则降级 warning）
+            BR="ledger/pr-${{ github.event.pull_request.number }}-${GITHUB_RUN_ID}"
+            git checkout -qb "$BR"
+            git push -q origin "HEAD:refs/heads/$BR"
+            resp=$(curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Content-Type: application/json" \
+              "https://api.github.com/repos/${{ github.repository }}/pulls" \
+              -d "{\"title\":\"library: ledger entries from PR #${{ github.event.pull_request.number }}\",\"head\":\"$BR\",\"base\":\"main\",\"body\":\"机器人补记 fork PR 的台账（下载已在该 PR 的 check 中完成），与其一起合入。\"}")
+            url=$(echo "$resp" | jq -r '.html_url // empty')
+            if [ -n "$url" ]; then echo "ledger PR: $url"; else
+              echo "::warning::辅助台账 PR 创建失败($(echo "$resp" | jq -r '.message // "unknown" | .[0:120]'))；分支 $BR 已推送，请手动开 PR"
+            fi
+            exit 0
+          fi
+
+          TARGET_REF='${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.ref_name }}'
           for i in 1 2 3 4 5; do
             git push -q origin "HEAD:$TARGET_REF" && exit 0
             echo "push race (attempt $i), rebasing onto moved tip" >&2
@@ -262,7 +251,7 @@ jobs:
             apply_patches
             git add model-library/
             if git diff --cached --quiet; then echo "entries already recorded by concurrent run"; exit 0; fi
-            git commit -m "library: merge ledger after push race"
+            git commit -qm "library: merge ledger after push race"
             sleep $((RANDOM % 4 + 2))
           done
           echo "ledger push failed after retries" >&2

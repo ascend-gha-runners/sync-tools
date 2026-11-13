@@ -31,12 +31,6 @@ on:
         type: boolean
         required: false
         default: true
-      auth_secret:
-        description: "私有模型凭证（token 本身不填这里，引用仓库 secrets）"
-        type: choice
-        required: false
-        default: none
-        options: [none, hf, modelscope]
   pull_request_target:
     types: [opened, synchronize, reopened, labeled]
     branches:
@@ -65,6 +59,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.gen.outputs.matrix }}
+      matrix_host: ${{ steps.gen.outputs.matrix_host }}
+      matrix_arc: ${{ steps.gen.outputs.matrix_arc }}
     steps:
       - name: Authorize dispatch (repo write/committer level required)
         if: github.event_name == 'workflow_dispatch'
@@ -94,14 +90,13 @@ jobs:
           INPUT_MODEL_NAME: ${{ inputs.model_name }}
           INPUT_REVISION: ${{ inputs.revision }}
           INPUT_FLATTEN_LEGACY: ${{ inputs.legacy_layout || 'false' }}
-          INPUT_AUTH_SECRET: ${{ inputs.auth_secret || 'none' }}
           PR_BASE_SHA: ${{ github.event_name == 'pull_request_target' && 'origin/main' || github.event.pull_request.base.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: bash .github/scripts/lib-build-matrix.sh
 
   download:
     needs: plan
-    if: needs.plan.result == 'success' && needs.plan.outputs.matrix != '[]'
+    if: needs.plan.result == 'success' && needs.plan.outputs.matrix_host != '[]'
     name: ${{ matrix.cluster }} <- ${{ matrix.request }}
     runs-on: ${{ matrix.runner }}
     # 同一台同步机上的下载串行排队（共享盘 cache/blobs 不可并发写），不同机器并行
@@ -111,14 +106,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.plan.outputs.matrix) }}
+        include: ${{ fromJson(needs.plan.outputs.matrix_host) }}
     env:
       MODELSCOPE_CACHE: ${{ matrix.ms_cache }}
       HF_HOME: ${{ matrix.hf_cache }}
       HUGGINGFACE_HUB_CACHE: ${{ matrix.hf_cache }}/hub
       HF_ENDPOINT: ${{ matrix.hf_endpoint }}
-      HF_TOKEN: ${{ matrix.auth == 'hf' && secrets.HF_TOKEN || '' }}
-      MODELSCOPE_SDK_TOKEN: ${{ matrix.auth == 'modelscope' && secrets.MODELSCOPE_SDK_TOKEN || '' }}
     steps:
       - name: Fetch repo snapshot via codeload (mainland-safe, no github.com git)
         run: |
@@ -185,12 +178,104 @@ jobs:
           path: /tmp/models.json
           if-no-files-found: ignore
 
+  # O 卡集群（无同步裸机的 gy001/wlcb001/sh001/sh002）：下载跑在集群内
+  # ascend-gha-runners org 级 ARC runner 的 sync-tools 容器里，job pod 已把
+  # 本集群共享盘挂成 /root/.cache，写入即落业务容器可读的位置。
+  download-arc:
+    needs: plan
+    if: needs.plan.result == 'success' && needs.plan.outputs.matrix_arc != '[]'
+    name: "[arc] ${{ matrix.cluster }} <- ${{ matrix.request }}"
+    container:
+      image: swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/sync-tools:latest
+    runs-on: ${{ matrix.runner }}
+    # 同一台同步机上的下载串行排队（共享盘 cache/blobs 不可并发写），不同机器并行
+    concurrency:
+      group: model-lib-dl-${{ matrix.runner }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.plan.outputs.matrix_arc) }}
+    env:
+      MODELSCOPE_CACHE: ${{ matrix.ms_cache }}
+      HF_HOME: ${{ matrix.hf_cache }}
+      HUGGINGFACE_HUB_CACHE: ${{ matrix.hf_cache }}/hub
+      HF_ENDPOINT: ${{ matrix.hf_endpoint }}
+    steps:
+      - name: Fetch repo snapshot via codeload (mainland-safe, no github.com git)
+        run: |
+          if [ '${{ github.event_name }}' = 'pull_request_target' ]; then
+            SHA=$(curl -sf -H "Authorization: Bearer $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/commits/HEAD?sha=${{ github.event.repository.default_branch }}" | jq -r '.sha')
+          else
+            SHA='${{ github.sha }}'
+          fi
+          curl -fsSL --retry 4 --retry-delay 5 -m 600 \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -o /tmp/repo.tgz "https://codeload.github.com/${{ github.repository }}/tar.gz/$SHA"
+          mkdir -p "$GITHUB_WORKSPACE"
+          tar xzf /tmp/repo.tgz -C "$GITHUB_WORKSPACE" --strip-components=1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure host tooling
+        if: false  # sync-tools 镜像自带 jq/hf/modelscope
+        run: |
+          if ! command -v jq >/dev/null; then
+            if command -v apt-get >/dev/null; then apt-get update -q && apt-get install -y -q jq
+            elif command -v dnf >/dev/null; then dnf install -y -q jq
+            else yum install -y -q jq; fi
+          fi
+          PIPFLAGS=""
+          pip3 install --help 2>/dev/null | grep -q break-system-packages && PIPFLAGS="--break-system-packages"
+          command -v hf >/dev/null || pip3 install -q $PIPFLAGS -i https://mirrors.huaweicloud.com/repository/pypi/simple -U huggingface_hub
+          command -v modelscope >/dev/null || pip3 install -q $PIPFLAGS -i https://mirrors.huaweicloud.com/repository/pypi/simple "modelscope==1.37.0"
+
+      - name: Prepare entries
+        run: |
+          cat > /tmp/req.json <<'REQEOF'
+          ${{ matrix.payload }}
+          REQEOF
+          jq '.models   // []' /tmp/req.json > /tmp/models.json
+          jq '.datasets // []' /tmp/req.json > /tmp/datasets.json
+          echo "models: $(jq length /tmp/models.json), datasets: $(jq length /tmp/datasets.json)"
+
+      - name: Download models
+        if: github.event_name != 'push'
+        run: |
+          if [ "$(jq length /tmp/models.json)" -gt 0 ]; then
+            bash .github/scripts/download-json-models.sh /tmp/models.json model
+          fi
+
+      - name: Download datasets
+        if: github.event_name != 'push'
+        run: |
+          if [ "$(jq length /tmp/datasets.json)" -gt 0 ]; then
+            bash .github/scripts/download-json-models.sh /tmp/datasets.json dataset
+          fi
+
+      # push(merge 后)只做审计：确认台账里的模型确实躺在本集群共享盘，
+      # 绝不重下（PR 阶段已下载；重下会堵死按 runner 串行的队列）。
+      - name: Audit landed models
+        if: github.event_name == 'push'
+        run: bash .github/scripts/audit-landed.sh
+
+      - name: Upload ledger patch
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ledger-patch-${{ strategy.job-index }}-${{ matrix.cluster }}
+          path: /tmp/models.json
+          if-no-files-found: ignore
+
   # Single writer: merges every downloaded entry into model-library/<cluster>.json.
   # dispatch -> pushes to the workflow branch (main); PR -> pushes onto the PR
   # head branch so the ledger lands together with the merge.
   ledger:
-    needs: [plan, download]
-    if: needs.download.result == 'success'
+    needs: [plan, download, download-arc]
+    if: >-
+      needs.plan.result == 'success' &&
+      (needs.download.result == 'success' || needs.download-arc.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -212,13 +212,13 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 
 ## 模型下载：两个入口，一种请求
 
-统一由 **(repo, runner 标签) 二元组自动路由**：标签先归一化出机型（`groups.json.label_rules`，substring 匹配，**GHA 日志里的 pod/runner 名带 `-6b8f4d9c7t-qr9wk` hash 后缀也能识别**），再查 `repos.json[repo][机型] → 集群列表`（同一标签在不同仓库下 provider 集群不同，如 800t：sglang 多落 gy004、vllm 恰好三集群），仓库未登记时用 `groups.json.groups` 兜底。业务方不需要知道集群概念。
+统一由 **(repo, runner 标签) 二元组自动路由**：查 `runner-map.json`（由 `gen-runner-map.py` 从 ascend-ci-deployment 生成：chart nodeSelector 硬落点 > karmada 组成员 > argocd dest；**GHA 日志里的 pod/runner 名带 `-6b8f4d9c7t-qr9wk` hash 后缀按最长前缀识别**），未命中时 `groups.json` 兜底（同一标签在不同仓库下集群不同，如 800t：sglang 多落 gy004、vllm 恰好三集群）。落点与盘位对照表：`model-library/RUNNERS.md`。业务方不需要知道集群概念。
 
 - `vllm-project/vllm-ascend` + `*800i*` → **cn12-001 + mind3 + aiframe**（恰好三个，绝不外溢）
 - `sgl-project/sglang` + `*800t*` → cn12-001 + mind3 + aiframe + gy004
 - 未接 runner 的集群自动跳过并 WARN；不想推断可在请求里显式写 `"clusters": ["cn12-001","mind3"]`（可填多个，含未注册集群会直接报错）
 
-请求要素：`repo（业务仓库）+ runner_label（你的 runs-on）+ models[]/datasets[]（platform/organization/model_name[/revision/legacy_layout]）+ auth_secret（可选）`。
+请求要素：`repo（业务仓库）+ runner_label（你的 runs-on）+ models[]/datasets[]（platform/organization/model_name[/revision/legacy_layout]）`。
 
 ### 入口一：手动触发（Actions → model library → Run workflow）
 
@@ -232,7 +232,6 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 {
   "repo": "vllm-project/vllm-ascend",
   "runner_label": "linux-aarch64-a3-800i-8-cn12-001",
-  "auth_secret": "none",
   "models": [
     { "platform": "modelscope", "organization": "vllm-sr", "model_name": "d3-edge", "legacy_layout": true }
   ],
@@ -243,13 +242,13 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 2. 提 PR（本仓库分支，fork 不跑）；**无任何下载**，直到管理员加 `model-download` 标签 → 流水线只对 diff 中**新增的条目**下载（历史条目不重跑，老模型天然幂等秒过）
 3. 下载完成后 bot 把条目自动回写进 PR 分支的 `model-library/<cluster>.json` 台账，随 PR 一起合入 —— 合入即完成登记
 
-### Token 安全
+### 需要 token 的模型（私有/gated）
 
-`auth_secret` 只允许 `none | hf | modelscope`，实际 token 存仓库 secrets（`HF_TOKEN`/`MODELSCOPE_SDK_TOKEN`），**请求文件与表单里绝不出现明文**。特殊团队的私有 token 请管理员另建 secret 后扩枚举值。
+流水线**不受理任何凭证**（表单与 requests.json 均无 token 入口）。需要 token 才能下载的模型，请**开 issue 联系维护者**走人工通道：维护者线下带凭证下载并落对应集群共享盘，台账手动补记。requests.json 里出现 `auth_secret` 非 `none` 会被 plan 直接拒绝。
 
 ### 模型库台账
 
-`model-library/<cluster>.json` 记录每个集群已下载过的 models/datasets（自动回写，`unique_by` 去重）；`clusters.json` 是集群注册表（runner、共享盘缓存路径、endpoint、探针 share_ids）；未接 runner 的集群（gy001/gy003/gy004/gy005）路由时自动跳过并 WARN。
+`model-library/<cluster>.json` 记录每个集群已下载过的 models/datasets（自动回写，`unique_by` 去重）；`clusters.json` 是集群注册表（runner、共享盘缓存路径、endpoint、探针 share_ids）；未接 runner 的集群（目前仅 gy003）路由时自动跳过并 WARN。**无同步裸机的 gy001/wlcb001/sh001/sh002 走集群内 O卡 runner 下载**（`clusters.json` 中 `mode: "arc"`，workflow 的 `download-arc` job，详见 RUNNERS.md"无同步机集群"一节）。
 
 ### 机器 ↔ 共享盘对照
 

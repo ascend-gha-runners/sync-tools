@@ -229,11 +229,18 @@ jobs:
             git add model-library/
             git commit -m "library: ledger for PR #${{ github.event.pull_request.number }} (fork)"
             git push -q origin "HEAD:refs/heads/$BR"
-            curl -sf -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Content-Type: application/json" \
+            resp=$(curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Content-Type: application/json" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${{ github.repository }}/pulls" \
-              -d "{\"title\":\"library: ledger entries from PR #${{ github.event.pull_request.number }}\",\"head\":\"$BR\",\"base\":\"main\",\"body\":\"机器人补记 fork PR 的台账；与 #${{ github.event.pull_request.number }} 一起合入即可。\"}" >/dev/null
-            echo "ledger PR created from branch $BR"
+              -d "{\"title\":\"library: ledger entries from PR #${{ github.event.pull_request.number }}\",\"head\":\"$BR\",\"base\":\"main\",\"body\":\"机器人补记 fork PR 的台账（下载已在该 PR 的 check 中完成）；与其一起合入即可。\"}")
+            url=$(echo "$resp" | jq -r '.html_url // empty')
+            if [ -n "$url" ]; then
+              echo "ledger PR: $url"
+            else
+              # 常见原因：org 策略禁止 GITHUB_TOKEN 开 PR。台账分支已推送，人工一键开 PR 即可。
+              echo "::warning::aux ledger PR 创建失败：$(echo "$resp" | jq -r '.message // "unknown" | .[0:140]')；分支 $BR 已推送，请手动开 PR 合入"
+            fi
+            fi
             exit 0
           fi
           TARGET_REF='${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.ref_name }}'

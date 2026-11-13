@@ -31,11 +31,11 @@ NAME_KEY="${TYPE}_name"
 # preference set; mainland hosts cannot reach huggingface.co directly
 export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
 
-# hf-mirror does not proxy the Xet CAS backend (cas-server.xethub.hf.co),
-# which makes snapshot downloads fail with 401. Pin classic HTTP transport.
-case "${HF_ENDPOINT}" in
-  *hf-mirror*|*aliyuncs*) export HF_HUB_DISABLE_XET=1 ;;
-esac
+# 同步机产物会被 CI 以 HF_HUB_OFFLINE=1 直读，blob 必须实体完整：
+# 1) hf-mirror 不代理 Xet CAS（401）；
+# 2) 实测直连 huggingface.co 的 xet materialize 弱网下会留下 80B 截断
+#    safetensors 却 0 退出。故一律禁用 xet，走经典 LFS + sha256 校验。
+export HF_HUB_DISABLE_XET=1
 
 failures=0
 rows=""

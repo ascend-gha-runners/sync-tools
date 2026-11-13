@@ -25,5 +25,59 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "clusters": [
+      "gy004"
+    ],
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen2-0.5B-Instruct",
+        "legacy_layout": true
+      },
+      {
+        "platform": "modelscope",
+        "organization": "RedHatAI",
+        "model_name": "Qwen2.5-0.5B-Instruct-quantized.w8a8",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "clusters": [
+      "gy005"
+    ],
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "Eco-Tech",
+        "model_name": "GLM-5.3-w8a8",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "clusters": [
+      "mind3"
+    ],
+    "auth_secret": "hf",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "meta-llama",
+        "model_name": "Llama-3.1-8B-Instruct",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
   }
 ]

@@ -25,5 +25,97 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "model-sync-hb3",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen2-0.5B-Instruct",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "model-sync-mind3",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "iridiumine",
+        "model_name": "MiMo-V2-Flash-W8A8",
+        "legacy_layout": true
+      },
+      {
+        "platform": "modelscope",
+        "organization": "RedHatAI",
+        "model_name": "Qwen2.5-0.5B-Instruct-quantized.w8a8",
+        "legacy_layout": true
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Eagle3-Qwen3-8B-zh",
+        "legacy_layout": true
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen3-a3B_eagle3",
+        "legacy_layout": true
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen2-0.5B-Instruct",
+        "legacy_layout": true
+      },
+      {
+        "platform": "modelscope",
+        "organization": "LLM-Research",
+        "model_name": "Llama-3.2-1B-Instruct",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "model-sync-mind3",
+    "auth_secret": "hf",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "meta-llama",
+        "model_name": "Llama-3.1-8B-Instruct",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "ascend-gha-runners/sync-tools",
+    "runner_label": "sglang-a3",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen2-0.5B-Instruct",
+        "legacy_layout": true
+      },
+      {
+        "platform": "modelscope",
+        "organization": "RedHatAI",
+        "model_name": "Qwen2.5-0.5B-Instruct-quantized.w8a8",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
   }
 ]

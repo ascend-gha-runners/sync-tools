@@ -62,15 +62,31 @@ case "${GITHUB_EVENT_NAME:-}" in
       BASE=$(git merge-base "origin/${GITHUB_BASE_REF:-main}" HEAD 2>/dev/null || echo HEAD~1)
     fi
     REQFILE="$REQUESTS_DIR/requests.json"
-    if ! git diff --name-only --diff-filter=ACM "$BASE"..HEAD -- "$REQFILE" | grep -q .; then
+    # head 内容来源：pull_request_target 时 plan checkout 固定在 base(main) 脚本，
+    # PR 提议的 requests.json 从 refs/pull/<N>/head 读（base 仓库自带该 ref，
+    # 不依赖 fork 仓库可见性；只当数据读，绝不执行 head 代码）。
+    HEADREF="HEAD"
+    if [ -n "${PR_NUMBER:-}" ] && git fetch -q origin "+refs/pull/${PR_NUMBER}/head" 2>/dev/null; then
+      HEADREF=FETCH_HEAD
+    fi
+    git show "$HEADREF:$REQFILE" > /tmp/requests-head.json 2>/dev/null || {
+      echo "no $REQFILE in PR head"; echo "matrix=[]" >> "${GITHUB_OUTPUT:-/dev/null}"; exit 0; }
+    git show "$BASE:$REQFILE" > /tmp/requests-base.json 2>/dev/null || echo '[]' > /tmp/requests-base.json
+    if cmp -s /tmp/requests-base.json /tmp/requests-head.json; then
       echo "no changes to $REQFILE"; echo "matrix=[]" >> "${GITHUB_OUTPUT:-/dev/null}"; exit 0
     fi
-    git show "$BASE:$REQFILE" > /tmp/requests-base.json 2>/dev/null || echo '[]' > /tmp/requests-base.json
-    python3 "$ROOT/.github/scripts/lib-extract-new-requests.py" /tmp/requests-base.json "$REQFILE" > /tmp/new-requests.jsonl
+    python3 "$ROOT/.github/scripts/lib-extract-new-requests.py" /tmp/requests-base.json /tmp/requests-head.json > /tmp/new-requests.jsonl
     n=0
     while IFS= read -r req; do
       [ -n "$req" ] || continue
       n=$((n+1))
+      # fork 安全：字符串字段白名单（拒绝引号/shell 元字符/非 ASCII）
+      echo "$req" | jq -e --arg x "^[A-Za-z0-9][A-Za-z0-9 .:/_-]*$" '
+        ([.repo, .runner_label, ((.clusters // [ ])[ ]?),
+          ((.models // [ ])[ ] | (.organization, .model_name, (.revision // ""))),
+          ((.datasets // [ ])[ ] | (.organization, .dataset_name, (.revision // "")))]
+         | map(select(type=="string" and length>0)) | all(test($x)))' >/dev/null || {
+        echo "ERROR: request #$n 含白名单外字符（[A-Za-z0-9 .:/_-]），已拒绝" >&2; exit 1; }
       echo "== new request #$n: $(echo "$req" | jq -r '.repo + " @ " + .runner_label') (+$(echo "$req" | jq -r '((.models|length)+(.datasets|length))')) entries"
       ENTRIES="$ENTRIES$(emit_for_request "requests.json#$n" "$req" "$req")"$'\n'
     done < /tmp/new-requests.jsonl

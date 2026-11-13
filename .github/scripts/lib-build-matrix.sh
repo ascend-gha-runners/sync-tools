@@ -56,7 +56,7 @@ emit_for_request() {  # $1 source-desc, $2 request-json, $3 payload(for dispatch
 
 ENTRIES=""
 case "${GITHUB_EVENT_NAME:-}" in
-  pull_request)
+  pull_request|pull_request_target)
     BASE="${PR_BASE_SHA:-}"
     if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
       BASE=$(git merge-base "origin/${GITHUB_BASE_REF:-main}" HEAD 2>/dev/null || echo HEAD~1)

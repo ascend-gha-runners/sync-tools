@@ -171,5 +171,65 @@
       "export": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks",
       "write": "TODO(集群侧)"
     }
+  },
+  "gy001": {
+    "mode": "arc",
+    "runner": "linux-amd64-cpu-2-gy001",
+    "caches": {
+      "huggingface": "/root/.cache/huggingface",
+      "modelscope": "/root/.cache/modelscope/hub"
+    },
+    "endpoint": "https://hf-mirror.com",
+    "note": "无同步裸机。O卡集群内下载：ascend-gha-runners org 级 runner，job pod /root/.cache <- hostPath /mnt/sfs-local/ascend-gha-runners-gy001",
+    "node_cache": {
+      "alias": "ascend-gha-runners-gy001",
+      "export": "d561f410:/ascend-ci-share",
+      "write": "集群内 job Pod /root/.cache（无同步机，下载即在集群里）"
+    }
+  },
+  "wlcb001": {
+    "mode": "arc",
+    "runner": "linux-aarch64-a2-1-wlcb001",
+    "caches": {
+      "huggingface": "/root/.cache/huggingface",
+      "modelscope": "/root/.cache/modelscope/hub"
+    },
+    "endpoint": "https://hf-mirror.com",
+    "note": "无同步裸机。O卡集群内下载：job pod /root/.cache <- PVC vllm-ascend-hk-001 = fef36441:/ascend-ci-share-nv-action-vllm-benchmarks",
+    "node_cache": {
+      "alias": "pvc:vllm-ascend-hk-001",
+      "export": "fef36441:/ascend-ci-share-nv-action-vllm-benchmarks",
+      "write": "集群内 job Pod /root/.cache"
+    }
+  },
+  "sh001": {
+    "mode": "arc",
+    "runner": "linux-aarch64-a5-2-sh001",
+    "caches": {
+      "huggingface": "/root/.cache/huggingface",
+      "modelscope": "/root/.cache/modelscope/hub"
+    },
+    "endpoint": "https://hf-mirror.com",
+    "note": "无同步裸机。O卡(950/A5)集群内下载：job pod /root/.cache <- hostPath /mnt/weight（节点权重盘）",
+    "node_cache": {
+      "alias": "hostPath:/mnt/weight",
+      "export": "sh-001 节点 /mnt/weight",
+      "write": "集群内 job Pod /root/.cache"
+    }
+  },
+  "sh002": {
+    "mode": "arc",
+    "runner": "linux-amd64-a5-2-sh002",
+    "caches": {
+      "huggingface": "/root/.cache/huggingface",
+      "modelscope": "/root/.cache/modelscope/hub"
+    },
+    "endpoint": "https://hf-mirror.com",
+    "note": "无同步裸机。O卡(950/A5)集群内下载：job pod /root/.cache <- PVC vllm-ascend-share-pvc-test（静态 PV，vllm-ascend/config-sh-002）",
+    "node_cache": {
+      "alias": "pvc:vllm-ascend-share-pvc-test",
+      "export": "见 config-sh-002 PV 注解",
+      "write": "集群内 job Pod /root/.cache"
+    }
   }
 }

@@ -25,5 +25,49 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "clusters": [
+      "gy005"
+    ],
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "Eco-Tech",
+        "model_name": "GLM-5.3-w8a8",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "clusters": [
+      "mind3"
+    ],
+    "auth_secret": "modelscope",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "iridiumine",
+        "model_name": "MiMo-V2-Flash-W8A8",
+        "legacy_layout": true
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Eagle3-Qwen3-8B-zh",
+        "legacy_layout": true
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen3-a3B_eagle3",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
   }
 ]

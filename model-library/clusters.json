@@ -110,12 +110,12 @@
   },
   "gy004": {
     "machine": "a3-800t",
-    "runner": null,
+    "runner": "model-sync-gy004",
     "caches": {
-      "huggingface": "/mnt/sfs_gy004/ascend-ci-share-pkking-sglang/huggingface",
-      "modelscope": "/mnt/sfs_gy004/ascend-ci-share-pkking-sglang/modelscope/hub"
+      "huggingface": "/mnt/sfs_turbo2/ascend-ci-share-pkking-sglang/huggingface",
+      "modelscope": "/mnt/sfs_turbo2/ascend-ci-share-pkking-sglang/modelscope/hub"
     },
-    "note": "与 gy005 同一台机器不同共享盘：SFS 1b51fb58，仅 guiyang VPC 内可达，需线下 runner（TODO: 机器上需挂 NFS 到 /mnt/sfs_gy004） （runner 未注册，接入后把 _planned_runner 挪回 runner）",
+    "note": "guiyang ECS 101.245.82.28 第二实例，写 1b51fb58 pkking-sglang 盘（= gy004 节点 az5 别名盘）",
     "endpoint": "https://hf-mirror.com",
     "match": {
       "label_regex": "gy004",
@@ -123,7 +123,6 @@
         "1b51fb58"
       ]
     },
-    "_planned_runner": "model-sync-gy004",
     "share": "1b51fb58 (runner 实证: /mnt/sfs-local/ascend-ci-share-pkking-sglang)",
     "node_cache": {
       "alias": "ascend-ci-share",
@@ -133,12 +132,12 @@
   },
   "gy005": {
     "machine": "a3-800t",
-    "runner": null,
+    "runner": "model-sync-gy005",
     "caches": {
-      "huggingface": "/mnt/sfs_gy005_b46afb97/ascend-ci-share-nv-action-vllm-benchmarks/huggingface",
-      "modelscope": "/mnt/sfs_gy005_b46afb97/ascend-ci-share-nv-action-vllm-benchmarks/modelscope/hub"
+      "huggingface": "/mnt/sfs_turbo/ascend-ci-share-nv-action-vllm-benchmarks/huggingface",
+      "modelscope": "/mnt/sfs_turbo/ascend-ci-share-nv-action-vllm-benchmarks/modelscope/hub"
     },
-    "note": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks；**gy005 节点上的 az5 别名即此目录**；写入口=guiyang 机器 /mnt/sfs_turbo/ascend-ci-share-nv-action-vllm-benchmarks（该机无 GitHub，暂由 ssh 直写，runner 待接入）",
+    "note": "guiyang ECS 101.245.82.28 第一实例，写 b46afb97 benchmark 盘（gy005 节点 az5 别名同盘）",
     "endpoint": "https://hf-mirror.com",
     "match": {
       "label_regex": "gy005",
@@ -146,7 +145,6 @@
         "b46afb97"
       ]
     },
-    "_planned_runner": "model-sync-gy005",
     "share": "TODO-gy005-az5-vllm-ascend-v2 (runner 实证 hostPath, export 待查)",
     "node_cache": {
       "alias": "vllm-ascend-az5",

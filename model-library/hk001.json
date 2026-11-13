@@ -17,6 +17,11 @@
     },
     {
       "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen3-0.6B"
+    },
+    {
+      "platform": "huggingface",
       "organization": "robbyant",
       "model_name": "lingbot-world-v2-14b-causal-fast-diffusers"
     }

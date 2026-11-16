@@ -60,6 +60,26 @@
         "organization": "inclusionAI",
         "model_name": "Ling-lite",
         "legacy_layout": true
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Eco-Tech",
+        "model_name": "Qwen3-Coder-480B-A35B-Instruct-w8a8-QuaRot",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "model-sync-mind3",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "Eco-Tech",
+        "model_name": "Qwen3-Coder-480B-A35B-Instruct-w8a8-QuaRot",
+        "legacy_layout": true
       }
     ],
     "datasets": []

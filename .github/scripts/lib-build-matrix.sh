@@ -4,6 +4,8 @@
 # A "request" is the single unit of work, provided by either entry:
 #   - pull_request : files under model-requests/*.json (repo + runner_label +
 #                    models[]/datasets[])  # token 模型不走流水线，见 README
+#   - repository_dispatch (model-download-request) : client_payload = 单个请求对象
+#                    + request_id（外部 CI 同步接口，见 README"外部 CI 接口"）
 #   - dispatch     : form fields (repo, runner_label, platform, org, name...)
 #
 # Routing is automatic: runner_label -> model-library/groups.json -> cluster
@@ -95,6 +97,24 @@ case "${GITHUB_EVENT_NAME:-}" in
       echo "== new request #$n: $(echo "$req" | jq -r '.repo + " @ " + .runner_label') (+$(echo "$req" | jq -r '((.models|length)+(.datasets|length))')) entries"
       ENTRIES="$ENTRIES$(emit_for_request "requests.json#$n" "$req" "$req")"$'\n'
     done < /tmp/new-requests.jsonl
+    ;;
+  repository_dispatch)
+    # 外部 CI 接口（vllm-ascend 等 org 成员仓库）：token 即权限边界，不再校验 label/表单权限
+    REQ="${INPUT_RD_PAYLOAD:-}"
+    [ -n "$REQ" ] || { echo "ERROR: repository_dispatch 缺 client_payload" >&2; exit 1; }
+    echo "$REQ" | jq -e '(.repo|type=="string") and (((.runner_label|type=="string") and (.runner_label|length>0)) or ((.clusters//[])|length>0))' >/dev/null || {
+      echo "ERROR: client_payload 需要 repo + (runner_label 或 clusters)" >&2; exit 1; }
+    rid=$(echo "$REQ" | jq -r '.request_id // "anon"' | tr -cd 'A-Za-z0-9._-' | cut -c1-80)
+    echo "$REQ" | jq -e --arg x "^[A-Za-z0-9][A-Za-z0-9 .:/_-]*$" '
+      [ ((.models // []) + (.datasets // []))[] ] as $e |
+      ([.repo, .runner_label, ((.clusters // [])[ ]?),
+        ($e[] | .platform), ($e[] | .organization),
+        ($e[] | (.model_name // .dataset_name)), ($e[] | (.revision // ""))]
+       | map(select(type=="string" and length>0)) | all(test($x)))' >/dev/null || {
+      echo "ERROR: client_payload 含白名单外字符（[A-Za-z0-9 .:/_-]）" >&2; exit 1; }
+    REQ=$(echo "$REQ" | jq -c --arg rid "$rid" 'del(.request_id) + {request_id:$rid}')
+    echo "== api request #$rid: $(echo "$REQ" | jq -r '.repo + " @ " + (.runner_label // (.clusters|join("+")))')"
+    ENTRIES="$(emit_for_request "api#$rid" "$REQ" "$REQ")"$'\n'
     ;;
   workflow_dispatch)
     REQ=$(jq -n \

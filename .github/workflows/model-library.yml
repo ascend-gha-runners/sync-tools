@@ -31,6 +31,8 @@ on:
         type: boolean
         required: false
         default: true
+  repository_dispatch:
+    types: [model-download-request]
   pull_request_target:
     types: [opened, synchronize, reopened, labeled]
     branches:
@@ -45,7 +47,7 @@ on:
       - ".github/scripts/download-json-models.sh"
 
 concurrency:
-  group: model-library-${{ github.event_name == 'pull_request_target' && format('pr-{0}', github.event.number) || format('dispatch-{0}-{1}-{2}', inputs.runner_label, inputs.organization, inputs.model_name) }}
+  group: model-library-${{ github.event_name == 'pull_request_target' && format('pr-{0}', github.event.number) || github.event_name == 'repository_dispatch' && format('rd-{0}', github.event.client_payload.request_id || github.run_id) || format('dispatch-{0}-{1}-{2}', inputs.runner_label, inputs.organization, inputs.model_name) }}
   cancel-in-progress: false  # review: 下载任务不可取消，中途 cancel 会留下半截共享盘文件
 
 jobs:
@@ -89,6 +91,7 @@ jobs:
           INPUT_ORGANIZATION: ${{ inputs.organization }}
           INPUT_MODEL_NAME: ${{ inputs.model_name }}
           INPUT_REVISION: ${{ inputs.revision }}
+          INPUT_RD_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
           INPUT_FLATTEN_LEGACY: ${{ inputs.legacy_layout || 'false' }}
           PR_BASE_SHA: ${{ github.event_name == 'pull_request_target' && 'origin/main' || github.event.pull_request.base.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

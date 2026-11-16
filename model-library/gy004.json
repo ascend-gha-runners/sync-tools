@@ -1,0 +1,10 @@
+{
+  "models": [
+    {
+      "model_name": "d3-edge",
+      "organization": "vllm-sr",
+      "platform": "modelscope"
+    }
+  ],
+  "datasets": []
+}

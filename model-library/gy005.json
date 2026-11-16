@@ -5,6 +5,11 @@
       "organization": "Eco-Tech",
       "model_name": "DeepSeek-V4-Pro-0813-w4a8",
       "legacy_layout": true
+    },
+    {
+      "model_name": "d3-edge",
+      "organization": "vllm-sr",
+      "platform": "modelscope"
     }
   ],
   "datasets": []

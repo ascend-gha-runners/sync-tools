@@ -3,15 +3,17 @@
 #
 # A "request" is the single unit of work, provided by either entry:
 #   - pull_request : files under model-requests/*.json (repo + runner_label +
-#                    models[]/datasets[] + optional auth_secret)
+#                    models[]/datasets[])  # token 模型不走流水线，见 README
 #   - dispatch     : form fields (repo, runner_label, platform, org, name...)
 #
 # Routing is automatic: runner_label -> model-library/groups.json -> cluster
 # list (e.g. "*800i*" -> cn12-001 + mind3 + aiframe), clusters without a
 # registered runner are skipped with a warning.
 #
-# Matrix element: {cluster, runner, hf_cache, ms_cache, hf_endpoint,
+# Matrix element: {cluster, runner, mode, hf_cache, ms_cache, hf_endpoint,
 #                  request: "<file path>" or "dispatch", payload: "<json>"}
+# mode=host -> 同步裸机; mode=arc -> 集群内 O卡 runner（写 job pod 的 /root/.cache）
+# Outputs: matrix, matrix_host (mode!=arc), matrix_arc (mode==arc)
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
@@ -20,15 +22,16 @@ CLUSTERS="$CFG/clusters.json"
 REQUESTS_DIR="model-requests"
 RESOLVE="$ROOT/.github/scripts/lib-resolve.sh"
 
-entry_for() {  # $1 cluster, $2 request-source, $3 payload, $4 auth-secret-mode
-  local c=$1 req=$2 payload=$3 auth=${4:-none} runner hf ms ep
+entry_for() {  # $1 cluster, $2 request-source, $3 payload
+  local c=$1 req=$2 payload=$3 runner hf ms ep mode
   runner=$(jq -r --arg c "$c" '.[$c].runner // empty' "$CLUSTERS")
   hf=$(jq -r --arg c "$c" '.[$c].caches.huggingface // empty' "$CLUSTERS")
   ms=$(jq -r --arg c "$c" '.[$c].caches.modelscope // empty' "$CLUSTERS")
   ep=$(jq -r --arg c "$c" '.[$c].endpoint // "https://hf-mirror.com"' "$CLUSTERS")
+  mode=$(jq -r --arg c "$c" '.[$c].mode // "host"' "$CLUSTERS")
   [ -n "$runner" ] && [ -n "$hf" ] && [ -n "$ms" ] || { echo "ERROR: cluster '$c' incomplete in clusters.json" >&2; return 1; }
-  jq -cn --arg c "$c" --arg r "$runner" --arg req "$req" --arg hf "$hf" --arg ms "$ms" --arg ep "$ep" --arg p "$payload" --arg a "$auth" \
-    '{cluster:$c, runner:$r, request:$req, hf_cache:$hf, ms_cache:$ms, hf_endpoint:$ep, payload:$p, auth:$a}'
+  jq -cn --arg c "$c" --arg r "$runner" --arg req "$req" --arg hf "$hf" --arg ms "$ms" --arg ep "$ep" --arg p "$payload" --arg m "$mode" \
+    '{cluster:$c, runner:$r, mode:$m, request:$req, hf_cache:$hf, ms_cache:$ms, hf_endpoint:$ep, payload:$p}'
 }
 
 emit_for_request() {  # $1 source-desc, $2 request-json, $3 payload(for dispatch only)
@@ -46,10 +49,12 @@ emit_for_request() {  # $1 source-desc, $2 request-json, $3 payload(for dispatch
     [ -n "$label" ] || { echo "ERROR: $src needs runner_label (or explicit clusters)" >&2; return 1; }
     clusters=$(bash "$RESOLVE" "$label" "$repo") || return 1
   fi
-  auth=$(echo "$reqjson" | jq -r '.auth_secret // "none"')
-  case "$auth" in none|hf|modelscope) ;; *) echo "ERROR: $src auth_secret must be none|hf|modelscope" >&2; return 1;; esac
+  if echo "$reqjson" | jq -e '(.auth_secret // "none") != "none"' >/dev/null; then
+    echo "ERROR: $src 请求了 token 凭证（auth_secret=$(echo "$reqjson" | jq -r .auth_secret)）。流水线已不受理需 token 的模型：请开 issue 联系维护者走人工通道（见 README）。" >&2
+    return 1
+  fi
   for c in $(echo "$clusters" | jq -r '.[]'); do
-    entry_for "$c" "$src" "$payload" "$auth" || return 1
+    entry_for "$c" "$src" "$payload" || return 1
     printf '\n'
   done
 }
@@ -100,8 +105,7 @@ case "${GITHUB_EVENT_NAME:-}" in
       --arg name "${INPUT_MODEL_NAME:-}" \
       --arg rev "${INPUT_REVISION:-}" \
       --argjson legacy "${INPUT_FLATTEN_LEGACY:-false}" \
-      --arg auth "${INPUT_AUTH_SECRET:-none}" \
-      '{repo:$repo, runner_label:$lbl, auth_secret:$auth,
+      '{repo:$repo, runner_label:$lbl,
         models: [({platform:$platform, organization:$org, model_name:$name}
                   + (if $rev == "" then {} else {revision:$rev} end)
                   + (if $platform == "modelscope" and $legacy then {legacy_layout:true} else {} end))],
@@ -114,8 +118,12 @@ case "${GITHUB_EVENT_NAME:-}" in
 esac
 
 MATRIX=$(printf '%s' "$ENTRIES" | sed '/^$/d' | jq -sc '.')
+MATRIX_HOST=$(printf '%s' "$MATRIX" | jq -c '[.[] | select((.mode // "host") != "arc")]')
+MATRIX_ARC=$(printf '%s' "$MATRIX" | jq -c '[.[] | select(.mode == "arc")]')
 echo "Selected requests:"; echo "$ENTRIES" | sed '/^$/d' | jq -r '.cluster + " <- " + .request' 2>/dev/null || true
 echo "Matrix: $MATRIX"
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+  echo "matrix_host=$MATRIX_HOST" >> "$GITHUB_OUTPUT"
+  echo "matrix_arc=$MATRIX_ARC" >> "$GITHUB_OUTPUT"
 fi

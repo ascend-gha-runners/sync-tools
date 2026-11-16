@@ -210,10 +210,10 @@
       "modelscope": "/root/.cache/modelscope/hub"
     },
     "endpoint": "https://hf-mirror.com",
-    "note": "无同步裸机。O卡(950/A5)集群内下载：job pod /root/.cache <- hostPath /mnt/weight（节点权重盘）",
+    "note": "无同步裸机。O卡(950/A5)集群内下载：job pod /root/.cache <- hostPath /mnt/weight = NFS suzblue.server:/weight（全集群共享，实证 4 节点同文件）",
     "node_cache": {
       "alias": "hostPath:/mnt/weight",
-      "export": "sh-001 节点 /mnt/weight",
+      "export": "suzblue.server:/weight (NFS)",
       "write": "集群内 job Pod /root/.cache"
     }
   },
@@ -225,10 +225,10 @@
       "modelscope": "/root/.cache/modelscope/hub"
     },
     "endpoint": "https://hf-mirror.com",
-    "note": "无同步裸机。O卡(950/A5)集群内下载：job pod /root/.cache <- PVC vllm-ascend-share-pvc-test（静态 PV，vllm-ascend/config-sh-002）",
+    "note": "无同步裸机。O卡(950/A5)集群内下载：job pod /root/.cache <- PVC vllm-ascend-share-pvc-test = NFS 179.130.11.2:/mnt/docker/home/share/ascend-ci-share-vllm-ascend-test",
     "node_cache": {
       "alias": "pvc:vllm-ascend-share-pvc-test",
-      "export": "见 config-sh-002 PV 注解",
+      "export": "179.130.11.2:/mnt/docker/home/share/ascend-ci-share-vllm-ascend-test (NFS)",
       "write": "集群内 job Pod /root/.cache"
     }
   }

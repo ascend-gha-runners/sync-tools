@@ -15,8 +15,8 @@
 | mind3 | `vllm-ascend-az5` | `cc8060b8:/` | mind3-ecs 113.46.31.157:/mnt/sfs_turbo |
 | gy001 | `ascend-gha-runners-gy001` | `d561f410:/ascend-ci-share` | （无同步机，O卡集群内下载） |
 | wlcb001 | `pvc:vllm-ascend-hk-001` | `fef36441:/ascend-ci-share-nv-action-vllm-benchmarks` | （无同步机，O卡集群内下载） |
-| sh001 | `hostPath:/mnt/weight` | 节点权重盘 | （无同步机，O卡集群内下载） |
-| sh002 | `pvc:vllm-ascend-share-pvc-test` | 静态 PV（vllm-ascend/config-sh-002） | （无同步机，O卡集群内下载） |
+| sh001 | `hostPath:/mnt/weight` | `NFS suzblue.server:/weight`（全集群共享） | （无同步机，O卡集群内下载） |
+| sh002 | `pvc:vllm-ascend-share-pvc-test` | `NFS 179.130.11.2:/mnt/docker/home/share/ascend-ci-share-vllm-ascend-test` | （无同步机，O卡集群内下载） |
 
 ## 无同步机集群：O卡集群内 runner 下载
 
@@ -26,8 +26,8 @@ gy001/wlcb001/sh001/sh002 没有同步 ECS，路由到这些集群的请求由 *
 |--|--|--|--|
 | gy001 | `linux-amd64-cpu-2-gy001` | hostPath `/mnt/sfs-local/ascend-gha-runners-gy001` | `d561f410:/ascend-ci-share` |
 | wlcb001 | `linux-aarch64-a2-1-wlcb001` | PVC `vllm-ascend-hk-001` | `fef36441:/ascend-ci-share-nv-action-vllm-benchmarks` |
-| sh001 | `linux-aarch64-a5-2-sh001` | hostPath `/mnt/weight` | 节点本地权重盘（跨节点不共享！同集群多节点调度时需评估） |
-| sh002 | `linux-amd64-a5-2-sh002` | PVC `vllm-ascend-share-pvc-test` | 见 config-sh-002 静态 PV |
+| sh001 | `linux-aarch64-a5-2-sh001` | hostPath `/mnt/weight` | NFS `suzblue.server:/weight` —— 全集群共享，任意节点调度都命中（4 节点同文件已实证） |
+| sh002 | `linux-amd64-a5-2-sh002` | PVC `vllm-ascend-share-pvc-test` | NFS `179.130.11.2:/mnt/docker/home/share/ascend-ci-share-vllm-ascend-test` |
 
 - 下载写在 job pod 的 `/root/.cache/huggingface`（=`<盘>/huggingface/hub/…`），与业务 job 容器视角一致，**不需要**再经同步机中转。
 - 这些集群均为非 HK 区：endpoint 固定 `hf-mirror.com`，且全局禁 xet（同裸机规则）。

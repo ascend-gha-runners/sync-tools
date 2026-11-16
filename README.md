@@ -246,6 +246,32 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 
 流水线**不受理任何凭证**（表单与 requests.json 均无 token 入口）。需要 token 才能下载的模型，请**开 issue 联系维护者**走人工通道：维护者线下带凭证下载并落对应集群共享盘，台账手动补记。requests.json 里出现 `auth_secret` 非 `none` 会被 plan 直接拒绝。
 
+### 外部 CI 接口（repository_dispatch，可同步等待）
+
+业务仓库自己的 CI 可程序化触发"按路由下载到正确盘 + 自动台账"，无需提 PR（vllm-ascend 的 `labeled_download_model_dataset.yaml` 即此用法）：
+
+```bash
+# PAT：fine-grained，仅 ascend-gha-runners/sync-tools 一库、Actions: Read and write
+# 由维护者账号签发，存调用方 org secret（如 MODEL_SYNC_PAT）
+curl -sf -X POST -H "Authorization: Bearer $MODEL_SYNC_PAT" \
+  -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/ascend-gha-runners/sync-tools/dispatches \
+  -d '{
+    "event_type": "model-download-request",
+    "client_payload": {
+      "repo": "vllm-project/vllm-ascend",
+      "runner_label": "linux-aarch64-a3-800t-0",
+      "request_id": "<你的 run id>-<matrix index>",
+      "models":   [{"platform":"modelscope","organization":"DeepSeek-ai","model_name":"DeepSeek-OCR"}],
+      "datasets": [{"platform":"modelscope","organization":"AI-ModelScope","dataset_name":"gsm8k"}]
+    }}'
+```
+
+- 字段语义同 `requests.json` 条目；`runner_label` 直接填你们 `runs-on`（pod 名带 hash 后缀也认），路由由 runner-map 决定（a5 → sh001+sh002 双写；800t/800i 按 chart 落点分盘）。也可跳过推断显式给 `"clusters": [...]`。
+- **完成判定**：轮询 `GET /repos/ascend-gha-runners/sync-tools/actions/runs?event=repository_dispatch`，找到包含 job 名 `<cluster> <- api#<request_id>` 的 run，其 conclusion 即结果。
+- 已落过的模型幂等秒级 done（CI 几乎不等待）；同一同步机/runner 串行排队；blob 完整性、镜像、禁 xet、台账回写全在流水线侧。
+- 需 token 的模型仍不受理（同 PR 入口规则）。
+
 ### 模型库台账
 
 `model-library/<cluster>.json` 记录每个集群已下载过的 models/datasets（自动回写，`unique_by` 去重）；`clusters.json` 是集群注册表（runner、共享盘缓存路径、endpoint、探针 share_ids）；未接 runner 的集群（目前仅 gy003）路由时自动跳过并 WARN。**无同步裸机的 gy001/wlcb001/sh001/sh002 走集群内 O卡 runner 下载**（`clusters.json` 中 `mode: "arc"`，workflow 的 `download-arc` job，详见 RUNNERS.md"无同步机集群"一节）。

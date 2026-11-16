@@ -29,6 +29,9 @@
   { "src": "https://raw.gitcode.com/Ascend/MindSpeed/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/mindspeed-core" },
   { "src": "https://raw.gitcode.com/Ascend/MindSpeed/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/mindspeed-core" },
 
+  { "src": "https://raw.gitcode.com/Ascend/MindSpeed-Ops/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/mindspeed-ops" },
+  { "src": "https://raw.gitcode.com/Ascend/MindSpeed-Ops/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/mindspeed-ops" },
+
   { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-device-plugin/OVERVIEW.md", "dest": "quay.io/ascend/ascend-k8sdeviceplugin" },
   { "src": "https://raw.gitcode.com/Ascend/mind-cluster/raw/master/docker/ascend-device-plugin/OVERVIEW.md", "dest": "docker.io/ascendai/ascend-k8sdeviceplugin" },
 

@@ -276,8 +276,10 @@ jobs:
   # head branch so the ledger lands together with the merge.
   ledger:
     needs: [plan, download, download-arc]
+    # 注意 always()：needs 里有 skipped 任务时（纯 host 请求会 skip download-arc，反之亦然），
+    # 不带 always() 的 if 会被 GitHub 无条件 skip。
     if: >-
-      needs.plan.result == 'success' &&
+      always() && needs.plan.result == 'success' &&
       (needs.download.result == 'success' || needs.download-arc.result == 'success')
     runs-on: ubuntu-latest
     permissions:

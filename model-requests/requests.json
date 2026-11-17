@@ -25,5 +25,48 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "modelscope/ms-swift",
+    "auth_secret": "none",
+    "clusters": [
+      "hk001",
+      "gy001",
+      "wlcb001"
+    ],
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen2-0.5B"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "AI-ModelScope",
+        "model_name": "Nemotron-Mini-4B-Instruct"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen2.5-7B-Instruct"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "openmoss",
+        "model_name": "MOSS-VL-Instruct-0708"
+      }
+    ],
+    "datasets": [
+      {
+        "platform": "modelscope",
+        "organization": "AI-ModelScope",
+        "dataset_name": "alpaca-gpt4-data-zh"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "swift",
+        "dataset_name": "stsb"
+      }
+    ]
   }
 ]

@@ -62,17 +62,6 @@
         "model_name": "DeepSeek-V4.1-Flash"
       }
     ],
-    "datasets": []
-  },
-  {
-    "repo": "areal-project/AReaL",
-    "clusters": [
-      "cn12-001",
-      "aiframe",
-      "mind3"
-    ],
-    "auth_secret": "none",
-    "models": [],
     "datasets": [
       {
         "platform": "huggingface",

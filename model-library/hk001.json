@@ -24,6 +24,11 @@
       "platform": "huggingface",
       "organization": "robbyant",
       "model_name": "lingbot-world-v2-14b-causal-fast-diffusers"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "vllm-project",
+      "model_name": "self_cognition_Alice"
     }
   ],
   "datasets": []

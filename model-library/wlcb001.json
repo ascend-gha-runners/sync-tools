@@ -4,6 +4,11 @@
       "platform": "huggingface",
       "organization": "Qwen",
       "model_name": "Qwen3-0.6B"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "vllm-project",
+      "model_name": "self_cognition_Alice"
     }
   ],
   "datasets": []

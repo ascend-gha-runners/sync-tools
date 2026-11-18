@@ -25,5 +25,18 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "linux-aarch64-a2-8-hk-001",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "vllm-project",
+        "model_name": "self_cognition_Alice"
+      }
+    ],
+    "datasets": []
   }
 ]

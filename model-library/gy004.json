@@ -1,6 +1,11 @@
 {
   "models": [
     {
+      "model_name": "Qwen3-4B",
+      "organization": "Qwen",
+      "platform": "huggingface"
+    },
+    {
       "model_name": "d3-edge",
       "organization": "vllm-sr",
       "platform": "modelscope"

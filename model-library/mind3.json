@@ -6,6 +6,11 @@
       "model_name": "Qwen2.5-0.5B-Instruct"
     },
     {
+      "platform": "huggingface",
+      "organization": "tencent",
+      "model_name": "HunyuanImage-3.0-Instruct-Distil"
+    },
+    {
       "platform": "modelscope",
       "organization": "vllm-sr",
       "model_name": "d3-edge",

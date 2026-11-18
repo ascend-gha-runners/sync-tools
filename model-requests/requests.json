@@ -25,5 +25,17 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "verl-project/uni-agent",
+    "runner_label": "linux-aarch64-a2-8-tc8rq-runner-8nr8q",
+    "auth_secret": "none",
+    "models": [
+      { "platform": "huggingface",
+        "organization": "Qwen",
+        "model_name": "Qwen3-0.6B"
+      }
+    ],
+    "datasets": []
   }
 ]

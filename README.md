@@ -274,7 +274,7 @@ curl -sf -X POST -H "Authorization: Bearer $MODEL_SYNC_PAT" \
 
 ### 模型库台账
 
-`model-library/<cluster>.json` 记录每个集群已下载过的 models/datasets（自动回写，`unique_by` 去重）；`clusters.json` 是集群注册表（runner、共享盘缓存路径、endpoint、探针 share_ids）；未接 runner 的集群（目前仅 gy003）路由时自动跳过并 WARN。**无同步裸机的 gy001/wlcb001/sh001/sh002 走集群内 O卡 runner 下载**（`clusters.json` 中 `mode: "arc"`，workflow 的 `download-arc` job，详见 RUNNERS.md"无同步机集群"一节）。
+`model-library/<cluster>.json` 记录每个集群已下载过的 models/datasets（自动回写，`unique_by` 去重）；`clusters.json` 是集群注册表（runner、共享盘缓存路径、endpoint、探针 share_ids）；未接 runner 的集群（目前仅 gy003）路由时自动跳过并 WARN。**无同步裸机的 gy001/wlcb001/sh001/sh002 走集群内 0 卡下载池 runner（a2-0/a5-0，不占卡）**（`clusters.json` 中 `mode: "arc"`，workflow 的 `download-arc` job，详见 RUNNERS.md"无同步机集群"一节；下载池 scale set 见 ascend-ci-deployment ADR-0022）。
 
 ### 机器 ↔ 共享盘对照
 

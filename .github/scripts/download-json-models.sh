@@ -45,6 +45,14 @@ export HF_HUB_DISABLE_XET=1
 # HF_HUB_DISABLE_PROGRESS_BARS=1。
 export PROGRESS_INTERVAL="${PROGRESS_INTERVAL:-30}"
 
+# 瞬时故障自动重试：镜像站 429/503、网络超时等按指数退避重试（默认 3 次尝试，
+# 间隔 60s/120s/240s）；永久性错误（仓库不存在/无权限，401/404）一次即失败，
+# 不浪费配额。判定靠每次尝试的错误输出（stderr 副本 + ERROR 行）匹配
+# DL_TRANSIENT_RE。可调：DL_ATTEMPTS=1 关闭重试，DL_BACKOFF_BASE=秒数。
+export DL_ATTEMPTS="${DL_ATTEMPTS:-3}"
+export DL_BACKOFF_BASE="${DL_BACKOFF_BASE:-60}"
+DL_TRANSIENT_RE='429|50[0-4]|Too Many|Service Unavailable|Bad Gateway|Gateway Tim|timed out|timeout|Temporary failure|Connection|RemoteDisconnected|Network is unreachable|getaddrinfo|SSL|Max retries'
+
 throttle() {  # 聚合 \r 进度帧：含 % 的行按间隔放行最新一帧，其余立即透传
   local iv="${PROGRESS_INTERVAL:-30}" line frame="" due=0
   while IFS= read -r -d $'\r' line || [ -n "$line" ]; do
@@ -76,10 +84,14 @@ legacy_materialize() {  # org name revision
   local cache=${MODELSCOPE_CACHE:-$HOME/.cache/modelscope}
   # modelscope >=1.38: content lives in models/<org>--<name>/snapshots/<rev> and
   # needs flattening into the classic hub/models/<org>/<name> layout.
-  # <=1.37 already writes the classic layout directly under $MODELSCOPE_CACHE/models/
-  # (set MODELSCOPE_CACHE to .../modelscope/hub so the result is hub/models/<org>/<name>)
-  if [ -f "$cache/models/$org/${name//./___}/config.json" ] || ls "$cache/models/$org/${name//./___}/"*.safetensors >/dev/null 2>&1; then
-    echo "classic layout already in place: $cache/models/$org"
+  # <=1.37 (同步机钉版) already writes the classic layout directly under
+  # $cache/models/. 旧判定只看顶层 config.json / *.safetensors，权重放子目录
+  # （EAGLE3 的 full//compressed/）或名字含点（→___ 转义）时误判"不在位"，
+  # 把已成功的下载翻转成 FAILURE（run 44283208990）。改为"目录存在且任意层级
+  # 有文件"即在位。
+  local classic="$cache/models/$org/${name//./___}"
+  if [ -d "$classic" ] && [ -n "$(find "$classic" -type f -print -quit 2>/dev/null)" ]; then
+    echo "classic layout already in place: $classic"
     return 0
   fi
   local srcroot="$cache/models/${org}--${name}/snapshots"
@@ -116,13 +128,32 @@ while IFS= read -r entry; do
     echo "Processing $TYPE: $repo from $platform -> (SDK default cache)"
   fi
 
-  ok=0
-  landed=""
+  # 平台校验前置（未知平台不参与重试）
+  case "$platform" in modelscope|huggingface) ;; *)
+    echo "Unknown platform: $platform. Skipping $repo"
+    report "$repo" "$platform" "skipped (unknown platform)" "-"
+    continue ;;
+  esac
+
+  # 尝试循环：瞬时错误（DL_TRANSIENT_RE 命中 stderr 副本/ERROR 行）指数退避重试，
+  # 其余一次即败。ok/landed 每次重置；dl_err 为 stderr 副本 + ERROR 协议行。
+  dl_err=$(mktemp /tmp/dl-err.XXXXXX)
+  attempt=0
+  while [ "$attempt" -lt "$DL_ATTEMPTS" ]; do
+    attempt=$((attempt + 1))
+    if [ "$attempt" -gt 1 ]; then
+      sl=$(( DL_BACKOFF_BASE * 2 ** (attempt - 2) ))
+      echo "RETRY $TYPE $repo: transient error; attempt $attempt/$DL_ATTEMPTS in ${sl}s"
+      sleep "$sl"
+    fi
+    : > "$dl_err"
+    ok=0
+    landed=""
   if [ "$platform" = "modelscope" ]; then
     ms_args=(--"$TYPE" "$repo")
     [ -n "$revision" ] && ms_args+=(--revision "$revision")
     [ -n "$local_dir" ] && ms_args+=(--local_dir "$local_dir")
-    if modelscope download "${ms_args[@]}" 2> >(throttle >&2); then
+    if modelscope download "${ms_args[@]}" 2> >(throttle | tee -a "$dl_err" >&2); then
       if [ "$legacy" = "true" ] && [ -z "$local_dir" ]; then
         legacy_materialize "$organization" "$name" "$revision" && ok=1 || ok=0
       else
@@ -134,7 +165,7 @@ while IFS= read -r entry; do
     if [ "$TYPE" = "model" ]; then
       # 结果行（LANDED/ERROR）走 stdout 由 bash 结构化处理；进度等 stderr 一律
       # 过 throttle。完整 traceback 落 $RUNNER_TEMP/dl-tracebacks/ 供排查。
-      hf_model=$(python3 - "$repo" "$revision" "$local_dir" 2> >(throttle >&2) <<'PY'
+      hf_model=$(python3 - "$repo" "$revision" "$local_dir" 2> >(throttle | tee -a "$dl_err" >&2) <<'PY'
 import os, sys, traceback
 from huggingface_hub import snapshot_download
 
@@ -161,30 +192,38 @@ PY
           ok=1
           landed=$(printf '%s' "$hf_model" | awk -F'\t' '{print $2" · "$3"B"}') ;;
         ERROR)
-          echo "ERROR $repo: ${hf_model#*$'\t'}" >&2 ;;
+          echo "ERROR $repo: ${hf_model#*$'\t'}" >&2
+          printf '%s\n' "${hf_model#*$'\t'}" >> "$dl_err" ;;
       esac
     else
       hf_args=("$repo" --repo-type=dataset)
       [ -n "$local_dir" ] && hf_args+=(--local-dir="$local_dir")
       [ -n "$revision" ] && hf_args+=(--revision="$revision")
-      if hf download "${hf_args[@]}" 2> >(throttle >&2); then
+      if hf download "${hf_args[@]}" 2> >(throttle | tee -a "$dl_err" >&2); then
         ok=1
         landed="${local_dir:-(SDK cache)}"
       fi
     fi
-  else
-    echo "Unknown platform: $platform. Skipping $repo"
-    report "$repo" "$platform" "skipped (unknown platform)"
-    continue
   fi
+
+    # 失败分类：命中瞬时特征且未到尝试上限 → continue（外层退避），否则终止
+    if [ "$ok" = 1 ]; then
+      break
+    fi
+    sleep 0.5  # 等 throttle|tee 异步写入落盘
+    if [ "$attempt" -lt "$DL_ATTEMPTS" ] && grep -qE "$DL_TRANSIENT_RE" "$dl_err"; then
+      continue
+    fi
+    break
+  done
 
   if [ "$ok" = 1 ]; then
     echo "OK $TYPE $repo${landed:+ -> $landed}"
     report "$repo" "$platform" "✅ ok" "${landed:--}"
   else
-    echo "FAILURE $TYPE $repo"
-    echo "::error::$TYPE $repo ($platform) failed; one-line reason on stderr above, traceback: ${RUNNER_TEMP:-/tmp}/dl-tracebacks/"
-    report "$repo" "$platform" "❌ failed" "-"
+    echo "FAILURE $TYPE $repo (attempts: $attempt/$DL_ATTEMPTS)"
+    echo "::error::$TYPE $repo ($platform) failed after $attempt attempt(s); one-line reason on stderr above, traceback: ${RUNNER_TEMP:-/tmp}/dl-tracebacks/"
+    report "$repo" "$platform" "❌ failed (${attempt}x)" "-"
     failures=$((failures + 1))
   fi
   echo "---"

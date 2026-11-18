@@ -25,5 +25,44 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "linux-aarch64-a3-800i-8",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "tencent",
+        "model_name": "HunyuanImage-3.0-Instruct-Distil"
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "linux-aarch64-a2-8",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "tencent",
+        "model_name": "HunyuanImage-3.0-Instruct-Distil"
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "linux-aarch64-a5-2",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "tencent",
+        "model_name": "HunyuanImage-3.0-Instruct-Distil"
+      }
+    ],
+    "datasets": []
   }
 ]

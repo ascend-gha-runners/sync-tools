@@ -96,15 +96,15 @@ gy001/wlcb001/sh001/sh002 没有同步 ECS，路由到这些集群的请求由 *
 | gy004 | `1b51fb58:/ascend-ci-share-pkking-sglang` | 单盘 ✓ | ✓ `guiyang-ecs:/mnt/sfs_turbo2/ascend-ci-share-pkking-sglang` |
 | gy005 | `b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks` | 3 个别名全同盘 ✓ | ✓ `guiyang-ecs:/mnt/sfs_turbo/ascend-ci-share-nv-action-vllm-benchmarks` |
 | gy001 | `d561f410:/ascend-ci-share` | 单盘 ✓ | 无同步机（线下交付 ARC） |
-| **hk001** | **一分为三**，见下表 | ⚠️ 唯一分裂集群 | 默认只写 `24dd126e:/ascend-ci-share`，覆盖不了 uni-agent 系 |
+| **hk001** | **一分为三**，见下表 | ⚠️ 唯一分裂集群 | 默认只写 `24dd126e:/ascend-ci-share-nv-action-vllm-benchmarks`，覆盖不了 ascend-ci-share 系与 d5b643e2 系 |
 
 ### hk001 的三块分盘（给 uni-agent 们下模型前必读）
 
 | 容器 `/root/.cache` ← | 真实位置 | 同步机写路径 | 谁在用 |
 |--|--|--|--|
-| `24dd126e:/ascend-ci-share` | 盘 24dd126e | hk-ecs `/opt/vllm-ci/ascend-ci-share`（**流水线默认**） | fla-org/flash-linear-attention（alias `fla-org-flash-linear-attention-a2-hk-001`，bindFrom `ganding-rlinf-a2-hk-001`） |
+| `24dd126e:/ascend-ci-share` | 盘 24dd126e | hk-ecs `/opt/vllm-ci/ascend-ci-share` | fla-org/flash-linear-attention（alias `fla-org-flash-linear-attention-a2-hk-001`，bindFrom `ganding-rlinf-a2-hk-001`） |
 | `d5b643e2:/ascend-ci-share` | 盘 d5b643e2 | hk-ecs `/mnt/d5b643e2/ascend-ci-share` | volcengine/uni-agent（`verl-uni-agent-hk001`）、volcengine/verl-SpeCo（`verl-verl-speco-hk001`）、hiyouga/LLaMA-Factory 与 modelscope/ms-swift（`hk001-v1`） |
-| `24dd126e:/ascend-ci-share-nv-action-vllm-benchmarks` | 盘 24dd126e | hk-ecs `/opt/vllm-ci/ascend-ci-share-nv-action-vllm-benchmarks` | nv-action/vllm-benchmarks 系（alias `ascend-ci-share-nv-action-vllm-benchmarks`） |
+| `24dd126e:/ascend-ci-share-nv-action-vllm-benchmarks` | 盘 24dd126e | hk-ecs `/opt/vllm-ci/ascend-ci-share-nv-action-vllm-benchmarks`（**流水线默认**） | nv-action/vllm-benchmarks 系（alias `ascend-ci-share-nv-action-vllm-benchmarks`） |
 
 ### 实例（#103：uni-agent 要 Qwen/Qwen3-0.6B）
 

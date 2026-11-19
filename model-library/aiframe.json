@@ -2,13 +2,48 @@
   "models": [
     {
       "platform": "huggingface",
+      "organization": "EngineeringTalus",
+      "model_name": "Qwen3-30B-A3B-Instruct-2507-theo-style-lora"
+    },
+    {
+      "platform": "huggingface",
       "organization": "Qwen",
       "model_name": "Qwen2.5-0.5B-Instruct"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "TanXS",
+      "model_name": "Qwen3-4B-LoRA-ZH-WebNovelty-v0.0"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "hotdogs",
+      "model_name": "qwen3.6-27b-cybersecurity-lora"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "jamezoon",
+      "model_name": "qwen3.5-4b-mcat-lora"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "nissenj",
+      "model_name": "Qwen3-4B-lora-v2"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "taobao-mnn",
+      "model_name": "Qwen3-VL-8B-Instruct-Eagle3"
     },
     {
       "model_name": "Qwen3-4B",
       "organization": "Qwen",
       "platform": "modelscope"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "lmsys",
+      "model_name": "sglang-EAGLE3-LLaMA3.1-Instruct-8B"
     },
     {
       "platform": "modelscope",

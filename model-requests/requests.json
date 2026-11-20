@@ -38,5 +38,49 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "Ascend/sglang",
+    "clusters": ["mind3"],
+    "auth_secret": "none",
+    "models": [
+      { "platform": "modelscope", "organization": "lmsys", "model_name": "sglang-EAGLE3-LLaMA3.1-Instruct-8B" },
+      { "platform": "huggingface", "organization": "rednote-hilab", "model_name": "dots.ocr" },
+      { "platform": "modelscope", "organization": "Qwen", "model_name": "Qwen3-4B" },
+      { "platform": "huggingface", "organization": "nissenj", "model_name": "Qwen3-4B-lora-v2" },
+      { "platform": "huggingface", "organization": "TanXS", "model_name": "Qwen3-4B-LoRA-ZH-WebNovelty-v0.0" },
+      { "platform": "modelscope", "organization": "stepfun-ai", "model_name": "Step3-VL-10B" },
+      { "platform": "huggingface", "organization": "taobao-mnn", "model_name": "Qwen3-VL-8B-Instruct-Eagle3" },
+      { "platform": "modelscope", "organization": "CohereForAI", "model_name": "c4ai-command-r-v01" },
+      { "platform": "huggingface", "organization": "jamezoon", "model_name": "qwen3.5-4b-mcat-lora" },
+      { "platform": "huggingface", "organization": "Aswinkv07", "model_name": "qwen3.5-4b-neo4j-text2cypher-lora" },
+      { "platform": "huggingface", "organization": "EngineeringTalus", "model_name": "Qwen3-30B-A3B-Instruct-2507-theo-style-lora" },
+      { "platform": "huggingface", "organization": "hotdogs", "model_name": "qwen3.6-27b-cybersecurity-lora" }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "Ascend/sglang",
+    "clusters": ["aiframe"],
+    "auth_secret": "none",
+    "models": [
+      { "platform": "modelscope", "organization": "lmsys", "model_name": "sglang-EAGLE3-LLaMA3.1-Instruct-8B" },
+      { "platform": "huggingface", "organization": "nissenj", "model_name": "Qwen3-4B-lora-v2" },
+      { "platform": "huggingface", "organization": "TanXS", "model_name": "Qwen3-4B-LoRA-ZH-WebNovelty-v0.0" },
+      { "platform": "huggingface", "organization": "taobao-mnn", "model_name": "Qwen3-VL-8B-Instruct-Eagle3" },
+      { "platform": "huggingface", "organization": "jamezoon", "model_name": "qwen3.5-4b-mcat-lora" },
+      { "platform": "huggingface", "organization": "EngineeringTalus", "model_name": "Qwen3-30B-A3B-Instruct-2507-theo-style-lora" },
+      { "platform": "huggingface", "organization": "hotdogs", "model_name": "qwen3.6-27b-cybersecurity-lora" }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "Ascend/sglang",
+    "clusters": ["gy004", "gy005"],
+    "auth_secret": "none",
+    "models": [
+      { "platform": "huggingface", "organization": "EngineeringTalus", "model_name": "Qwen3-30B-A3B-Instruct-2507-theo-style-lora" }
+    ],
+    "datasets": []
   }
 ]

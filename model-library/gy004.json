@@ -1,6 +1,11 @@
 {
   "models": [
     {
+      "platform": "huggingface",
+      "organization": "EngineeringTalus",
+      "model_name": "Qwen3-30B-A3B-Instruct-2507-theo-style-lora"
+    },
+    {
       "model_name": "Qwen3-4B",
       "organization": "Qwen",
       "platform": "huggingface"

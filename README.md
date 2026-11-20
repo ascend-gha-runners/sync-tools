@@ -239,7 +239,7 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 }
 ```
 
-2. 提 PR（本仓库分支，fork 不跑）；**无任何下载**，直到管理员加 `model-download` 标签 → 流水线只对 diff 中**新增的条目**下载（历史条目不重跑，老模型天然幂等秒过）
+2. 提 PR；**无任何下载**，直到管理员加 `model-download` 标签 → 流水线只对 diff 中**新增的条目**下载（历史条目不重跑，老模型天然幂等秒过）
 3. 下载完成后 bot 把条目自动回写进 PR 分支的 `model-library/<cluster>.json` 台账，随 PR 一起合入 —— 合入即完成登记
 
 ### 需要 token 的模型（私有/gated）

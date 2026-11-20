@@ -7,6 +7,11 @@
     },
     {
       "platform": "huggingface",
+      "organization": "tencent",
+      "model_name": "HunyuanImage-3.0-Instruct-Distil"
+    },
+    {
+      "platform": "huggingface",
       "organization": "vllm-project",
       "model_name": "self_cognition_Alice"
     }

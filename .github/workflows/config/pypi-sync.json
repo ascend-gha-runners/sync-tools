@@ -1,0 +1,4 @@
+[
+  { "name": "cannbot_arena_net_ops", "target_dir": "nightly/cannbot-arena-net-ops" },
+  { "name": "cannbotdsl", "target_dir": "nightly/cannbotdsl" }
+]

@@ -9,6 +9,26 @@
       "platform": "huggingface",
       "organization": "vllm-project",
       "model_name": "self_cognition_Alice"
+    },
+    {
+      "model_name": "Qwen3.5-9B",
+      "organization": "Qwen",
+      "platform": "modelscope"
+    },
+    {
+      "model_name": "DeepSeek-V4-Flash-w4a8-mtp",
+      "organization": "gdydems",
+      "platform": "modelscope"
+    },
+    {
+      "model_name": "DeepSeek-V3-W8A8",
+      "organization": "vllm-ascend",
+      "platform": "modelscope"
+    },
+    {
+      "model_name": "Qwen3-0.6B-W8A8",
+      "organization": "vllm-ascend",
+      "platform": "modelscope"
     }
   ],
   "datasets": []

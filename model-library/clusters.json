@@ -3,7 +3,7 @@
     "machine": "a2",
     "runner": "model-sync-hk001",
     "caches": {
-      "huggingface": "/opt/vllm-ci/ascend-ci-share/huggingface",
+      "huggingface": "/opt/vllm-ci/ascend-ci-share-nv-action-vllm-benchmarks/huggingface",
       "modelscope": "/opt/vllm-ci/ascend-ci-share-nv-sync-tools/modelscope/hub"
     },
     "note": "ecs-sync 直连 GitHub，共享盘 /opt/vllm-ci (SFS 24dd126e)",

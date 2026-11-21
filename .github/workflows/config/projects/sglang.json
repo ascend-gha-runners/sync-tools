@@ -136,7 +136,7 @@
       "model_name": "HiDream-O1-Image-Dev"
 	},
 	{
-	  "platform": "modelscope",
+	  "platform": "huggingface",
 	  "organization": "tencent",
       "model_name": "HunyuanImage-3.0-Instruct"
 	}

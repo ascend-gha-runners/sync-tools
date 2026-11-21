@@ -32,9 +32,23 @@
     "auth_secret": "none",
     "models": [
       {
-        "platform": "huggingface",
-        "organization": "vllm-project",
-        "model_name": "self_cognition_Alice"
+      "platform": "huggingface",
+      "organization": "vllm-project",
+      "model_name": "self_cognition_Alice"
+    }
+  ],
+  "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "linux-aarch64-a3-800i-4",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "Ex0bit",
+        "model_name": "Qwen3.6-27B-PRISM-EAGLE3",
+        "legacy_layout": true
       }
     ],
     "datasets": []

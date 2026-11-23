@@ -6,6 +6,26 @@
       "model_name": "Qwen2.5-0.5B-Instruct"
     },
     {
+      "platform": "huggingface",
+      "organization": "tencent",
+      "model_name": "HunyuanImage-3.0-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "HiDream-ai",
+      "model_name": "HiDream-O1-Image"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "HiDream-ai",
+      "model_name": "HiDream-O1-Image-Dev"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "inclusionAI",
+      "model_name": "LLaDA-Image"
+    },
+    {
       "platform": "modelscope",
       "organization": "vllm-sr",
       "model_name": "d3-edge",

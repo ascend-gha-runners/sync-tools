@@ -6,6 +6,11 @@
       "platform": "huggingface"
     },
     {
+      "platform": "huggingface",
+      "organization": "tencent",
+      "model_name": "HunyuanImage-3.0-Instruct"
+    },
+    {
       "model_name": "Qwen3.5-9B-Eagle3-ShareGPTocal-di",
       "organization": "leslie1776",
       "platform": "modelscope"

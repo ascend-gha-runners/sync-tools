@@ -12,6 +12,12 @@
     },
     {
       "platform": "modelscope",
+      "organization": "deepseek-ai",
+      "model_name": "dspark_qwen3_8b_block7",
+      "legacy_layout": true
+    },
+    {
+      "platform": "modelscope",
       "organization": "vllm-sr",
       "model_name": "d3-edge",
       "legacy_layout": true

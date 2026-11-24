@@ -13,7 +13,7 @@
 | gy005 | `vllm-ascend-az5` | `b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks` | guiyang-ecs 101.245.82.28:/mnt/sfs_turbo |
 | hk001 | `pvc:ascend-ci-share-nv-action-vllm-benchmarks` | `24dd126e:/ascend-ci-share-nv-action-vllm-benchmarks` | hk-ecs 159.138.152.35:/opt/vllm-ci |
 | mind3 | `vllm-ascend-az5` | `cc8060b8:/` | mind3-ecs 113.46.31.157:/mnt/sfs_turbo |
-| gy001 | `ascend-gha-runners-gy001` | `d561f410:/ascend-ci-share` | （无同步机，集群内CPU下载池） |
+| gy001 | `ascend-gha-runners-gy001-nvbench` | `b9bf4a57:/ascend-ci-share-nv-action-vllm-benchmarks` | （无同步机，集群内CPU下载池） |
 | wlcb001 | `pvc:vllm-ascend-hk-001` | `fef36441:/ascend-ci-share-nv-action-vllm-benchmarks` | （无同步机，集群内CPU下载池） |
 | sh001 | `hostPath:/mnt/weight` | 节点权重盘 | （无同步机，集群内CPU下载池） |
 | sh002 | `pvc:vllm-ascend-share-pvc-test` | 静态 PV（vllm-ascend/config-sh-002） | （无同步机，集群内CPU下载池） |
@@ -24,7 +24,7 @@ gy001/wlcb001/sh001/sh002 没有同步 ECS，路由到这些集群的请求由 *
 
 | 集群 | 下载 runner 标签（runs-on） | job pod `/root/.cache` ← | 真实落点 |
 |--|--|--|--|
-| gy001 | `linux-amd64-cpu-2-gy001` | hostPath `/mnt/sfs-local/ascend-gha-runners-gy001` | `d561f410:/ascend-ci-share` |
+| gy001 | `linux-amd64-cpu-2-gy001` | PVC `ascend-gha-runners-gy001-nvbench`（ADR-0028） | `b9bf4a57:/ascend-ci-share-nv-action-vllm-benchmarks` |
 | wlcb001 | `linux-aarch64-a2-0-wlcb001` | PVC `vllm-ascend-hk-001` | `fef36441:/ascend-ci-share-nv-action-vllm-benchmarks` |
 | sh001 | `linux-aarch64-a5-0-sh001` | hostPath `/mnt/weight`（钉 lab 节点，与业务 job 模板同落点） | 节点本地权重盘（跨节点不共享！同集群多节点调度时需评估） |
 | sh002 | `linux-amd64-a5-0-sh002` | PVC `vllm-ascend-share-pvc-test` | 见 config-sh-002 静态 PV |
@@ -95,7 +95,7 @@ gy001/wlcb001/sh001/sh002 没有同步 ECS，路由到这些集群的请求由 *
 | mind3 | `cc8060b8:/` | 统一，仅 `verl-hb003`→`a8317f79:/ascend-ci-share` 例外 | ✓ `mind3-ecs:/mnt/sfs_turbo` |
 | gy004 | `1b51fb58:/ascend-ci-share-pkking-sglang` | 单盘 ✓ | ✓ `guiyang-ecs:/mnt/sfs_turbo2/ascend-ci-share-pkking-sglang` |
 | gy005 | `b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks` | 3 个别名全同盘 ✓ | ✓ `guiyang-ecs:/mnt/sfs_turbo/ascend-ci-share-nv-action-vllm-benchmarks` |
-| gy001 | `d561f410:/ascend-ci-share` | 单盘 ✓ | 无同步机（线下交付 ARC） |
+| gy001 | `b9bf4a57:/ascend-ci-share-nv-action-vllm-benchmarks` | 下载池 11-24 起落 b9bf4a57（ADR-0028）；原生业务池 `vllm-project-gy001` 仍在 d561f410，两盘不自动一致 | 无同步机（线下交付 ARC） |
 | **hk001** | **一分为三**，见下表 | ⚠️ 唯一分裂集群 | 默认只写 `24dd126e:/ascend-ci-share`，覆盖不了 uni-agent 系 |
 
 ### hk001 的三块分盘（给 uni-agent 们下模型前必读）

@@ -65,6 +65,8 @@
   { "src": "https://raw.githubusercontent.com/triton-lang/triton-ascend/refs/heads/main/docker/OVERVIEW.md", "dest": "quay.io/ascend/triton" },
   { "src": "https://raw.githubusercontent.com/triton-lang/triton-ascend/refs/heads/main/docker/OVERVIEW.md", "dest": "docker.io/ascendai/triton" },
   
+  { "src": "https://raw.githubusercontent.com/ByteDance-Seed/VeOmni/refs/heads/main/docs/hardware_support/AscendDockerUsage/overview.md", "dest": "quay.io/ascend/veomni" },
+
   { "src": "https://raw.gitcode.com/Ascend/VisionSDK/raw/master/docker/OVERVIEW.md", "dest": "quay.io/ascend/visionsdk" },
   { "src": "https://raw.gitcode.com/Ascend/VisionSDK/raw/master/docker/OVERVIEW.md", "dest": "docker.io/ascendai/visionsdk" },
 

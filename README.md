@@ -82,7 +82,10 @@ model-library/                            # 路由数据 + 台账
 
 ### 入口一：业务提 PR（推荐）——**fork PR 一样生效**，管理员打标签放行
 
-1. 业务方在**唯一入口文件** `model-requests/requests.json`（数组）里**追加一个对象**：
+完整流程六步，**全程只需要改一个文件**：`model-requests/requests.json`。
+
+1. **fork 本仓库，在 fork 上改**——不需要主仓库 write 权限，也不必回主仓库开分支：该入口的流水线是 `pull_request_target`，不执行 PR 分支里的任何代码（workflow 与脚本固定取 main 版本，`requests.json` 只当数据读，字符串字段过白名单 `[A-Za-z0-9 .:/_-]`）。
+2. **在 `model-requests/requests.json` 顶层数组末尾追加一个请求对象**（不要改动/删除已有条目，流水线只对 diff 新增条目执行）：
 
 ```json
 {
@@ -95,9 +98,17 @@ model-library/                            # 路由数据 + 台账
 }
 ```
 
-2. 提 PR；**无任何下载**，直到管理员加 `model-download` 标签 → 流水线只对 diff 中**新增的条目**下载（历史条目不重跑，老模型天然幂等秒过）。`models: []` 只给 `datasets` 的纯数据集请求同样合法。
-3. 下载完成后 bot 把条目自动回写进 PR 分支的 `model-library/<cluster>.json` 台账，随 PR 一起合入 —— 合入即完成登记；多 PR 并发回写撞 push race 时自动 rebase 重试（台账里的 “library: merge ledger after push race” commit 即此）。
-4. **fork PR 的细节**：workflow 与所有脚本固定取 main 当前版本，PR 内容只当 `requests.json` 数据读；字符串字段过白名单（`[A-Za-z0-9 .:/_-]`，拒绝引号/shell 元字符/非 ASCII）。fork 分支 bot 写不回时，台账推辅助分支并自动开一条台账 PR，随请求 PR 一起合入。
+   `models` / `datasets` 可只给其一（纯数据集请求合法）；可选 `clusters[]` 显式指定落盘；`auth_secret` 只接受 `none`（或不填）。
+
+3. **向上游 main 开 PR**。此时**不会有任何下载**——下载只在标签出现后发生。
+4. **管理员加 `model-download` 标签 → 流水线自动跑**：
+   - `plan`：diff 提取新增条目，按 (repo, runner_label) 路由展开目标集群（runner-map > groups 兜底，见上文）；
+   - `download`：每集群一个 job，写到该集群共享盘（同步裸机或集群内 0 卡池；同一台机器串行排队；已落过的条目幂等秒过）；
+   - `ledger`：下载成功的条目由 bot 回写 `model-library/<cluster>.json`——非 fork PR 直接推到你的 PR 分支；fork PR 写不回时自动推辅助分支并开一条台账 PR，随你的请求 PR 一起合入；并发撞 push race 自动 rebase 重试（台账里的 “library: merge ledger after push race” commit 即此）。
+5. **看 checks**：任一条目失败则对应 check 变红，明细在 job summary；全绿后请管理员合入——**合入即完成登记**，无需另行提 issue。
+6. **业务 CI 直接可用**：模型已在目标集群共享盘，容器内 `/root/.cache` 离线读取（路径规则见 RUNNERS.md“模型在容器里的最终路径”）；后续 push 到 main 只触发在盘审计，不重下。
+
+**常见错误**（AI 提 PR 高发）：把请求写进 `.github/workflows/config/projects/*.json` 或 `projects-clusters.json`（那是“按项目”常驻清单机制，不是这里）；手改 `model-library/*.json` 台账（bot 的事）；误以为 fork PR 无效而在主仓库开分支或来要权限（不需要）。
 
 ### 入口二：手动触发（Actions → model library → Run workflow）
 
@@ -332,7 +343,7 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 - [镜像地址指引（按项目分类）](IMAGE_SYNC_GUIDE.md) – 详细列出各项目镜像的存放地址，方便快速查找。
 
 ## 更新记录
-- 2026-11-24: 模型下载 README 刷新（对齐 main 实际行为）：项目结构补 model library（`model-library.yml` + `model-requests/` + `model-library/`）；按项目同步明确 **PR 需 `model-download` 标签、无定时全量、push 到 main 只审计不重下**；同步裸机 4→6 台（新增 model-sync-gy004/gy005，model-sync-mind3 修正为独立机器 113.46.31.157）；路由示例修正（sglang `*800t*` 实为仅落 gy004，repo 参与消歧；a5 走 groups 兜底）；补充 fork PR 受理（pull_request_target + 字段白名单 + 台账辅助分支 PR）与纯数据集请求；下载池标签写实（gy001 为 CPU 池；gy001 落盘 ADR-0028 切换中，见 PR #131）。**结构调整**：「模型下载（model library）」整节前置（紧随项目结构），“提 PR 追加 `model-requests/requests.json`”改为**入口一**并醒目标注 **fork PR 生效**；节首加“先看清要改哪个文件”提示框，防止把下载请求误改到 `config/projects/*.json` 或台账文件。
+- 2026-11-24: 模型下载 README 刷新（对齐 main 实际行为）：项目结构补 model library（`model-library.yml` + `model-requests/` + `model-library/`）；按项目同步明确 **PR 需 `model-download` 标签、无定时全量、push 到 main 只审计不重下**；同步裸机 4→6 台（新增 model-sync-gy004/gy005，model-sync-mind3 修正为独立机器 113.46.31.157）；路由示例修正（sglang `*800t*` 实为仅落 gy004，repo 参与消歧；a5 走 groups 兜底）；补充 fork PR 受理（pull_request_target + 字段白名单 + 台账辅助分支 PR）与纯数据集请求；下载池标签写实（gy001 为 CPU 池；gy001 落盘 ADR-0028 切换中，见 PR #131）。**结构调整**：「模型下载（model library）」整节前置（紧随项目结构），“提 PR 追加 `model-requests/requests.json`”改为**入口一**并醒目标注 **fork PR 生效**，且改写为六步端到端流程（fork→追加→开 PR→打标签 plan/download/ledger→checks→合入后离线读取），附“常见错误”清单；节首加“先看清要改哪个文件”提示框，防止把下载请求误改到 `config/projects/*.json` 或台账文件。
 - 2026-05-18: 模型/数据集同步重构为单一通用工作流 `sync-models-datasets.yml`，每个项目一份合并配置 `config/projects/<name>.json`（含 `models` / `datasets`，可选 `local_dir`，留空走 SDK 默认 cache）；新增双架构同步镜像 `sync-tools` 与构建 workflow；删除 hk001，新增 ms-swift / llamafactory（共用 `linux-aarch64-sync-hk001` runner）；新增项目只需 2 个文件改动，无需新建 workflow。
 - 2026-05-13: 新增 README 同步工作流（sync-readmes.yml），通过 docker-pushrm 将 README 推送到 Docker Hub / Quay.io 的对应仓库。
 - 2026-04-20: 镜像同步改为配置驱动（image-sync.json），支持任意源/目标 registry，同步频率改为每小时一次，新增 digest 比对跳过机制。

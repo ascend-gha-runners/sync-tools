@@ -70,5 +70,19 @@
         "dataset_name": "gsm8k-lite"
       }
     ]
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "linux-aarch64-a3-800i-8-cn12-001",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "deepseek-ai",
+        "model_name": "dspark_qwen3_8b_block7",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
   }
 ]

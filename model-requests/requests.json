@@ -73,12 +73,8 @@
   },
   {
     "repo": "vllm-project/vllm-ascend",
-    "runner_label": "linux-aarch64-a3-800i-8-cn12-001",
+    "runner_label": "linux-aarch64-nightly-a3-16",
     "clusters": [
-      "cn12-001",
-      "mind3",
-      "aiframe",
-      "gy004",
       "gy005"
     ],
     "auth_secret": "none",

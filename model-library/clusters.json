@@ -3,10 +3,10 @@
     "machine": "a2",
     "runner": "model-sync-hk001",
     "caches": {
-      "huggingface": "/opt/vllm-ci/ascend-ci-share/huggingface",
-      "modelscope": "/opt/vllm-ci/ascend-ci-share-nv-sync-tools/modelscope/hub"
+      "huggingface": "/opt/vllm-ci/ascend-ci-share-nv-action-vllm-benchmarks/huggingface",
+      "modelscope": "/opt/vllm-ci/ascend-ci-share-nv-action-vllm-benchmarks/modelscope/hub"
     },
-    "note": "ecs-sync 直连 GitHub，共享盘 /opt/vllm-ci (SFS 24dd126e)",
+    "note": "ecs-sync 直连 GitHub；共享盘 /opt/vllm-ci (SFS 24dd126e) 多 export：写端已统一到业务读位 nv-action-vllm-benchmarks（2026-11-24 契约统一，历史 nv-sync-tools/ascend-ci-share 缓存不再新增）",
     "endpoint": "https://huggingface.co",
     "match": {
       "label_regex": "(hk.?001|a2b[0-9])",

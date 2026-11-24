@@ -115,6 +115,7 @@ jobs:
       HF_HOME: ${{ matrix.hf_cache }}
       HUGGINGFACE_HUB_CACHE: ${{ matrix.hf_cache }}/hub
       HF_ENDPOINT: ${{ matrix.hf_endpoint }}
+      NODE_CACHE_EXPORT: ${{ matrix.node_cache_export }}
     steps:
       - name: Fetch repo snapshot via codeload (mainland-safe, no github.com git)
         run: |
@@ -167,10 +168,13 @@ jobs:
             bash .github/scripts/download-json-models.sh /tmp/datasets.json dataset
           fi
 
-      # push(merge 后)只做审计：确认台账里的模型确实躺在本集群共享盘，
-      # 绝不重下（PR 阶段已下载；重下会堵死按 runner 串行的队列）。
+      # 落位断言 + 审计：所有事件都跑。assert 比对写端 caches 与 node_cache.export
+      # 读端是否同盘同目录（#132 hk001 全绿但落错兄弟 export 的教训——旧 audit 拿
+      # 写端 env 查写端目录必然绿，防不住错位）；audit 查空壳/未落盘。绝不重下。
+      - name: Assert landing mount
+        run: bash .github/scripts/assert-landing-mount.sh
+
       - name: Audit landed models
-        if: github.event_name == 'push'
         run: bash .github/scripts/audit-landed.sh
 
       - name: Upload ledger patch
@@ -204,6 +208,7 @@ jobs:
       HF_HOME: ${{ matrix.hf_cache }}
       HUGGINGFACE_HUB_CACHE: ${{ matrix.hf_cache }}/hub
       HF_ENDPOINT: ${{ matrix.hf_endpoint }}
+      NODE_CACHE_EXPORT: ${{ matrix.node_cache_export }}
     steps:
       - name: Fetch repo snapshot via codeload (mainland-safe, no github.com git)
         run: |
@@ -257,10 +262,13 @@ jobs:
             bash .github/scripts/download-json-models.sh /tmp/datasets.json dataset
           fi
 
-      # push(merge 后)只做审计：确认台账里的模型确实躺在本集群共享盘，
-      # 绝不重下（PR 阶段已下载；重下会堵死按 runner 串行的队列）。
+      # 落位断言 + 审计：所有事件都跑。assert 比对写端 caches 与 node_cache.export
+      # 读端是否同盘同目录（#132 hk001 全绿但落错兄弟 export 的教训——旧 audit 拿
+      # 写端 env 查写端目录必然绿，防不住错位）；audit 查空壳/未落盘。绝不重下。
+      - name: Assert landing mount
+        run: bash .github/scripts/assert-landing-mount.sh
+
       - name: Audit landed models
-        if: github.event_name == 'push'
         run: bash .github/scripts/audit-landed.sh
 
       - name: Upload ledger patch

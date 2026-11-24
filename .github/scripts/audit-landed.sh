@@ -34,6 +34,12 @@ check() { # $1 kind, $2 json file
         p="$HF_HOME/hub/models--${org}--${name}"
       fi
       [ -d "$p" ] && found=$p
+      # xet 指针壳检测：blobs 出现 sha256--* 指针文件即判未落盘（流水线契约
+      # HF_HUB_DISABLE_XET=1，正常缓存不应有；gy003 实测 13M 假壳骗过大小阈值）
+      if [ -n "$found" ] && find "$found/blobs" -maxdepth 1 -name 'sha256--*' 2>/dev/null | grep -q .; then
+        found=""
+        rows="${rows}| ${kind} | ${org}/${name} | ❌ xet 指针壳（blobs 含 sha256-- 指针，需 DISABLE_XET 重下）|\n"
+      fi
     fi
     [ -n "$found" ] && sz=$(du -sb "$found" 2>/dev/null | cut -f1)
     if [ -n "$found" ] && [ "${sz:-0}" -gt 1000000 ]; then

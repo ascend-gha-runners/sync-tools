@@ -52,5 +52,62 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-omni",
+    "runner_label": "a2b3",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "MiniMaxAI",
+        "model_name": "MiniMax-H3-Image"
+      },
+      {
+        "platform": "huggingface",
+        "organization": "istupakov",
+        "model_name": "silero-vad-onnx",
+        "revision": "8b14476858ef240c50b3884bb38cc67290c1cc70"
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-omni",
+    "runner_label": "a3",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "MiniMaxAI",
+        "model_name": "MiniMax-H3-Image"
+      },
+      {
+        "platform": "huggingface",
+        "organization": "istupakov",
+        "model_name": "silero-vad-onnx",
+        "revision": "8b14476858ef240c50b3884bb38cc67290c1cc70"
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-omni",
+    "clusters": [
+      "sh001",
+      "sh002"
+    ],
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "MiniMaxAI",
+        "model_name": "MiniMax-H3-Image"
+      },
+      {
+        "platform": "huggingface",
+        "organization": "istupakov",
+        "model_name": "silero-vad-onnx",
+        "revision": "8b14476858ef240c50b3884bb38cc67290c1cc70"
+      }
+    ],
+    "datasets": []
   }
 ]

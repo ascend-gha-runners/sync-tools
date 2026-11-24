@@ -1,0 +1,16 @@
+{
+  "models": [
+    {
+      "platform": "huggingface",
+      "organization": "MiniMaxAI",
+      "model_name": "MiniMax-H3-Image"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "istupakov",
+      "model_name": "silero-vad-onnx",
+      "revision": "8b14476858ef240c50b3884bb38cc67290c1cc70"
+    }
+  ],
+  "datasets": []
+}

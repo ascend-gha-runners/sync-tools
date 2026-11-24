@@ -105,7 +105,7 @@ model-library/                            # 路由数据 + 台账
    - `plan`：diff 提取新增条目，按 (repo, runner_label) 路由展开目标集群（runner-map > groups 兜底，见上文）；
    - `download`：每集群一个 job，写到该集群共享盘（同步裸机或集群内 0 卡池；同一台机器串行排队；已落过的条目幂等秒过）；
    - `ledger`：下载成功的条目由 bot 回写 `model-library/<cluster>.json`——非 fork PR 直接推到你的 PR 分支；fork PR 写不回时自动推辅助分支并开一条台账 PR，随你的请求 PR 一起合入；并发撞 push race 自动 rebase 重试（台账里的 “library: merge ledger after push race” commit 即此）。
-5. **看 checks**：任一条目失败则对应 check 变红，明细在 job summary；全绿后请管理员合入——**合入即完成登记**，无需另行提 issue。
+5. **全绿自动合入**：plan/download/ledger 任一 job 变红，check 即红（明细看 job summary）；全绿后 `merge` job 会自动 squash-merge 请求 PR——**不用再等管理员点合入**，fork 场景配套开出的台账 PR 也会一并自动合入。管理员的人工介入点只有第 4 步的打标签；自动合入只在「无失败检查、与 main 无冲突」时发生，否则 PR 保留原位等人工处理。合入即完成登记，无需另行提 issue。
 6. **业务 CI 直接可用**：模型已在目标集群共享盘，容器内 `/root/.cache` 离线读取（路径规则见 RUNNERS.md“模型在容器里的最终路径”）；后续 push 到 main 只触发在盘审计，不重下。
 
 **常见错误**（AI 提 PR 高发）：把请求写进 `.github/workflows/config/projects/*.json` 或 `projects-clusters.json`（那是“按项目”常驻清单机制，不是这里）；手改 `model-library/*.json` 台账（bot 的事）；误以为 fork PR 无效而在主仓库开分支或来要权限（不需要）。
@@ -343,6 +343,7 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 - [镜像地址指引（按项目分类）](IMAGE_SYNC_GUIDE.md) – 详细列出各项目镜像的存放地址，方便快速查找。
 
 ## 更新记录
+- 2026-11-24: model library 新增 **workflow 全绿自动合入**（`merge` job）：带 `model-download` 标签的请求 PR，在 plan/download/ledger 全部成功后由 bot 自动 squash-merge（fork 的配套台账 PR 一并合入）；存在失败检查、与 main 冲突或等待超时则保留人工处理。管理员介入点收敛为“打标签”一处。
 - 2026-11-24: 模型下载 README 刷新（对齐 main 实际行为）：项目结构补 model library（`model-library.yml` + `model-requests/` + `model-library/`）；按项目同步明确 **PR 需 `model-download` 标签、无定时全量、push 到 main 只审计不重下**；同步裸机 4→6 台（新增 model-sync-gy004/gy005，model-sync-mind3 修正为独立机器 113.46.31.157）；路由示例修正（sglang `*800t*` 实为仅落 gy004，repo 参与消歧；a5 走 groups 兜底）；补充 fork PR 受理（pull_request_target + 字段白名单 + 台账辅助分支 PR）与纯数据集请求；下载池标签写实（gy001 为 CPU 池；gy001 落盘 ADR-0028 切换中，见 PR #131）。**结构调整**：「模型下载（model library）」整节前置（紧随项目结构），“提 PR 追加 `model-requests/requests.json`”改为**入口一**并醒目标注 **fork PR 生效**，且改写为六步端到端流程（fork→追加→开 PR→打标签 plan/download/ledger→checks→合入后离线读取），附“常见错误”清单；节首加“先看清要改哪个文件”提示框，防止把下载请求误改到 `config/projects/*.json` 或台账文件。
 - 2026-05-18: 模型/数据集同步重构为单一通用工作流 `sync-models-datasets.yml`，每个项目一份合并配置 `config/projects/<name>.json`（含 `models` / `datasets`，可选 `local_dir`，留空走 SDK 默认 cache）；新增双架构同步镜像 `sync-tools` 与构建 workflow；删除 hk001，新增 ms-swift / llamafactory（共用 `linux-aarch64-sync-hk001` runner）；新增项目只需 2 个文件改动，无需新建 workflow。
 - 2026-05-13: 新增 README 同步工作流（sync-readmes.yml），通过 docker-pushrm 将 README 推送到 Docker Hub / Quay.io 的对应仓库。

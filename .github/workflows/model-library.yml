@@ -276,6 +276,8 @@ jobs:
   # head branch so the ledger lands together with the merge.
   ledger:
     needs: [plan, download, download-arc]
+    outputs:
+      ledger_pr: ${{ steps.apply.outputs.ledger_pr }}
     # 注意 always()：needs 里有 skipped 任务时（纯 host 请求会 skip download-arc，反之亦然），
     # 不带 always() 的 if 会被 GitHub 无条件 skip。
     if: >-
@@ -294,7 +296,8 @@ jobs:
           pattern: "ledger-patch-*"
           path: /tmp/patches
           merge-multiple: false
-      - name: Apply patches and push
+      - id: apply
+        name: Apply patches and push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -326,7 +329,7 @@ jobs:
               "https://api.github.com/repos/${{ github.repository }}/pulls" \
               -d "{\"title\":\"library: ledger entries from PR #${{ github.event.pull_request.number }}\",\"head\":\"$BR\",\"base\":\"main\",\"body\":\"机器人补记 fork PR 的台账（下载已在该 PR 的 check 中完成），与其一起合入。\"}")
             url=$(echo "$resp" | jq -r '.html_url // empty')
-            if [ -n "$url" ]; then echo "ledger PR: $url"; else
+            if [ -n "$url" ]; then echo "ledger PR: $url"; echo "ledger_pr=$url" >> "$GITHUB_OUTPUT"; else
               echo "::warning::辅助台账 PR 创建失败($(echo "$resp" | jq -r '.message // "unknown" | .[0:120]'))；分支 $BR 已推送，请手动开 PR"
             fi
             exit 0
@@ -346,3 +349,79 @@ jobs:
           done
           echo "ledger push failed after retries" >&2
           exit 1
+
+  # 全绿自动合入：带 model-download 标签的请求 PR（入口一），plan/download/ledger
+  # 全部成功后由本 job squash-merge，业务方不必再等管理员点合入；fork 请求 PR 的
+  # 配套台账 PR 一并自动合入。
+  # 安全边界：①标签本身就是人工审批（人工介入点在 label，不在 merge）；
+  # ②当前 head 上任何已完成(check)为红则拒绝自动合入；③与 base 冲突(dirty)不合；
+  # ④本工作流自身仍在途的 job 不算阻塞（避免等待自己造成死锁），外部工作流的
+  #   在途 checks 最多等 15 分钟，超条件即留给人工。
+  merge:
+    needs: [plan, download, download-arc, ledger]
+    if: >-
+      always() && github.event_name == 'pull_request_target' &&
+      contains(github.event.pull_request.labels.*.name, 'model-download') &&
+      needs.plan.result == 'success' &&
+      (needs.download.result == 'success' || needs.download-arc.result == 'success') &&
+      needs.ledger.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: read
+    steps:
+      - name: Squash-merge when checks are green
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          LEDGER_PR: ${{ needs.ledger.outputs.ledger_pr }}
+        run: |
+          set -uo pipefail
+          merge_when_ready() { # $1=PR号  $2=最长等待秒
+            local pr="$1" budget="$2" t=0 info merged rest state sha ms crs fails pend blocking n
+            while [ "$t" -lt "$budget" ]; do
+              info=$(gh api "repos/$REPO/pulls/$pr" --jq '[.merged,.state,.head.sha,.mergeable_state]|@tsv' 2>/dev/null) \
+                || { sleep 15; t=$((t+15)); continue; }
+              merged=${info%%$'\t'*}; rest=${info#*$'\t'}
+              state=${rest%%$'\t'*};   rest=${rest#*$'\t'}
+              sha=${rest%%$'\t'*};     ms=${rest#*$'\t'}
+              if [ "$merged" = "true" ]; then echo "PR #$pr already merged"; return 0; fi
+              if [ "$state" != "open" ]; then echo "::warning::PR #$pr state=$state, 跳过自动合入"; return 1; fi
+              if [ "$ms" = "dirty" ]; then echo "::error::PR #$pr 与 base 冲突，请 rebase 后重试"; return 1; fi
+              crs=$(gh api "repos/$REPO/commits/$sha/check-runs?per_page=100" --paginate \
+                    --jq '.check_runs[]|[.name,.status,.conclusion]|@tsv' 2>/dev/null) || crs=""
+              fails=$(printf '%s\n' "$crs" | awk -F'\t' '$2=="completed" && $3!="success" && $3!="skipped" && $3!="neutral" && $3!="" {print $1}' | sort -u | paste -sd, -)
+              if [ -n "$fails" ]; then echo "::error::PR #$pr head $sha 存在失败检查: $fails，不自动合入"; return 1; fi
+              pend=$(printf '%s\n' "$crs" | awk -F'\t' '$2!="completed" {print $1}' | sort -u)
+              blocking=""
+              while IFS= read -r n; do
+                [ -z "$n" ] && continue
+                case "$n" in
+                  plan|ledger|merge) ;;      # 本工作流自身（含正在跑的 merge job）
+                  *" <- "*) ;;               # download / [arc] download job 名格式 "<cluster> <- <req>"
+                  *) blocking="$blocking $n" ;;
+                esac
+              done <<< "$pend"
+              if [ -n "${blocking// /}" ]; then echo "等待外部检查完成:$blocking (${t}s)"; sleep 15; t=$((t+15)); continue; fi
+              if [ "$ms" = "clean" ] || [ "$ms" = "behind" ] || [ "$ms" = "has_hooks" ]; then
+                if gh pr merge "$pr" --repo "$REPO" --squash; then echo "merged PR #$pr (sha=$sha ms=$ms)"; return 0; fi
+                if [ "$(gh api "repos/$REPO/pulls/$pr" --jq .merged 2>/dev/null)" = "true" ]; then echo "PR #$pr 已被并发合入"; return 0; fi
+                echo "merge 调用失败（可能 head 刚移动），重试"
+              else
+                echo "mergeable_state=$ms，等待重算"; sleep 10; t=$((t+10))
+              fi
+              sleep 15; t=$((t+15))
+            done
+            echo "::warning::PR #$pr 未自动合入（超时或条件未满足），请管理员手动处理"
+            return 1
+          }
+          rc=0
+          merge_when_ready "$PR" 900 || rc=1
+          if [ -n "$LEDGER_PR" ]; then
+            lpr=${LEDGER_PR##*/}
+            echo "配套台账 PR（fork 回写）：$LEDGER_PR"
+            merge_when_ready "$lpr" 600 || rc=1
+          fi
+          exit $rc

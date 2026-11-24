@@ -2,6 +2,11 @@
   "models": [
     {
       "platform": "huggingface",
+      "organization": "MiniMaxAI",
+      "model_name": "MiniMax-H3-Image"
+    },
+    {
+      "platform": "huggingface",
       "organization": "OpenMOSS-Team",
       "model_name": "MOSS-Image-Base"
     },
@@ -19,6 +24,12 @@
       "platform": "huggingface",
       "organization": "Qwen",
       "model_name": "Qwen3-0.6B"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "istupakov",
+      "model_name": "silero-vad-onnx",
+      "revision": "8b14476858ef240c50b3884bb38cc67290c1cc70"
     },
     {
       "platform": "huggingface",

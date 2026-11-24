@@ -70,5 +70,62 @@
         "dataset_name": "gsm8k-lite"
       }
     ]
+  },
+  {
+    "repo": "vllm-project/vllm-omni",
+    "runner_label": "linux-aarch64-a2b3",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "istupakov",
+        "model_name": "silero-vad-onnx",
+        "revision": "8b14476858ef240c50b3884bb38cc67290c1cc70"
+      },
+      {
+        "platform": "huggingface",
+        "organization": "MiniMaxAI",
+        "model_name": "MiniMax-H3-Image"
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-omni",
+    "runner_label": "linux-aarch64-a3",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "istupakov",
+        "model_name": "silero-vad-onnx",
+        "revision": "8b14476858ef240c50b3884bb38cc67290c1cc70"
+      },
+      {
+        "platform": "huggingface",
+        "organization": "MiniMaxAI",
+        "model_name": "MiniMax-H3-Image"
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-omni",
+    "runner_label": "linux-aarch64-a5-2",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "istupakov",
+        "model_name": "silero-vad-onnx",
+        "revision": "8b14476858ef240c50b3884bb38cc67290c1cc70"
+      },
+      {
+        "platform": "huggingface",
+        "organization": "MiniMaxAI",
+        "model_name": "MiniMax-H3-Image"
+      }
+    ],
+    "datasets": []
   }
 ]

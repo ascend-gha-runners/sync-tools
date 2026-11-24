@@ -4,6 +4,18 @@
       "platform": "modelscope",
       "organization": "Qwen",
       "model_name": "Qwen2.5-7B-Instruct"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Qwen",
+      "model_name": "Qwen3-8B",
+      "legacy_layout": true
+    },
+    {
+      "platform": "modelscope",
+      "organization": "deepseek-ai",
+      "model_name": "dspark_qwen3_8b_block7",
+      "legacy_layout": true
     }
   ],
   "datasets": [

@@ -38,7 +38,7 @@ entry_for() {  # $1 cluster, $2 request-source, $3 payload
 
 emit_for_request() {  # $1 source-desc, $2 request-json, $3 payload(for dispatch only)
   local src=$1 reqjson=$2 payload=$3 label repo clusters
-  echo "$reqjson" | jq -e '(.models // []) | length > 0 or ((.datasets // []) | length > 0)' >/dev/null || {
+  echo "$reqjson" | jq -e '((.models // []) | length) > 0 or ((.datasets // []) | length) > 0' >/dev/null || {
     echo "ERROR: $src has no models/datasets" >&2; return 1; }
   label=$(echo "$reqjson" | jq -r '.runner_label // empty')
   repo=$(echo "$reqjson" | jq -r '.repo // empty')
@@ -94,7 +94,7 @@ case "${GITHUB_EVENT_NAME:-}" in
           ((.datasets // [ ])[ ] | (.organization, .dataset_name, (.revision // "")))]
          | map(select(type=="string" and length>0)) | all(test($x)))' >/dev/null || {
         echo "ERROR: request #$n 含白名单外字符（[A-Za-z0-9 .:/_-]），已拒绝" >&2; exit 1; }
-      echo "== new request #$n: $(echo "$req" | jq -r '.repo + " @ " + .runner_label') (+$(echo "$req" | jq -r '((.models|length)+(.datasets|length))')) entries"
+      echo "== new request #$n: $(echo "$req" | jq -r '.repo + " @ " + .runner_label') (+$(echo "$req" | jq -r '(((.models // [])|length)+((.datasets // [])|length))')) entries"
       ENTRIES="$ENTRIES$(emit_for_request "requests.json#$n" "$req" "$req")"$'\n'
     done < /tmp/new-requests.jsonl
     ;;

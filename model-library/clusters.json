@@ -180,10 +180,10 @@
       "modelscope": "/root/.cache/modelscope/hub"
     },
     "endpoint": "https://hf-mirror.com",
-    "note": "无同步裸机。集群内 0 卡下载池（aX-0）（linux-amd64-cpu-2-gy001，本就 CPU）：job pod /root/.cache <- hostPath /mnt/sfs-local/ascend-gha-runners-gy001",
+    "note": "无同步裸机。集群内 0 卡下载池（linux-amd64-cpu-2-gy001）：job pod /root/.cache <- PVC ascend-gha-runners-gy001-nvbench（ADR-0028 起落联邦 a2 缓存盘；原 hostPath d561f410 退役）",
     "node_cache": {
-      "alias": "ascend-gha-runners-gy001",
-      "export": "d561f410:/ascend-ci-share",
+      "alias": "ascend-gha-runners-gy001-nvbench",
+      "export": "b9bf4a57:/ascend-ci-share-nv-action-vllm-benchmarks",
       "write": "集群内 job Pod /root/.cache（无同步机，下载即在集群里）"
     }
   },

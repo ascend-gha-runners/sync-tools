@@ -27,6 +27,12 @@
       "platform": "modelscope"
     },
     {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "GLM-5.3-W8A8C8-MXFP8-1D7M1MTP",
+      "legacy_layout": true
+    },
+    {
       "model_name": "d3-edge",
       "organization": "vllm-sr",
       "platform": "modelscope"

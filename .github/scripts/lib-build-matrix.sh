@@ -25,15 +25,16 @@ REQUESTS_DIR="model-requests"
 RESOLVE="$ROOT/.github/scripts/lib-resolve.sh"
 
 entry_for() {  # $1 cluster, $2 request-source, $3 payload
-  local c=$1 req=$2 payload=$3 runner hf ms ep mode
+  local c=$1 req=$2 payload=$3 runner hf ms ep mode nce
   runner=$(jq -r --arg c "$c" '.[$c].runner // empty' "$CLUSTERS")
   hf=$(jq -r --arg c "$c" '.[$c].caches.huggingface // empty' "$CLUSTERS")
   ms=$(jq -r --arg c "$c" '.[$c].caches.modelscope // empty' "$CLUSTERS")
   ep=$(jq -r --arg c "$c" '.[$c].endpoint // "https://hf-mirror.com"' "$CLUSTERS")
   mode=$(jq -r --arg c "$c" '.[$c].mode // "host"' "$CLUSTERS")
+  nce=$(jq -r --arg c "$c" '.[$c].node_cache.export // empty' "$CLUSTERS")
   [ -n "$runner" ] && [ -n "$hf" ] && [ -n "$ms" ] || { echo "ERROR: cluster '$c' incomplete in clusters.json" >&2; return 1; }
-  jq -cn --arg c "$c" --arg r "$runner" --arg req "$req" --arg hf "$hf" --arg ms "$ms" --arg ep "$ep" --arg p "$payload" --arg m "$mode" \
-    '{cluster:$c, runner:$r, mode:$m, request:$req, hf_cache:$hf, ms_cache:$ms, hf_endpoint:$ep, payload:$p}'
+  jq -cn --arg c "$c" --arg r "$runner" --arg req "$req" --arg hf "$hf" --arg ms "$ms" --arg ep "$ep" --arg p "$payload" --arg m "$mode" --arg nce "$nce" \
+    '{cluster:$c, runner:$r, mode:$m, request:$req, hf_cache:$hf, ms_cache:$ms, hf_endpoint:$ep, payload:$p, node_cache_export:$nce}'
 }
 
 emit_for_request() {  # $1 source-desc, $2 request-json, $3 payload(for dispatch only)

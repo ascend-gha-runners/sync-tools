@@ -52,5 +52,23 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "linux-aarch64-a2-8",
+    "auth_secret": "none",
+    "models": [],
+    "datasets": [
+      {
+        "platform": "modelscope",
+        "organization": "vllm-ascend",
+        "dataset_name": "GSM8K_prefix100_in16384_bs500_GLM5_3_flash_w8a8"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "vllm-ascend",
+        "dataset_name": "gsm8k-lite"
+      }
+    ]
   }
 ]

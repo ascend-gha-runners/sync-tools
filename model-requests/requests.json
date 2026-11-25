@@ -70,5 +70,23 @@
         "dataset_name": "gsm8k-lite"
       }
     ]
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "linux-aarch64-a5-4",
+    "clusters": [
+      "sh001",
+      "sh002"
+    ],
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "vllm-ascend",
+        "model_name": "GLM-5.3-Flash-W8A8-MXFP8-9L-MTP1",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
   }
 ]

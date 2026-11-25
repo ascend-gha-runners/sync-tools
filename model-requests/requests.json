@@ -70,5 +70,41 @@
         "dataset_name": "gsm8k-lite"
       }
     ]
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "linux-aarch64-a5-8",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "MiniMax",
+        "model_name": "MiniMax-M3-MXFP8",
+        "legacy_layout": true
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Inferact",
+        "model_name": "MiniMax-M3-EAGLE3-GQA",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": [
+      {
+        "platform": "modelscope",
+        "organization": "vllm-ascend",
+        "dataset_name": "GSM8K_prefix0_in131072_bs500_MiniMax_w8a8_0626"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "vllm-ascend",
+        "dataset_name": "GSM8K_prefix90_in131072_bs1000_Minimax"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "vllm-ascend",
+        "dataset_name": "GSM8K_prefix99_in131072_bs500_MiniMax_w8a8_0626"
+      }
+    ]
   }
 ]

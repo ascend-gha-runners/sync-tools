@@ -73,7 +73,7 @@
   },
   {
     "repo": "vllm-project/vllm-ascend",
-    "runner_label": "linux-aarch64-a2-8",
+    "runner_label": "fed-1-runner-9qtdc",
     "auth_secret": "none",
     "models": [
       {

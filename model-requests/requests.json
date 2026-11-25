@@ -70,5 +70,19 @@
         "dataset_name": "gsm8k-lite"
       }
     ]
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "linux-aarch64-a3-800t-16",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "vllm-ascend",
+        "model_name": "MiniMax-M3.1-Flash-W4A8",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
   }
 ]

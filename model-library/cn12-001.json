@@ -6,6 +6,11 @@
       "model_name": "Qwen2.5-0.5B-Instruct"
     },
     {
+      "model_name": "bge-m3",
+      "organization": "BAAI",
+      "platform": "modelscope"
+    },
+    {
       "platform": "modelscope",
       "organization": "vllm-sr",
       "model_name": "d3-edge",

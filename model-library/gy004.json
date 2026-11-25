@@ -6,6 +6,11 @@
       "platform": "huggingface"
     },
     {
+      "model_name": "bge-m3",
+      "organization": "BAAI",
+      "platform": "modelscope"
+    },
+    {
       "model_name": "Qwen3.5-9B-Eagle3-ShareGPTocal-di",
       "organization": "leslie1776",
       "platform": "modelscope"

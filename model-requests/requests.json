@@ -70,5 +70,18 @@
         "dataset_name": "gsm8k-lite"
       }
     ]
+  },
+  {
+    "repo": "vllm-project/vllm-ascend",
+    "runner_label": "linux-aarch64-a2-8",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "vllm-ascend",
+        "model_name": "ilama-text2sql-spider"
+      }
+    ],
+    "datasets": []
   }
 ]

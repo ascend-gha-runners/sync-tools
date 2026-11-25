@@ -123,5 +123,6 @@
   { "src": "swr.cn-north-12.myhuaweicloud.com/ascend/vllm-ascend", "dest": "quay.io/ascend/vllm-ascend" },
   { "src": "swr.cn-north-12.myhuaweicloud.com/atlas_inference/vllm-ascend", "dest": "swr.cn-north-4.myhuaweicloud.com/inference/vllm-ascend" },
   
-  { "src": "quay.io/celenewyear/tilelang-ascend",   "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/tilelang/tilelang-ascend" }
+  { "src": "quay.io/celenewyear/tilelang-ascend",   "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/tilelang/tilelang-ascend" },
+  { "src": "ghcr.io/actions/actions-runner", "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/actions/actions-runner", "tag_filter": "^latest$|^2\\.33" }
 ]

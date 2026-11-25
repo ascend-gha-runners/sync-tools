@@ -31,6 +31,11 @@
       "model_name": "self_cognition_Alice"
     },
     {
+      "model_name": "DeepSeek-OCR",
+      "organization": "DeepSeek-ai",
+      "platform": "modelscope"
+    },
+    {
       "platform": "modelscope",
       "organization": "Eco-Tech",
       "model_name": "DeepSeek-V4.1-Flash-w4a8",

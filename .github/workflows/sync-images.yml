@@ -25,8 +25,13 @@ jobs:
     # 并发控制在 job 级按 src 分组：某个慢源（如 verl/vllm-ascend 同步 2h+）只会延迟
     # 它自己的下一次同步，不会把整个 run 拖住、连坐其他镜像的同步节奏。
     # 不要提升回 workflow 级——那会让所有 src 一起等最慢的那个。
+    # 组 key 故意不带 github.ref：任何 ref 写的都是同一批 dest registry，跨 ref 的同
+    # src 同样必须互斥，否则「同 src 不并发」在分支手动 dispatch 时会被绕过；
+    # 代价是在分支上手动跑同一 src 时要排队等 main 的 job 结束。
+    # 另外注意：默认 queue: single 下，被更新的 pending 顶掉的 job 会以 cancelled 收场
+    # （正常替换，非失败）；若对 cancelled run 有告警，需排除这类情况以免误报。
     concurrency:
-      group: sync-images-${{ matrix.src }}-${{ github.ref }}
+      group: sync-images-${{ matrix.src }}
       cancel-in-progress: false
     container:
       image: quay.io/skopeo/stable:latest

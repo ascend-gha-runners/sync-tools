@@ -1,6 +1,6 @@
 # 业务对照表：runner 标签 → 集群 → 共享盘
 
-由 `.github/scripts/gen-runner-map.py` 从 ascend-ci-deployment 生成，证据链：**chart nodeSelector 硬落点** > **karmada propagation 组成员** > **argocd dest**；盘位在 `model-library/clusters.json` 的 node_cache。业务只需要看这张表 + 各集群台账 `<cluster>.json`。
+由 `.github/scripts/gen-runner-map.py` 从 ascend-ci-deployment 生成，证据链：**chart 注册的 scaleSetLabels 标签**（二维 key：repo×label，chart 目录名/releaseName 作别名打通）> **chart nodeSelector 硬落点** > **karmada propagation 组成员** > **argocd dest**；盘位在 `model-library/clusters.json` 的 node_cache。业务只需要看这张表 + 各集群台账 `<cluster>.json`。
 
 ## 集群盘位
 
@@ -51,12 +51,14 @@ gy001/wlcb001/sh001/sh002 没有同步 ECS，路由到这些集群的请求由 *
 - **ascend-gha-runners/sgl-kernel-npu**: `a2`→{gy001,hk001,wlcb001}, `a3`→{cn12-001,gy004}, `npu`→{gy004}
 - **ascend-gha-runners/sglang_public**: `a3-0-sgl`→{cn12-001}, `a3-16-sgl`→{cn12-001}, `a3-2-sgl`→{cn12-001}, `a3-4-sgl`→{cn12-001}, `a3-8-sgl`→{cn12-001}
 - **ascend-gha-runners/sync-tools**: `sglang-a2`→{gy001,hk001,wlcb001}, `sglang-a3`→{gy004}, `verl-a3`→{mind3}, `vllm-a2`→{gy001,hk001,wlcb001}, `vllm-a3`→{gy005}
-- **ascend-gha-runners/vllm-ascend**: `a2`→{gy001,hk001,wlcb001}, `a3`→{gy005}, `a3-test`→{cn12-001}
+- **ascend-gha-runners/test**: `a2-test-fed`→{gy001,hk001,wlcb001}
+- **ascend-gha-runners/vllm-ascend**: `a2`→{gy001,hk001,wlcb001}, `a3`→{gy005}, `a3-test`→{gy005}
 - **fla-org/flash-linear-attention**: `a2`→{gy001,hk001,wlcb001}
 - **gaoyuanyuanqiqi/TorchTurbo**: `a3-800i`→{aiframe,cn12-001,mind3}
 - **hiyouga/LLaMA-Factory**: `a2`→{gy001,hk001,wlcb001}
 - **modelscope/ms-swift**: `a2`→{gy001,hk001,wlcb001}
-- **nv-action/vllm-benchmarks**: `310p`→{gy003}, `910b`→{gy001,hk001,wlcb001}, `a2`→{gy001,hk001,wlcb001}, `a2b1`→{gy001}, `a2b3`→{gy001,hk001,wlcb001}, `a2b3-v-half`→{gy001,hk001,wlcb001}, `a2b3-v-quarter`→{gy001,hk001,wlcb001}, `a2b4`→{gy001}, `a3`→{cn12-001}, `a3-800i`→{aiframe,cn12-001,mind3}, `a3-800t`→{cn12-001,gy004,gy005}, `cpu`→{gy005}, `cpu-16-hk`→{hk001}, `cpu-2-hk`→{hk001}, `cpu-32-hk`→{hk001}, `cpu-4-hk`→{hk001}, `cpu-8-hk`→{hk001}, `nightly-310p`→{gy003}, `nightly-a2b3`→{gy001,hk001,wlcb001}, `nightly-a3`→{gy005}
+- **mooncake-ai-test/mooncake**: `a2-mooncake-fed`→{gy001,hk001,wlcb001}, `a3`→{gy004}, `a3-800i-mooncake-fed`→{aiframe,cn12-001,mind3}
+- **nv-action/vllm-benchmarks**: `310p`→{gy003}, `910b`→{gy001,hk001,wlcb001}, `a2`→{gy001,hk001,wlcb001}, `a2b1`→{gy001}, `a2b3`→{gy001,hk001,wlcb001}, `a2b3-v-half`→{gy001,hk001,wlcb001}, `a2b3-v-quarter`→{gy001,hk001,wlcb001}, `a2b4`→{gy001}, `a3`→{cn12-001}, `a3-800i`→{aiframe,cn12-001,mind3}, `a3-800t`→{gy005}, `cpu`→{gy005}, `cpu-16-hk`→{hk001}, `cpu-2-hk`→{hk001}, `cpu-32-hk`→{hk001}, `cpu-4-hk`→{hk001}, `cpu-8-hk`→{hk001}, `nightly-310p`→{gy003}, `nightly-a2b3`→{gy001,hk001,wlcb001}, `nightly-a3`→{gy005}
 - **pt-ecosystem/flash-linear-attention**: `a2`→{gy001,hk001,wlcb001}
 - **sgl-project/sgl-kernel-npu**: `a2`→{gy001,hk001,wlcb001}, `a3`→{cn12-001}, `a3-800i`→{aiframe,cn12-001,mind3}, `a3-800t`→{gy004}
 - **sgl-project/sglang**: `a2`→{gy001,hk001,wlcb001}, `a3`→{cn12-001,gy004}, `a3-800t`→{gy004}, `a3-800t-test`→{gy004}, `a3-test`→{cn12-001}, `cpu`→{gy004}
@@ -67,7 +69,7 @@ gy001/wlcb001/sh001/sh002 没有同步 ECS，路由到这些集群的请求由 *
 - **vllm-ascend/main2main-automator**: `a2b3`→{gy001,hk001,wlcb001}
 - **vllm-ascend/vllm-ascend-kimi-k3**: `a2b3`→{gy001,hk001,wlcb001}, `a3`→{gy005}, `cpu-2-hk`→{hk001}, `cpu-8-hk`→{hk001}
 - **vllm-ascend/vllm-ascend-recipes**: `a2b4`→{gy001}, `a3-800i`→{aiframe,cn12-001,mind3}
-- **vllm-project/vllm-ascend**: `310p`→{gy003}, `910b`→{gy001,hk001,szlab,wlcb001}, `a2`→{gy001,hk001,wlcb001}, `a2b1`→{gy001}, `a2b1b3`→{gy001,hk001,wlcb001}, `a2b1b3-test`→{gy001,hk001,wlcb001}, `a2b3`→{gy001,hk001,wlcb001}, `a2b4`→{gy001}, `a3`→{cn12-001}, `a3-800i`→{aiframe,cn12-001,mind3}, `a3-800i-test`→{aiframe,cn12-001,mind3}, `a3-800t`→{cn12-001,gy004,gy005}, `a3-800t-test`→{gy005}, `a3-test-16-gy005`→{gy005}, `cpu`→{cn12-001,gy005}, `cpu-16-hk`→{hk001}, `cpu-2-hk`→{hk001}, `cpu-32-hk`→{hk001}, `cpu-4-hk`→{hk001}, `cpu-8-hk`→{hk001}, `nightly-a3`→{gy005}
+- **vllm-project/vllm-ascend**: `310p`→{gy003}, `910b`→{gy001,hk001,szlab,wlcb001}, `a2`→{gy001,hk001,wlcb001}, `a2b1`→{gy001}, `a2b1b3`→{gy001,hk001,wlcb001}, `a2b1b3-test`→{gy001,hk001,wlcb001}, `a2b3`→{gy001,hk001,wlcb001}, `a2b4`→{gy001}, `a3`→{cn12-001}, `a3-800i`→{aiframe,cn12-001,mind3}, `a3-800i-test`→{aiframe,cn12-001,mind3}, `a3-800t`→{gy005}, `a3-800t-fed`→{gy004,gy005}, `a3-800t-test`→{gy005}, `a3-test-16-gy005`→{gy005}, `cpu`→{cn12-001,gy005}, `cpu-16-hk`→{hk001}, `cpu-2-hk`→{hk001}, `cpu-32-hk`→{hk001}, `cpu-4-hk`→{hk001}, `cpu-8-hk`→{hk001}, `nightly-a3`→{gy005}
 - **vllm-project/vllm-omni**: `310p`→{gy003}, `a2b3`→{gy001,hk001,wlcb001}, `a3`→{cn12-001}, `a3-offload`→{cn12-001}, `a3-offload-test`→{cn12-001}
 - **volcengine/uni-agent**: `a2`→{gy001,hk001,wlcb001}
 - **volcengine/verl**: `a2`→{gy001,hk001,wlcb001}, `a3-800i`→{aiframe,cn12-001,mind3}, `a3-800i-16-memclean`→{aiframe,cn12-001,mind3}, `a3-800i-test`→{aiframe,cn12-001,mind3}

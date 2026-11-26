@@ -6,6 +6,10 @@
   2. karmada  manifests/arc-fedsched/prod-cp-*/propagation-policies.yaml clusterNames
      (a2 / a3-800i / a3-800t / a3-n 四组成员)
   3. argocd Application destinations (chart 部署的 host 集群，无 selector 时落本地)
+     argocd app 的 helm.releaseName 与 chart 目录名（带 -<host集群> 后缀）是两个 key，
+     用 ALIAS 打通：releaseName 形式的 label 优先继承目录名形式的 nodeSelector 硬落点，
+     避免 liqo 卸载部署被误记成 host 集群（二维匹配：每 (repo,label) 独立解析，
+     全局 map 仅作跨 repo 并集兜底）
   4. cluster_disks 读 model-library/clusters.json 的 node_cache
 Output runner-map.json:
   map:            label -> [clusters]                (全局并集)
@@ -36,11 +40,14 @@ for f in glob.glob(f"{ACD}/manifests/arc-fedsched/prod-cp-*/propagation-policies
     PLACEMENT[grp] = sorted({norm(m) for m in members if norm(m)})
 
 
-# ---- 1: chart selectors ----
-SEL = {}   # (repo,label) -> clusters
+# ---- 1: chart selectors + registered runner labels ----
+SEL = {}     # (repo, chart 目录名) -> 硬落点 clusters（nodeSelector）
+DIRSET = collections.defaultdict(set)           # repo -> {chart 目录名}
+LBLDIR = collections.defaultdict(set)           # (repo, scaleSetLabel) -> {chart 目录名}
 for f in sorted(glob.glob(f"{ACD}/projects/*/*/linux-*/values.yaml") + glob.glob(f"{ACD}/other/*/*/linux-*/values.yaml")):
     rel = os.path.relpath(f, ACD).split("/")
     repo, lbl = "/".join(rel[1:3]), rel[3]
+    DIRSET[repo].add(lbl)
     try: v = yaml.safe_load(open(f))
     except Exception: continue
     found = []
@@ -57,6 +64,12 @@ for f in sorted(glob.glob(f"{ACD}/projects/*/*/linux-*/values.yaml") + glob.glob
     deep(v)
     if found:
         SEL[(repo, lbl)] = [x for x in dict.fromkeys(found) if x]
+    # 二维锚点：chart 实际注册的 runner 标签（runs-on 用的就是它），
+    # 而非 releaseName/目录名；同一标签多 chart 时并集
+    sset = (v or {}).get("gha-runner-scale-set") or {}
+    for lab in sset.get("scaleSetLabels") or []:
+        if isinstance(lab, str) and lab.startswith("linux-"):
+            LBLDIR[(repo, lab)].add(lbl)
 
 # ---- 2: fed groups by label pattern ----
 def fed_clusters(lbl):
@@ -71,6 +84,7 @@ def fed_clusters(lbl):
 
 # ---- 3: argocd hosts per (repo,label) ----
 HOSTS = collections.defaultdict(set)
+ALIAS = {}  # (repo, releaseName) -> chart 目录名（两者不同时才有）
 DEST = {"ascend-cn12-001-cluster": "cn12-001", "ascend-hk-001-cluster": "hk001",
         "openmerlin-guiyang-003-cluster": "gy003", "openmerlin-guiyang-004-cluster": "gy004",
         "openmerlin-guiyang-005-cluster": "gy005", "ascend-aiframework": "aiframe",
@@ -89,7 +103,14 @@ for app in glob.glob(f"{ACD}/argocd/clusters/*/*.yaml"):
             if len(p) < 4 or p[0] not in ("projects", "other"): continue  # path 本身是相对路径
             lbl = (src.get("helm") or {}).get("releaseName") or os.path.basename(path)
             if lbl.startswith("linux-"):
-                HOSTS[("/".join(p[1:3]), lbl)].add(dst)
+                repo = "/".join(p[1:3])
+                HOSTS[(repo, lbl)].add(dst)
+                dir_lbl = os.path.basename(path.rstrip("/"))
+                if dir_lbl.startswith("linux-"):
+                    HOSTS[(repo, dir_lbl)].add(dst)
+                    if dir_lbl != lbl:
+                        # 同一部署的 releaseName 与目录名别名，供无 scaleSetLabels 时打通
+                        ALIAS.setdefault((repo, lbl), dir_lbl)
 
 # ---- 4: cluster disk table ----
 CLUSTER_FIX = {"ascend-cn12-001-cluster": "cn12-001", "openmerlin-guiyang-003-cluster": "gy003",
@@ -103,18 +124,40 @@ disk = {c: v["node_cache"] for c, v in json.load(open(os.path.join(
     if v.get("node_cache")}
 
 # ---- assemble ----
-repos = {r for r, _ in HOSTS} | {r for r, _ in SEL}
+def landing(r, lbl):
+    """二维定位：(repo,label) -> {目录名 / releaseName 别名 / scaleSetLabels 反查}
+    锚定的 chart 集合；返回 (liqo 硬落点, 是否 hostname 钉节点, 相关 host 集群)"""
+    dirs = set()
+    if lbl in DIRSET.get(r, set()): dirs.add(lbl)
+    if ALIAS.get((r, lbl)): dirs.add(ALIAS[(r, lbl)])
+    dirs |= LBLDIR.get((r, lbl), set())
+    sel, pinned = [], False
+    for d in sorted(dirs):
+        for c in SEL.get((r, d), []):
+            if c.startswith("host:"): pinned = True
+            else: sel.append(c)
+    hosts = set(HOSTS.get((r, lbl), ()))
+    for d in dirs: hosts |= HOSTS.get((r, d), set())
+    return list(dict.fromkeys(sel)), pinned, hosts
+
+repos = {r for r, _ in HOSTS} | {r for r, _ in SEL} | {r for r, _ in LBLDIR}
 map_by_repo, gmap = {}, collections.defaultdict(set)
 for repo in sorted(repos):
     labels = {}
-    for (r, lbl) in list(HOSTS) + list(SEL):
-        if r != repo: continue
-        if SEL.get((r, lbl)):
-            cl = [c for c in SEL[(r, lbl)] if not c.startswith("host:")]
-            if not cl:
-                cl = sorted(HOSTS.get((r, lbl), []))
+    keys = ({l for (r, l) in HOSTS if r == repo}
+            | {l for (r, l) in SEL if r == repo}
+            | {l for (r, l) in LBLDIR if r == repo})
+    for lbl in sorted(keys):
+        sel, pinned, hosts = landing(repo, lbl)
+        if sel:
+            # chart nodeSelector 硬落点（liqo 跨集群卸载）优先级最高；
+            # 不再误并入 host∪karmada（教训：vllm-ascend 800t-* 托管 cn12、
+            # 实际落点 gy005，旧逻辑给 cn12-001/gy004 各多下一份模型，见 PR#145）
+            cl = sel
+        elif pinned:
+            cl = sorted(hosts)          # hostname 钉节点 -> 落 host 集群
         else:
-            base = sorted(HOSTS.get((r, lbl), []))
+            base = sorted(hosts)
             grp = "a3-800i" if "800i" in lbl else "a3-800t" if "800t" in lbl \
                   else "a2" if re.search(r"a2b|910b|-a2", lbl) else None
             if "fed" in lbl and grp:

@@ -17,7 +17,7 @@ repo="${2:-}"
 
 out=$(jq -cn --arg l "$label" --arg repo "$repo" \
       --slurpfile m "$DIR/runner-map.json" --slurpfile g "$DIR/groups.json" --slurpfile c "$DIR/clusters.json" '
-  def longest($map): ($map // {} | keys | map(select($l == . or ($l | startswith(. + "-")))) | sort_by(-length) | .[0] // null);
+  def longest($map): ($map // {} | keys | map(. as $k | select($l == $k or ($l | startswith($k + "-")))) | sort_by(-length) | .[0] // null);
   longest(($m[0].map_by_repo[$repo] // null)) as $krepo |
   longest($m[0].map) as $kglobal |
   (if $krepo != null then {clusters: $m[0].map_by_repo[$repo][$krepo], via: "runner-map[repo]", key: $krepo}

@@ -1,0 +1,11 @@
+{
+  "models": [
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "GLM-5.3-Flash-W8A8-MXFP8-9L-MTP1",
+      "legacy_layout": true
+    }
+  ],
+  "datasets": []
+}

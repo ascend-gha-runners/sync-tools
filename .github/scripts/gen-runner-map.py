@@ -4,7 +4,7 @@
   1. runner chart values.yaml  -> nodeSelector liqo.io/remote-cluster-id=X (硬落点)
      or hostname=X (钉节点)
   2. karmada  manifests/arc-fedsched/prod-cp-*/propagation-policies.yaml clusterNames
-     (a2 / a3-800i / a3-800t / a3-n 四组成员)
+     (a2 / a3-800i / a3-800t / a3-n / a5 五组成员)
   3. argocd Application destinations (chart 部署的 host 集群，无 selector 时落本地)
      argocd app 的 helm.releaseName 与 chart 目录名（带 -<host集群> 后缀）是两个 key，
      用 ALIAS 打通：releaseName 形式的 label 优先继承目录名形式的 nodeSelector 硬落点，
@@ -24,7 +24,8 @@ a = ap.parse_args(); ACD = a.acd
 CN = {"aiframework": "aiframe", "mind-third-ci": "mind3", "openmerlin-guiyang-004": "gy004",
       "openmerlin-guiyang-005": "gy005", "openmerlin-guiyang-001": "gy001", "gy-001": "gy001",
       "gy-004": "gy004", "gy-005": "gy005", "ascend-hk-001": "hk001", "cn12-001": "cn12-001",
-      "wlcb-001": "wlcb001", "sz-lab": "szlab", "gluster": None}
+      "wlcb-001": "wlcb001", "sz-lab": "szlab", "gluster": None,
+      "sh-001": "sh001", "sh-002": "sh002"}
 def norm(c): return CN.get(c, c)
 PLACEMENT = {  # karmada 组 -> 成员（去掉 karc 控制面），来源 prod-cp-*/propagation-policies.yaml
 }
@@ -76,6 +77,7 @@ def fed_clusters(lbl):
     l = lbl.lower()
     if "800i" in l: g = "a3-800i"
     elif "800t" in l: g = "a3-800t"
+    elif re.search(r"-a5\b|-a5-|-a5$", l): g = "a5"
     elif re.search(r"a2b|910b|-a2|-cpu", l): g = "a2"
     elif re.search(r"a3-n|ascend-910c", l): g = "a3-n"
     elif "a3" in l: g = "a3-800i"
@@ -89,7 +91,8 @@ DEST = {"ascend-cn12-001-cluster": "cn12-001", "ascend-hk-001-cluster": "hk001",
         "openmerlin-guiyang-003-cluster": "gy003", "openmerlin-guiyang-004-cluster": "gy004",
         "openmerlin-guiyang-005-cluster": "gy005", "ascend-aiframework": "aiframe",
         "ascend-mind-third-ci": "mind3", "ascend-infra-guiyang-cluster-001": "gy001",
-        "ascend-infra-wlcb-cluster-001": "wlcb001"}
+        "ascend-infra-wlcb-cluster-001": "wlcb001",
+        "openmerlin-sh-001-cluster": "sh001", "openmerlin-sh-002-cluster": "sh002"}
 for app in glob.glob(f"{ACD}/argocd/clusters/*/*.yaml"):
     for d in (yaml.safe_load_all(open(app)) or []):
         if not isinstance(d, dict) or d.get("kind") != "Application": continue
@@ -159,14 +162,18 @@ for repo in sorted(repos):
         else:
             base = sorted(hosts)
             grp = "a3-800i" if "800i" in lbl else "a3-800t" if "800t" in lbl \
-                  else "a2" if re.search(r"a2b|910b|-a2", lbl) else None
+                  else "a2" if re.search(r"a2b|910b|-a2", lbl) else \
+                  "a5" if re.search(r"-a5\b|-a5-|-a5$", lbl) else None
             if "fed" in lbl and grp:
                 cl = fed_clusters(lbl) or base
-            elif grp and base:
+            elif grp and base and grp != "a5":
                 # karmada 组成员并入 host（800i: cn12+ aiframe+mind3；a2: hk001+gy001+wlcb001）
                 cl = sorted(set(base) | {c for c in fed_clusters(lbl) if c})
+            elif grp and not base:
+                # 无 host 证据 = chart 部署在 karmada CP（或 fed 别名的裸标签）-> 组落点
+                cl = fed_clusters(lbl)
             else:
-                cl = base
+                cl = base   # a5 分池（sh001/sh002 各挂各的），有 host 时不隐式跨联邦
         if not cl: continue
         labels[lbl] = sorted(set(cl))
         for c in cl: gmap[lbl].add(c)

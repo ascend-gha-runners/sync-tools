@@ -21,6 +21,8 @@ out=$(jq -cn --arg l "$label" --arg repo "$repo" \
   longest(($m[0].map_by_repo[$repo] // null)) as $krepo |
   longest($m[0].map) as $kglobal |
   (if $krepo != null then {clusters: $m[0].map_by_repo[$repo][$krepo], via: "runner-map[repo]", key: $krepo}
+   elif ($repo != "") and (($m[0].map_by_repo[$repo] // {}) | length > 0)
+     then {clusters: [], via: "repo-miss", key: $l}
    elif $kglobal != null then {clusters: $m[0].map[$kglobal], via: "runner-map", key: $kglobal}
    else
      ($g[0].label_rules | map(select(. as $r | $l | test($r[0]))) | .[0][1] // null) as $machine |
@@ -46,8 +48,13 @@ if [ "$via" = "runner-map" ] && [ -z "$repo" ]; then
 fi
 if [ "$clusters" = "[]" ]; then
   [ -n "$skipped" ] && echo "命中的集群尚未接入 runner: $skipped（接入后自动生效）" >&2
-  echo "无法从该 runner 名称路由到已接入集群。精确表: model-library/runner-map.json；规则: groups.json。" >&2
-  echo "也可显式传 \"clusters\": [...] 或换用 ci-deployment 里的完整 runner 标签。" >&2
+  if [ "$via" = "repo-miss" ]; then
+    echo "二维表里该 repo 存在，但没有注册过这个 runner 标签——不会按跨仓库并集下载。" >&2
+    echo "请核对 runs-on 标签，或先在 ascend-ci-deployment 部署该标签的 scale set，再重跑 gen-runner-map。" >&2
+  else
+    echo "无法从该 runner 名称路由到已接入集群。精确表: model-library/runner-map.json；规则: groups.json。" >&2
+    echo "也可显式传 \"clusters\": [...] 或换用 ci-deployment 里的完整 runner 标签。" >&2
+  fi
   echo '[]'
   exit 2
 fi

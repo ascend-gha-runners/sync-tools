@@ -3,7 +3,7 @@ name: Sync Images Between Registries
 on:
   workflow_dispatch:
   schedule:
-      - cron: "0 * * * *"
+      - cron: "23 * * * *"
 
 concurrency:
   group: sync-images-${{ github.ref }}

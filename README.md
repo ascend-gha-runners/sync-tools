@@ -15,10 +15,12 @@
 |--|--|--|--|--|
 |[sglang](https://github.com/sgl-project/sglang)|`docker.io/lmsysorg/sglang`|国外： `quay.io/ascend/sglang`<br>国内： ` swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/dockerhub/lmsysorg/sglang`||
 |[vllm-ascend](https://github.com/vllm-project/vllm-ascend)|`quay.io/ascend/vllm-ascend`|国内： `swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend`||
-|[verl](https://github.com/verl-project/verl)|`docker.io/verlai/verl`|国外： `quay.io/ascend/verl`<br>国内： `swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/verl/verl`||
+|[vllm-ascend (CI)](https://quay.io/organization/ascend-ci)|`quay.io/ascend-ci/vllm-ascend`（仅 `lint` tag）|香港：`swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend`||
+|[verl](https://github.com/verl-project/verl)|`docker.io/verlai/verl`|国外： `quay.io/ascend/verl`<br>国内： `swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/verl/verl`<br>香港：`swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/verl/verl`||
 |[llamafactory](https://github.com/hiyouga/LlamaFactory)|`docker.io/hiyouga/llamafactory`|国外：`quay.io/ascend/llamafactory`<br>国内：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/llamafactory/llamafactory`||
 |[veomni](https://github.com/ByteDance-Seed/VeOmni)|`quay.io/ascend/veomni`|国内：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/veomni/veomni`|
 |[cann](https://gitcode.com/cann)|`quay.io/ascend/cann`|国内：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann/cann`||
+|[cann (atlas_inference)](https://gitcode.com/cann)|`swr.cn-north-12.myhuaweicloud.com/atlas_inference/cann`|香港：`swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/atlas_inference/cann`||
 |[pytorch-npu](https://gitcode.com/ascend/pytorch)|TBD|TBD||
 |[swift](https://github.com/modelscope/ms-swift)|TBD|TBD||
 |[triton-ascend](https://gitcode.com/ascend/triton-ascend)|`quay.io/ascend/triton`|国内：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/triton/triton`||

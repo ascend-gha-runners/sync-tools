@@ -43,7 +43,10 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: /tmp/digest-cache
-          key: digest-cache-${{ matrix.src }}
+          key: digest-cache-${{ matrix.src }}-${{ github.run_id }}
+          # exact 永远 miss（save key 带 run_id 后缀），靠前缀回退取该 src 最近一次保存的缓存
+          restore-keys: |
+            digest-cache-${{ matrix.src }}
 
       - name: Sync ${{ matrix.src }} to all destinations
         env:

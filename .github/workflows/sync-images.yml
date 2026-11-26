@@ -50,7 +50,13 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: /tmp/digest-cache
-          key: digest-cache-${{ matrix.src }}
+          key: digest-cache-${{ matrix.src }}#${{ github.run_id }}
+          # exact 永远 miss（save key 带 run_id 后缀），靠前缀回退取该 src 最近一次保存的缓存。
+          # 分隔符必须用 src 字符集里不会出现的字符（#）：src 之间可能互为字符串前缀
+          # （mindie / mindie-motor / mindiesd），若用 - 之类，mindie 的前缀回退会匹配到
+          # 别的 src 的缓存归档，取回的文件名对不上等于白缓存。
+          restore-keys: |
+            digest-cache-${{ matrix.src }}#
 
       - name: Sync ${{ matrix.src }} to all destinations
         env:
@@ -384,4 +390,5 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: /tmp/digest-cache
-          key: digest-cache-${{ matrix.src }}-${{ github.run_id }}
+          # 带 run_attempt：同一 run 被 re-run 时 key 不同，避免 save 撞 already exists
+          key: digest-cache-${{ matrix.src }}#${{ github.run_id }}-${{ github.run_attempt }}

@@ -5,10 +5,6 @@ on:
   schedule:
       - cron: "23 * * * *"
 
-concurrency:
-  group: sync-images-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   prepare:
     name: Prepare sync matrix
@@ -26,6 +22,12 @@ jobs:
     name: Sync ${{ matrix.src }}
     needs: prepare
     runs-on: ubuntu-latest
+    # 并发控制在 job 级按 src 分组：某个慢源（如 verl/vllm-ascend 同步 2h+）只会延迟
+    # 它自己的下一次同步，不会把整个 run 拖住、连坐其他镜像的同步节奏。
+    # 不要提升回 workflow 级——那会让所有 src 一起等最慢的那个。
+    concurrency:
+      group: sync-images-${{ matrix.src }}-${{ github.ref }}
+      cancel-in-progress: false
     container:
       image: quay.io/skopeo/stable:latest
     strategy:

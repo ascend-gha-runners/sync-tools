@@ -9,22 +9,59 @@
 - **按请求 model library**（**业务方走这个**，详见下文「模型下载（model library）」一节）：在 `model-requests/requests.json` 追加一条请求对象即可提 PR——**从自己 fork 提也生效**（不执行 fork 代码）；或在业务 CI 里调 API。按 (repo, runner 标签) 自动路由到对应集群共享盘并自动记台账。
 - **按项目常态同步**（runner 维护方配置，业务方**不要**为此改这些文件）：每个项目在 `config/projects/<name>.json` 维护常驻清单，无需新增 workflow。
 
-## 包含的image
+## 包含的镜像（在哪下载）
 
-|镜像|源地址|目标地址|下载命令|同步日志|
-|--|--|--|--|--|
-|[sglang](https://github.com/sgl-project/sglang)|`docker.io/lmsysorg/sglang`|国外： `quay.io/ascend/sglang`<br>国内： ` swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/dockerhub/lmsysorg/sglang`||
-|[vllm-ascend](https://github.com/vllm-project/vllm-ascend)|`quay.io/ascend/vllm-ascend`|国内： `swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend`||
-|[vllm-ascend (CI)](https://quay.io/organization/ascend-ci)|`quay.io/ascend-ci/vllm-ascend`（仅 `lint` tag）|香港：`swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend`||
-|[verl](https://github.com/verl-project/verl)|`docker.io/verlai/verl`|国外： `quay.io/ascend/verl`<br>国内： `swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/verl/verl`<br>香港：`swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/verl/verl`||
-|[llamafactory](https://github.com/hiyouga/LlamaFactory)|`docker.io/hiyouga/llamafactory`|国外：`quay.io/ascend/llamafactory`<br>国内：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/llamafactory/llamafactory`||
-|[veomni](https://github.com/ByteDance-Seed/VeOmni)|`quay.io/ascend/veomni`|国内：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/veomni/veomni`|
-|[cann](https://gitcode.com/cann)|`quay.io/ascend/cann`|国内：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann/cann`||
-|[cann (atlas_inference)](https://gitcode.com/cann)|`swr.cn-north-12.myhuaweicloud.com/atlas_inference/cann`|香港：`swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/atlas_inference/cann`||
-|[pytorch-npu](https://gitcode.com/ascend/pytorch)|TBD|TBD||
-|[swift](https://github.com/modelscope/ms-swift)|TBD|TBD||
-|[triton-ascend](https://gitcode.com/ascend/triton-ascend)|`quay.io/ascend/triton`|国内：`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/triton/triton`||
-|[tilelang-ascend](https://github.com/tile-ai/tilelang-ascend)|TBD|TBD||
+从使用者角度整理：想知道某个镜像去哪拉，按地域就近选。同一镜像的不同版本各占一行；「—」表示该地域没有。同步源地址与 tag 过滤规则以 [`.github/workflows/config/image-sync.json`](.github/workflows/config/image-sync.json) 为准。
+
+|镜像|国外（quay.io / docker.io）|国内（SWR）|香港（SWR）|说明|
+|---|---|---|---|---|
+|[vllm-ascend](https://github.com/vllm-project/vllm-ascend)|`quay.io/ascend/vllm-ascend`<br>`docker.io/ascendai/vllm-ascend`|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend`<br>`swr.cn-east-3.myhuaweicloud.com/upupup/ascend-ci/vllm-ascend/vllm-ascend`|—|正式版|
+|vllm-ascend（每日构建）|—|`swr.cn-east-3.myhuaweicloud.com/upupup/ascend-ci/vllm-ascend/vllm-ascend-daily`|—|每日构建版本|
+|vllm-ascend（CI 构建）|`quay.io/atlas-ci/vllm-ascend`|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend-ci`|—|CI 构建版本|
+|vllm-ascend（lint）|—|—|`swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend`|仅 `lint` tag|
+|vllm-ascend（北四）|—|`swr.cn-north-4.myhuaweicloud.com/inference/vllm-ascend`|—|北四地域版本|
+|[sglang](https://github.com/sgl-project/sglang)|`quay.io/ascend/sglang`|`swr.cn-southwest-2.myhuaweicloud.com/base_image/dockerhub/lmsysorg/sglang`|—|仅同步含 `cann` 的 tag|
+|[verl](https://github.com/verl-project/verl)|`quay.io/ascend/verl`<br>`docker.io/ascendai/verl`|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/verl/verl`<br>`swr.cn-southwest-2.myhuaweicloud.com/modelfoundry/ascend-ci/verl/verl`|`swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/verl/verl`|—|
+|[llamafactory](https://github.com/hiyouga/LlamaFactory)|`quay.io/ascend/llamafactory`<br>`docker.io/ascendai/llamafactory`|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/llamafactory/llamafactory`|—|—|
+|[ms-swift](https://github.com/modelscope/ms-swift)|`quay.io/ascend/ms-swift`<br>`docker.io/ascendai/ms-swift`|—|—|—|
+|[cann](https://gitcode.com/cann)|`quay.io/ascend/cann`<br>`docker.io/ascendai/cann`|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann/cann`|—|—|
+|cann（atlas_inference）|`quay.io/atlas_inference/cann`|—|`swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/atlas_inference/cann`|日期版本 tag（`2026.xx.xx-*`）|
+|[mindie](https://www.hiascend.com/software/mindie)|`quay.io/ascend/mindie`<br>`docker.io/ascendai/mindie`|—|—|—|
+|mindie-motor|`quay.io/ascend/mindie-motor`<br>`docker.io/ascendai/mindie-motor`|—|—|—|
+|mindiesd|`quay.io/ascend/mindiesd`<br>`docker.io/ascendai/mindiesd`|—|—|—|
+|mindspeed-llm|`quay.io/ascend/mindspeed-llm`<br>`docker.io/ascendai/mindspeed-llm`|—|—|—|
+|mindspeed-mm|`quay.io/ascend/mindspeed-mm`<br>`docker.io/ascendai/mindspeed-mm`|—|—|—|
+|mindspeed-core|`quay.io/ascend/mindspeed-core`<br>`docker.io/ascendai/mindspeed-core`|—|—|—|
+|mindspeed-ops|`quay.io/ascend/mindspeed-ops`<br>`docker.io/ascendai/mindspeed-ops`|—|—|—|
+|mindformers|`quay.io/ascend/mindformers`<br>`docker.io/ascendai/mindformers`|—|—|—|
+|mindspore|`quay.io/ascend/mindspore`<br>`docker.io/ascendai/mindspore`|—|—|—|
+|[pytorch](https://gitcode.com/ascend/pytorch)|`quay.io/ascend/pytorch`<br>`docker.io/ascendai/pytorch`|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/pytorch/pytorch`|—|—|
+|torch-npu|`quay.io/ascend/torch-npu`<br>`docker.io/ascendai/torch-npu`|—|—|—|
+|python|`quay.io/ascend/python`<br>`docker.io/ascendai/python`|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/python/python`|—|—|
+|manylinux|`quay.io/ascend/manylinux`<br>`docker.io/ascendai/manylinux`|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/manylinux/manylinux`|—|—|
+|[triton-ascend](https://gitcode.com/ascend/triton-ascend)|`quay.io/ascend/triton`<br>`docker.io/ascendai/triton`|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/triton/triton`|—|—|
+|[tilelang-ascend](https://github.com/tile-ai/tilelang-ascend)|—|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/tilelang/tilelang-ascend`|—|—|
+|vllm-omni|`quay.io/ascend/vllm-omni`<br>`docker.io/ascendai/vllm-omni`|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/vllm-omni/vllm-omni`|—|—|
+|[veomni](https://github.com/ByteDance-Seed/VeOmni)|`quay.io/ascend/veomni`<br>`docker.io/ascendai/veomni`|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/veomni/veomni`|—|—|
+|roll|`quay.io/ascend/roll`<br>`docker.io/ascendai/roll`|—|—|—|
+|slime-ascend|`quay.io/ascend/slime-ascend`<br>`docker.io/ascendai/slime-ascend`|—|—|—|
+|xllm-ai|—|`swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/xllm-ai/xllm-ai`|—|仅同步 `a2` / `a3` / `release` tag|
+|visionsdk|`quay.io/ascend/visionsdk`<br>`docker.io/ascendai/visionsdk`|—|—|—|
+|ragsdk|`quay.io/ascend/ragsdk`<br>`docker.io/ascendai/ragsdk`|—|—|—|
+|indexsdk|`quay.io/ascend/indexsdk`<br>`docker.io/ascendai/indexsdk`|—|—|—|
+|multimodalsdk|`quay.io/ascend/multimodalsdk`<br>`docker.io/ascendai/multimodalsdk`|—|—|—|
+|drivingsdk|`quay.io/ascend/drivingsdk`<br>`docker.io/ascendai/drivingsdk`|—|—|—|
+|model-agent|`quay.io/ascend/model-agent`<br>`docker.io/ascendai/model-agent`|—|—|—|
+|ascend-k8sdeviceplugin|`quay.io/ascend/ascend-k8sdeviceplugin`<br>`docker.io/ascendai/ascend-k8sdeviceplugin`|—|—|—|
+|ascend-operator|`quay.io/ascend/ascend-operator`<br>`docker.io/ascendai/ascend-operator`|—|—|—|
+|npu-exporter|`quay.io/ascend/npu-exporter`<br>`docker.io/ascendai/npu-exporter`|—|—|—|
+|noded|`quay.io/ascend/noded`<br>`docker.io/ascendai/noded`|—|—|—|
+|clusterd|`quay.io/ascend/clusterd`<br>`docker.io/ascendai/clusterd`|—|—|—|
+|vc-scheduler|`quay.io/ascend/vc-scheduler`<br>`docker.io/ascendai/vc-scheduler`|—|—|—|
+|vc-controller-manager|`quay.io/ascend/vc-controller-manager`<br>`docker.io/ascendai/vc-controller-manager`|—|—|—|
+|infer-operator|`quay.io/ascend/infer-operator`<br>`docker.io/ascendai/infer-operator`|—|—|—|
+|resilience-controller|`quay.io/ascend/resilience-controller`<br>`docker.io/ascendai/resilience-controller`|—|—|—|
+|actions-runner|—|`swr.cn-southwest-2.myhuaweicloud.com/base_image/actions/actions-runner`|—|仅同步 `latest` 与 `2.33.x` tag|
 
 ## 项目结构
 

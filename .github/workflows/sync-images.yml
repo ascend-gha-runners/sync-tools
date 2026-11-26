@@ -277,6 +277,13 @@ jobs:
           TAG_COUNT=$(echo "$TAGS" | wc -l)
           echo "Found $TAG_COUNT tags for $SRC"
 
+          # docker.io dest 兜底 inspect 的单轮配额预算：Docker Hub 拉取配额 200/h 是
+          # 全仓库共享的（还要留给 docker.io 源头的 tag 拉取）。超出预算的 tag 本轮
+          # 不验证也不 copy，下一轮继续（缓存跨轮增量自愈），全程不重推。
+          DEST_INSPECT_BUDGET="${DEST_INSPECT_BUDGET:-150}"
+          DEST_INSPECT_USED=0
+          DEFERRED=0
+
           # 对每个 dest 逐 tag 同步，src inspect 结果复用
           for DEST in $DESTS; do
             echo ""
@@ -330,6 +337,13 @@ jobs:
                 # 硬保证：内容未变的 tag 绝不重 PUT manifest——重推会刷新 Docker Hub 的
                 # last_updated 时间戳，用户会误以为镜像被改动。缓存只是省 API 调用的
                 # 优化，不作为正确性依据。digest 一致 → 跳过并回写缓存自愈。
+                # 每 tag 1 次 GET（计入 200/h 拉取配额），因此有预算上限，跨轮收敛。
+                if [ "$DEST_INSPECT_USED" -ge "$DEST_INSPECT_BUDGET" ]; then
+                  echo "⏭️  Skip $tag (dest inspect budget exhausted this run; retry next run)"
+                  DEFERRED=$((DEFERRED + 1))
+                  continue
+                fi
+                DEST_INSPECT_USED=$((DEST_INSPECT_USED + 1))
                 set +e
                 DEST_DIGEST=$(get_manifest_id "${DEST_INSPECT_ARGS[@]}" "$DEST_IMG")
                 dest_rc=$?
@@ -415,6 +429,10 @@ jobs:
               exit 1
             fi
           done
+
+          if [ "$DEFERRED" -gt 0 ]; then
+            echo "Dest inspect budget: used $DEST_INSPECT_USED/$DEST_INSPECT_BUDGET; $DEFERRED tag(s) deferred to next run (no copy, no re-push)"
+          fi
 
       - name: Save digest cache
         if: always()

@@ -1,6 +1,6 @@
 # 业务对照表：runner 标签 → 集群 → 共享盘
 
-由 `.github/scripts/gen-runner-map.py` 从 ascend-ci-deployment 生成，证据链：**chart 注册的 scaleSetLabels 标签**（二维 key：repo×label，chart 目录名/releaseName 作别名打通）> **chart nodeSelector 硬落点** > **karmada propagation 组成员** > **argocd dest**；盘位在 `model-library/clusters.json` 的 node_cache。业务只需要看这张表 + 各集群台账 `<cluster>.json`。
+由 `.github/scripts/gen-runner-map.py` 从 ascend-ci-deployment 生成，证据链：**chart 注册的 scaleSetLabels 标签**（二维 key：repo×label，chart 目录名/releaseName 作别名打通）> **chart nodeSelector 硬落点** > **karmada propagation 组成员** > **argocd dest**；**Buildkite 池（agent-stack-k8s chart）例外**：以 `config.queue` 为路由键，落点 = argocd dest ∪ liqo NamespaceOffloading providers，不做 karmada 推断。盘位在 `model-library/clusters.json` 的 node_cache。业务只需要看这张表 + 各集群台账 `<cluster>.json`。
 
 ## 集群盘位
 
@@ -8,25 +8,26 @@
 |--|--|--|--|
 | aiframe | `vllm-ascend-az5` | `c461cb6e:/` | hb3-ecs 113.46.1.251:/opt/vllm-ci |
 | cn12-001 | `vllm-ascend-az5` | `37cbefa6:/ascend-ci-share` | cn12-ecs 113.46.27.144:/mnt/sfs_turbo |
-| gy003 | `ascend-ci-share-nv-action-vllm-benchmarks` | `b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks` | TODO(集群侧) |
+| gy003 | `ascend-ci-share-nv-action-vllm-benchmarks` | `b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks` | （无同步机，集群内CPU下载池；⚠️ 同 share b46afb97 有兄弟 export `ascend-ci-share-vllm-ascend-ci-dev-vllm-ascend`，认盘以 /proc/mounts 为准） |
 | gy004 | `ascend-ci-share` | `1b51fb58:/ascend-ci-share-pkking-sglang` | guiyang-ecs 101.245.82.28:/mnt/sfs_turbo2 |
 | gy005 | `vllm-ascend-az5` | `b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks` | guiyang-ecs 101.245.82.28:/mnt/sfs_turbo |
 | hk001 | `pvc:ascend-ci-share-nv-action-vllm-benchmarks` | `24dd126e:/ascend-ci-share-nv-action-vllm-benchmarks` | hk-ecs 159.138.152.35:/opt/vllm-ci |
 | mind3 | `vllm-ascend-az5` | `cc8060b8:/` | mind3-ecs 113.46.31.157:/mnt/sfs_turbo |
 | gy001 | `ascend-gha-runners-gy001-nvbench` | `b9bf4a57:/ascend-ci-share-nv-action-vllm-benchmarks` | （无同步机，集群内CPU下载池） |
 | wlcb001 | `pvc:vllm-ascend-hk-001` | `fef36441:/ascend-ci-share-nv-action-vllm-benchmarks` | （无同步机，集群内CPU下载池） |
-| sh001 | `hostPath:/mnt/weight` | 节点权重盘 | （无同步机，集群内CPU下载池） |
+| sh001 | `hostPath:/mnt/weight` | suzblue.server:/weight（210T NFS，全集群共享） | （无同步机，集群内CPU下载池） |
 | sh002 | `pvc:vllm-ascend-share-pvc-test` | 静态 PV（vllm-ascend/config-sh-002） | （无同步机，集群内CPU下载池） |
 
 ## 无同步机集群：集群内 0 卡下载池（aX-0，不占卡）
 
-gy001/wlcb001/sh001/sh002 没有同步 ECS，路由到这些集群的请求由 **ascend-gha-runners org 级 CPU-only ARC runner** 在集群内执行（`clusters.json` 中 `mode:"arc"`，workflow `download-arc` job 跑 sync-tools 容器；下载池不声明 NPU 资源、不走 npu-scheduler/volcano 卡队列，只占落点节点 cpu/mem——原卡池通道会整份扣卡，实测 wlcb001 下载因此排队 ~13min，2026-11-18 切换，见 ascend-ci-deployment ADR-0022）：
+gy001/wlcb001/gy003/sh001/sh002 没有同步 ECS，路由到这些集群的请求由 **ascend-gha-runners org 级 CPU-only ARC runner** 在集群内执行（`clusters.json` 中 `mode:"arc"`，workflow `download-arc` job 跑 sync-tools 容器；下载池不声明 NPU 资源、不走 npu-scheduler/volcano 卡队列，只占落点节点 cpu/mem——原卡池通道会整份扣卡，实测 wlcb001 下载因此排队 ~13min，2026-11-18 切换，见 ascend-ci-deployment ADR-0022）：
 
 | 集群 | 下载 runner 标签（runs-on） | job pod `/root/.cache` ← | 真实落点 |
 |--|--|--|--|
 | gy001 | `linux-amd64-cpu-2-gy001` | PVC `ascend-gha-runners-gy001-nvbench`（ADR-0028） | `b9bf4a57:/ascend-ci-share-nv-action-vllm-benchmarks` |
 | wlcb001 | `linux-aarch64-a2-0-wlcb001` | PVC `vllm-ascend-hk-001` | `fef36441:/ascend-ci-share-nv-action-vllm-benchmarks` |
-| sh001 | `linux-aarch64-a5-0-sh001` | hostPath `/mnt/weight`（钉 lab 节点，与业务 job 模板同落点） | 节点本地权重盘（跨节点不共享！同集群多节点调度时需评估） |
+| gy003 | `linux-amd64-cpu-2-gy003` | hostPath `/mnt/sfs-local/ascend-ci-share-nv-action-vllm-benchmarks` | `b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks`（与 vllm-omni Buildkite `ascend-310p` queue 同盘，2026-11-27 实测跨节点写读互通） |
+| sh001 | `linux-aarch64-a5-0-sh001` | hostPath `/mnt/weight` | suzblue.server:/weight（210T NFS 共享，2026-11-27 实测 a5-01/02/03 内容一致；一次下载全集群可读） |
 | sh002 | `linux-amd64-a5-0-sh002` | PVC `vllm-ascend-share-pvc-test` | 见 config-sh-002 静态 PV |
 
 - 下载写在 job pod 的 `/root/.cache/huggingface`（=`<盘>/huggingface/hub/…`），与业务 job 容器视角一致，**不需要**再经同步机中转。
@@ -71,7 +72,7 @@ gy001/wlcb001/sh001/sh002 没有同步 ECS，路由到这些集群的请求由 *
 - **vllm-ascend/vllm-ascend-kimi-k3**: `a2b3`→{gy001,hk001,wlcb001}, `a3`→{gy005}, `cpu-2-hk`→{hk001}, `cpu-8-hk`→{hk001}
 - **vllm-ascend/vllm-ascend-recipes**: `a2b4`→{gy001}, `a3-800i`→{aiframe,cn12-001,mind3}, `a5`→{sh001}
 - **vllm-project/vllm-ascend**: `310p`→{gy003}, `910b`→{gy001,hk001,szlab,wlcb001}, `a2`→{gy001,hk001,wlcb001}, `a2b1`→{gy001}, `a2b1b3`→{gy001,hk001,wlcb001}, `a2b1b3-test`→{gy001,hk001,wlcb001}, `a2b3`→{gy001,hk001,wlcb001}, `a2b4`→{gy001}, `a3`→{cn12-001}, `a3-800i`→{aiframe,cn12-001,mind3}, `a3-800i-test`→{aiframe,cn12-001,mind3}, `a3-800t`→{gy005}, `a3-800t-fed`→{gy004,gy005}, `a3-800t-test`→{gy005}, `a5`→{sh001}, `a3-test-16-gy005`→{gy005}, `cpu`→{cn12-001,gy005}, `cpu-16-hk`→{hk001}, `cpu-2-hk`→{hk001}, `cpu-32-hk`→{hk001}, `cpu-4-hk`→{hk001}, `cpu-8-hk`→{hk001}, `nightly-a3`→{gy005}
-- **vllm-project/vllm-omni**: `310p`→{gy003}, `a2b3`→{gy001,hk001,wlcb001}, `a3`→{cn12-001}, `a3-offload`→{cn12-001}, `a3-offload-test`→{cn12-001}, `a5`→{sh001}
+- **vllm-project/vllm-omni**: **Buildkite（agent-stack-k8s，2026-11 起）**——请求 `runner_label` 直接填 queue：`ascend-a2b3`→{hk001}, `ascend-a3`→{cn12-001}, `ascend-a3-offload`/`ascend-a3-offload-test`→{cn12-001,aiframe,mind3}（liqo NamespaceOffloading `vllm-project-vllm-omni` LocalAndRemote）, `ascend-310p`→{gy003}, `ascend-a5`→{sh001}；GHA 时代的目录标签（`linux-aarch64-*`）键仍在 map 中且与 queue 同落点（a2b3 已按实测修正为仅 hk001）
 - **volcengine/uni-agent**: `a2`→{gy001,hk001,wlcb001}
 - **volcengine/verl**: `a2`→{gy001,hk001,wlcb001}, `a3-800i`→{aiframe,cn12-001,mind3}, `a3-800i-16-memclean`→{aiframe,cn12-001,mind3}, `a3-800i-test`→{aiframe,cn12-001,mind3}
 - **volcengine/verl-SpeCo**: `a2`→{gy001,hk001,wlcb001}

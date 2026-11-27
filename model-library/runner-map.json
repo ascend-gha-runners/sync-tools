@@ -1,6 +1,28 @@
 {
- "_generated_by": "gen-runner-map.py (chart nodeSelector + karmada placement + argocd dest)",
+ "_generated_by": "gen-runner-map.py (chart nodeSelector + karmada placement + argocd dest + agent-stack-k8s buildkite queues + liqo offload)",
  "map": {
+  "ascend-310p": [
+   "gy003"
+  ],
+  "ascend-a2b3": [
+   "hk001"
+  ],
+  "ascend-a3": [
+   "cn12-001"
+  ],
+  "ascend-a3-offload": [
+   "aiframe",
+   "cn12-001",
+   "mind3"
+  ],
+  "ascend-a3-offload-test": [
+   "aiframe",
+   "cn12-001",
+   "mind3"
+  ],
+  "ascend-a5": [
+   "sh001"
+  ],
   "linux-aarch64-310p": [
    "gy003"
   ],
@@ -365,9 +387,7 @@
    "wlcb001"
   ],
   "linux-aarch64-a2b3": [
-   "gy001",
-   "hk001",
-   "wlcb001"
+   "hk001"
   ],
   "linux-aarch64-a2b3-0": [
    "gy001",
@@ -1143,10 +1163,14 @@
    "gy005"
   ],
   "linux-aarch64-a3-offload": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "mind3"
   ],
   "linux-aarch64-a3-offload-test": [
-   "cn12-001"
+   "aiframe",
+   "cn12-001",
+   "mind3"
   ],
   "linux-aarch64-a3-test-0-cn12-001": [
    "cn12-001"
@@ -4401,22 +4425,46 @@
    ]
   },
   "vllm-project/vllm-omni": {
+   "ascend-310p": [
+    "gy003"
+   ],
+   "ascend-a2b3": [
+    "hk001"
+   ],
+   "ascend-a3": [
+    "cn12-001"
+   ],
+   "ascend-a3-offload": [
+    "aiframe",
+    "cn12-001",
+    "mind3"
+   ],
+   "ascend-a3-offload-test": [
+    "aiframe",
+    "cn12-001",
+    "mind3"
+   ],
+   "ascend-a5": [
+    "sh001"
+   ],
    "linux-aarch64-310p": [
     "gy003"
    ],
    "linux-aarch64-a2b3": [
-    "gy001",
-    "hk001",
-    "wlcb001"
+    "hk001"
    ],
    "linux-aarch64-a3": [
     "cn12-001"
    ],
    "linux-aarch64-a3-offload": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "mind3"
    ],
    "linux-aarch64-a3-offload-test": [
-    "cn12-001"
+    "aiframe",
+    "cn12-001",
+    "mind3"
    ],
    "linux-aarch64-a5": [
     "sh001"
@@ -4660,7 +4708,7 @@
   "gy003": {
    "alias": "ascend-ci-share-nv-action-vllm-benchmarks",
    "export": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks",
-   "write": "TODO(集群侧)"
+   "write": "集群内下载池 job Pod /root/.cache（hostPath 同盘）"
   },
   "gy004": {
    "alias": "ascend-ci-share",
@@ -4684,7 +4732,7 @@
   },
   "sh001": {
    "alias": "hostPath:/mnt/weight",
-   "export": "sh-001 节点 /mnt/weight",
+   "export": "suzblue.server:/weight（跨节点共享 NFS，2026-11-27 实测）",
    "write": "集群内 job Pod /root/.cache"
   },
   "sh002": {

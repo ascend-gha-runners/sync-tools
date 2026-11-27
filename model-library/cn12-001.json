@@ -12,6 +12,30 @@
     },
     {
       "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "InternVL3_5-241B-A28B-w8a8",
+      "legacy_layout": true
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "InternVL3_5-38B-w8a8",
+      "legacy_layout": true
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Tencent-Hunyuan",
+      "model_name": "Hy3-preview",
+      "legacy_layout": true
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "MiniMax-M2.7-w8a8-QuaRot",
+      "legacy_layout": true
+    },
+    {
+      "platform": "modelscope",
       "organization": "vllm-sr",
       "model_name": "d3-edge",
       "legacy_layout": true

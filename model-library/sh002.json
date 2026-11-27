@@ -1,0 +1,61 @@
+{
+  "models": [
+    {
+      "platform": "huggingface",
+      "organization": "MiniMaxAI",
+      "model_name": "MiniMax-H3-Image"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen3-0.6B"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "istupakov",
+      "model_name": "silero-vad-onnx"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "Inferact",
+      "model_name": "MiniMax-M3-EAGLE3-GQA"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "MiniMax",
+      "model_name": "MiniMax-M3-MXFP8"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "deepseek-ai",
+      "model_name": "DeepSeek-V4-Flash"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "deepseek-ai",
+      "model_name": "DeepSeek-V4-Flash-0731"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "model_name": "GLM-5.3-Flash-W8A8-MXFP8-9L-MTP1"
+    }
+  ],
+  "datasets": [
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix0_in131072_bs500_MiniMax_w8a8_0626"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix90_in131072_bs1000_Minimax"
+    },
+    {
+      "platform": "modelscope",
+      "organization": "vllm-ascend",
+      "dataset_name": "GSM8K_prefix99_in131072_bs500_MiniMax_w8a8_0626"
+    }
+  ]
+}

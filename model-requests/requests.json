@@ -109,5 +109,19 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-gr",
+    "runner_label": "ascend-a2b3",
+    "clusters": ["hk001"],
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "OpenOneRec",
+        "model_name": "OneRec-1.7B"
+      }
+    ],
+    "datasets": []
   }
 ]

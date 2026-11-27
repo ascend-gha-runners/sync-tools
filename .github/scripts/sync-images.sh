@@ -218,11 +218,15 @@ echo "Found $TAG_COUNT tags for $SRC"
 #    inspect 比对；确实变化的才 copy。
 #
 # docker.io 兜底 inspect 的单轮配额预算（#154 分支 fbe3e57 的机制，并行化
-# 移植）：Docker Hub 拉取配额 200/h 全仓库共享（还要留给 docker.io 源头的
-# tag 拉取）。超出预算的 tag 本轮不验证也不 copy，计为 deferred（不是失败，
-# job 保持绿），下一轮继续——缓存跨轮增量自愈，全程不重推。并行下用追加
-# 计数文件实现（check-then-append 有 ≤ 并行度的轻微超额，可接受）。
-DEST_INSPECT_BUDGET="${DEST_INSPECT_BUDGET:-150}"
+# 移植）：Docker Hub 拉取配额是**账号级共享、200/6h**（官方文档口径；匿名
+# 100/6h），还要留给 docker.io 源头的 tag 拉取。超出预算的 tag 本轮不验证
+# 也不 copy，计为 deferred（不是失败，job 保持绿），下一轮继续——缓存跨轮
+# 增量自愈，全程不重推。并行下用追加计数文件实现（check-then-append 有
+# ≤ 并行度的轻微超额，可接受）。
+# 默认上限取保守值（40/轮）：6 小时窗口内跑 ~6 轮，40×6=240 接近 200 上限，
+# 留不出 docker.io 源头的量；真实额度以运行时读 remaining 为准（见下）。
+DEST_INSPECT_BUDGET="${DEST_INSPECT_BUDGET:-40}"
+SAFETY_MARGIN="${SAFETY_MARGIN:-60}"
 export DEST_INSPECT_BUDGET
 TAG_PARALLELISM="${TAG_PARALLELISM:-8}"
 MAX_INSPECT_FAILURES="${MAX_INSPECT_FAILURES:-10}"
@@ -231,6 +235,28 @@ export TAG_PARALLELISM MAX_INSPECT_FAILURES
 SRC_MAP=$(mktemp)         # "tag <TAB> rc <TAB> digest"
 CACHE_UPDATES=$(mktemp)   # "DEST:tag <TAB> digest"
 BUDGET_FILE=$(mktemp)     # docker.io 兜底 inspect 配额：一行一次
+
+# 自适应预算：真实额度以运行时 Docker Hub 返回的 ratelimit-remaining 为准
+# （账号级共享、200/6h）。budget = min(上限, remaining - SAFETY_MARGIN)，
+# SAFETY_MARGIN 留给 docker.io 源头（sglang 等）与同窗口内的后续 run。
+# 读不到 remaining（网络/token 失败）时退回固定上限（40，保守）。
+EFFECTIVE_BUDGET="$DEST_INSPECT_BUDGET"
+if printf '%s\n' "$DESTS" | grep -q '^docker\.io/'; then
+  _rt=$(curl -sf "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" \
+    -u "${DOCKERHUB_USER}:${DOCKERHUB_PWD}" 2>/dev/null | jq -r '.token // empty' 2>/dev/null || true)
+  if [ -n "$_rt" ]; then
+    _rem=$(curl -sf -I -H "Authorization: Bearer ${_rt}" \
+      "https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest" 2>/dev/null \
+      | tr -d '\r' | grep -i '^ratelimit-remaining:' | grep -oE '[0-9]+' | head -n1 || true)
+    if [ -n "$_rem" ]; then
+      _b=$((_rem - SAFETY_MARGIN))
+      [ "$_b" -lt 0 ] && _b=0
+      [ "$_b" -lt "$EFFECTIVE_BUDGET" ] && EFFECTIVE_BUDGET="$_b"
+      echo "Docker Hub pull quota remaining: $_rem → adaptive dest-inspect budget: $EFFECTIVE_BUDGET"
+    fi
+  fi
+fi
+export EFFECTIVE_BUDGET
 
 # 每个缓存键写回 CACHE_FILE（顺序执行，主 shell 独占，无并发写）。
 # 缓存只是性能优化（#154 确立的不变式），合并失败不致命，告警后继续。
@@ -340,7 +366,7 @@ dest_tag_worker() {
     # 每 tag 1 次 GET（计入 200/h 拉取配额），因此有预算上限，跨轮收敛。
     local used
     used=$(wc -l < "$BUDGET_FILE")
-    if [ "$used" -ge "$DEST_INSPECT_BUDGET" ]; then
+    if [ "$used" -ge "$EFFECTIVE_BUDGET" ]; then
       echo "⏭️  Skip $tag (dest inspect budget exhausted this run; retry next run)"
       printf 'deferred\t%s\n' "$tag" >> "$EVENTS"
       return 0
@@ -452,7 +478,7 @@ for DEST in $DESTS; do
   echo "Done [$SRC → $DEST]: $SYNCED synced, $SKIPPED skipped, $INSPECT_FAILED inspect-failed, $FAILED failed"
 
   if [ "$DEFERRED" -gt 0 ]; then
-    echo "Dest inspect budget: used $(wc -l < "$BUDGET_FILE")/$DEST_INSPECT_BUDGET; $DEFERRED tag(s) deferred to next run (no copy, no re-push)"
+    echo "Dest inspect budget: used $(wc -l < "$BUDGET_FILE")/$EFFECTIVE_BUDGET; $DEFERRED tag(s) deferred to next run (no copy, no re-push)"
   fi
   # 熔断/速退的 tag 不写事件，五项之和 < TAG_COUNT 时显式对账，避免计数不闭合
   ABORTED=$((TAG_COUNT - SYNCED - SKIPPED - INSPECT_FAILED - FAILED - DEFERRED))

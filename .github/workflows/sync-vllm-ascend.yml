@@ -3,10 +3,6 @@ name: Sync vllm-ascend Images
 on:
   workflow_dispatch:
 
-concurrency:
-  group: sync-images-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   prepare:
     name: Prepare sync matrix
@@ -26,6 +22,14 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/skopeo/stable:latest
+    # 并发组与 sync-images.yml 的主同步完全一致（sync-images-<src>）：
+    # 本 workflow 与主 workflow 同 src 的 job 必须互斥——两边写的是同一批
+    # dest registry，并发跑会互相踩。旧组名 sync-images-<github.ref> 只在
+    # 本 workflow 内部互斥，跟主同步的 per-src 组对不上，是协调漏洞。
+    concurrency:
+      group: sync-images-${{ matrix.src }}
+      cancel-in-progress: false
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
@@ -41,7 +45,13 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: /tmp/digest-cache
-          key: digest-cache-${{ matrix.src }}
+          # 与 sync-images.yml 主同步完全同一套 key 方案（# 分隔符 + 旧 `-` 格式
+          # 回退），两个 workflow 共享同一缓存命名空间、写同一种格式，消除
+          # 「旧格式被本 fork 续命、新格式迁移永远收不了尾」的问题。
+          key: digest-cache-${{ matrix.src }}#${{ github.run_id }}
+          restore-keys: |
+            digest-cache-${{ matrix.src }}#
+            digest-cache-${{ matrix.src }}-
 
       - name: Sync ${{ matrix.src }} to all destinations
         env:
@@ -101,9 +111,13 @@ jobs:
           #   3 = registry 明确返回 MANIFEST_UNKNOWN / NAME_UNKNOWN（确认 tag 不存在）
           #   4 = 重试后仍然失败（网络/5xx/超时/未知），调用方禁止 copy
           #   5 = 鉴权/权限/配置错误，调用方禁止 copy，并让 job 失败
+          #   6 = 限速（429 / toomanyrequests）：账号配额按时间窗恢复，重试纯属
+          #       浪费时间（旧逻辑每个失败 tag 磨 5×35s≈3min，一次 run 白烧几十分钟），
+          #       立即返回并让调用方熔断整个目的地
           INSPECT_ATTEMPTS="${INSPECT_ATTEMPTS:-5}"
           INSPECT_DELAY="${INSPECT_DELAY:-5}"
           INSPECT_TIMEOUT="${INSPECT_TIMEOUT:-60s}"
+          export INSPECT_ATTEMPTS INSPECT_DELAY INSPECT_TIMEOUT
 
           get_manifest_id() {
             local image="${!#}"
@@ -130,6 +144,13 @@ jobs:
               rm -f "$err"
 
               status=$(printf '%s' "$msg" | grep -oE 'unexpected HTTP status: [0-9]{3}' | grep -oE '[0-9]{3}' | head -n1 || true)
+
+              # 限速：配额耗尽（Docker Hub 免费版 200 pulls/6h），立即失败，不重试。
+              # 调用方见到 rc=6 会熔断该目的地，避免后续 tag 继续无意义地打 API。
+              if [ "$status" = "429" ] || printf '%s' "$msg" | grep -qiE 'toomanyrequests|too many requests|rate ?limit'; then
+                echo "::error title=Inspect rate limited::$image: $msg" >&2
+                return 6
+              fi
 
               # 鉴权/权限/配置错误：重试没有意义，直接失败（禁止 copy）
               if [ "$status" = "401" ] || [ "$status" = "403" ] \
@@ -176,8 +197,8 @@ jobs:
           TAG_FILTER=$(jq -r --arg src "$SRC" 'first(.[] | select(.src == $src) | .tag_filter // empty)' "$CONFIG")
 
           SRC_CREDS=$(get_creds "$SRC")
-          build_inspect_args SRC_INSPECT_ARGS "$SRC_CREDS"
-          build_copy_src_args SRC_COPY_ARGS "$SRC_CREDS"
+          SRC_INSPECT_ARGS_ARRAY=()
+          build_inspect_args SRC_INSPECT_ARGS_ARRAY "$SRC_CREDS"
 
           # 获取 tag 列表（只做一次）
           if [ -n "$TAG_FILTER" ]; then
@@ -229,7 +250,7 @@ jobs:
               TAGS=$(echo "$TAGS" | sed '/^$/d' | sort -u)
             else
               # 非 Docker Hub 源（如 quay.io）：list-tags 后按关键词过滤
-              if ! TAGS_RAW=$(list_tags "${SRC_INSPECT_ARGS[@]}" docker://"$SRC" 2>/tmp/list_tags_err); then
+              if ! TAGS_RAW=$(list_tags "${SRC_INSPECT_ARGS_ARRAY[@]}" docker://"$SRC" 2>/tmp/list_tags_err); then
                 echo "::error title=List tags failed::$SRC: $(tr '\n' ' ' < /tmp/list_tags_err)"
                 exit 1
               fi
@@ -240,7 +261,7 @@ jobs:
               TAGS=$(printf '%s\n' "$TAGS" | sed '/^$/d' | sort -u)
             fi
           else
-            if ! TAGS_RAW=$(list_tags "${SRC_INSPECT_ARGS[@]}" docker://"$SRC" 2>/tmp/list_tags_err); then
+            if ! TAGS_RAW=$(list_tags "${SRC_INSPECT_ARGS_ARRAY[@]}" docker://"$SRC" 2>/tmp/list_tags_err); then
               echo "::error title=List tags failed::$SRC: $(tr '\n' ' ' < /tmp/list_tags_err)"
               exit 1
             fi
@@ -258,114 +279,237 @@ jobs:
           TAG_COUNT=$(echo "$TAGS" | wc -l)
           echo "Found $TAG_COUNT tags for $SRC"
 
-          # 对每个 dest 逐 tag 同步，src inspect 结果复用
+          # ---------------------------------------------------------------------------
+          # 两段式结构（替代原来的「dest 外层 × tag 内层」纯串行双循环）：
+          #
+          # 1) pre-pass：每个 tag 只做一次源 inspect。旧实现对每个 dest 都重复查源
+          #    （API 量 = tags × dests × 2 次 inspect，注释声称“src inspect 复用”但
+          #    从未实现）；源 digest 是 tag 的属性、与 dest 无关，算一次就够。
+          # 2) per-dest：tag 级并行（skip 路径是纯 I/O 延迟等待，串行是耗时大头——
+          #    实测 1328 tag 全 skip 也要 78 分钟）。docker.io 走缓存（#154 语义保留：
+          #    未命中才实时 inspect 兜底，digest 一致回写缓存自愈）；其它 dest 实时
+          #    inspect 比对；确实变化的才 copy。
+          #
+          # 并行下的共享状态约定：
+          #   - SRC_MAP / EVENTS / CACHE_UPDATES 都是小行（< PIPE_BUF）追加写，原子；
+          #     worker 之间无键依赖（同 dest 内不同 tag 的缓存键互不相交），主 shell
+          #     在 dest 结束后顺序汇总计数、合并缓存。
+          #   - ABORT_FILE 是 dest 级熔断旗标：任一 worker 碰到限速（rc=6）或该 dest
+          #     失败数超过 MAX_INSPECT_FAILURES 就落旗标，其余 worker 见旗标速退。
+          #     替代旧的「连续 5 次失败 break」——并行下没有“连续”语义，改为总数熔断。
+          TAG_PARALLELISM="${TAG_PARALLELISM:-8}"
+          MAX_INSPECT_FAILURES="${MAX_INSPECT_FAILURES:-10}"
+          export TAG_PARALLELISM MAX_INSPECT_FAILURES
+
+          SRC_MAP=$(mktemp)         # "tag <TAB> rc <TAB> digest"
+          CACHE_UPDATES=$(mktemp)   # "DEST:tag <TAB> digest"
+
+          # 每个缓存键写回 CACHE_FILE（顺序执行，主 shell 独占，无并发写）。
+          # 缓存只是性能优化（#154 确立的不变式），合并失败不致命，告警后继续。
+          merge_cache_updates() {
+            [ -s "$CACHE_UPDATES" ] || return 0
+            local key val tmp
+            while IFS=$'\t' read -r key val; do
+              [ -n "$key" ] && [ -n "$val" ] || continue
+              tmp=$(mktemp)
+              if jq --arg key "$key" --arg val "$val" '.[$key] = $val' "$CACHE_FILE" > "$tmp" 2>/dev/null; then
+                mv "$tmp" "$CACHE_FILE"
+              else
+                rm -f "$tmp"
+                echo "::warning title=Cache merge failed::cannot write cache entry $key"
+              fi
+            done < "$CACHE_UPDATES"
+            : > "$CACHE_UPDATES"
+          }
+          # timeout/取消兜底：job 被 timeout-minutes 杀掉时尽力把已完成的 dest 的
+          # 缓存增量合并掉（save 步骤 if: always() 仍会执行，别让进度白跑）。
+          trap 'merge_cache_updates 2>/dev/null || true' INT TERM
+          trap 'merge_cache_updates 2>/dev/null || true' EXIT
+
+          src_tag_worker() {
+            local tag="$1" args=() digest rc
+            build_inspect_args args "$SRC_CREDS"
+            digest=$(get_manifest_id "${args[@]}" "docker://$SRC:$tag")
+            rc=$?
+            printf '%s\t%s\t%s\n' "$tag" "$rc" "$digest" >> "$SRC_MAP"
+          }
+
+          # dest 级熔断：限速（配额是账号级的，同 dest 继续 query 毫无意义）
+          quota_abort_dest() {
+            echo "⏭️  Skip $1 (destination rate-limited; aborting this destination)"
+            printf 'inspect_failed\t%s\n' "$1" >> "$EVENTS"
+            echo "::error::$SRC → $DEST: destination inspect hit rate limit; aborting this destination" >&2
+            : > "$ABORT_FILE" || true
+          }
+
+          # dest 级熔断：失败总数超过预算（并行下替代旧的“连续失败”计数）
+          check_failure_budget() {
+            local n
+            n=$(awk -F'\t' '$1=="inspect_failed"' "$EVENTS" 2>/dev/null | wc -l)
+            if [ "${n:-0}" -ge "$MAX_INSPECT_FAILURES" ]; then
+              echo "::error::$SRC → $DEST: too many inspect failures ($n >= $MAX_INSPECT_FAILURES); aborting this destination" >&2
+              : > "$ABORT_FILE" || true
+            fi
+          }
+
+          dest_tag_worker() {
+            local tag="$1"
+            # dest 已熔断：速退，不再打 API
+            [ -e "$ABORT_FILE" ] && return 0
+
+            local row rc src_digest
+            row=$(awk -F'\t' -v t="$tag" '$1==t{print; exit}' "$SRC_MAP" 2>/dev/null)
+            if [ -z "$row" ]; then
+              printf 'inspect_failed\t%s\n' "$tag" >> "$EVENTS"
+              echo "⏭️  Skip $tag (source digest missing from pre-pass, no sync)"
+              check_failure_budget
+              return 0
+            fi
+            rc=${row#*$'\t'}
+            rc=${rc%%$'\t'*}
+            src_digest=${row##*$'\t'}
+
+            local src_img="docker://$SRC:$tag" dest_img="docker://$DEST:$tag"
+            echo "from=\"$src_img\" to=\"$dest_img\""
+
+            if [ "$rc" -eq 3 ]; then
+              echo "⏭️  Skip $tag (source tag not found)"
+              printf 'skipped\t%s\n' "$tag" >> "$EVENTS"
+              return 0
+            fi
+            if [ "$rc" -ne 0 ]; then
+              echo "⏭️  Skip $tag (source inspect failed, no sync)"
+              printf 'inspect_failed\t%s\n' "$tag" >> "$EVENTS"
+              check_failure_budget
+              return 0
+            fi
+
+            local dest_args=()
+            build_inspect_args dest_args "$DEST_CREDS"
+            local copy_src_args=() copy_dest_args=()
+            build_copy_src_args copy_src_args "$SRC_CREDS"
+            build_copy_dest_args copy_dest_args "$DEST_CREDS"
+
+            local d_digest d_rc
+            if [[ "$DEST" == docker.io/* ]]; then
+              # docker.io 目的地：优先信缓存（不消耗 Docker Hub pull 配额）。
+              # 缓存存的是上次同步成功时的源 digest，命中即证明未变更，不查 dest。
+              local cached
+              cached=$(jq -r --arg key "$DEST:$tag" '.[$key] // empty' "$CACHE_FILE" 2>/dev/null)
+              if [ -n "$cached" ] && [ "$src_digest" = "$cached" ]; then
+                echo "⏭️  Skip $tag (cache)"
+                printf 'skipped\t%s\n' "$tag" >> "$EVENTS"
+                # skip 时也回写，确保本次 run 的 cache 是完整的
+                printf '%s:%s\t%s\n' "$DEST" "$tag" "$src_digest" >> "$CACHE_UPDATES"
+                return 0
+              fi
+              # 缓存未命中（冷启动/淘汰/格式迁移）：实时 inspect dest 兜底。
+              # 硬保证（#154）：内容未变的 tag 绝不重 PUT manifest——重推会刷新
+              # Docker Hub 的 last_updated 时间戳。缓存只是省 API 调用的优化，
+              # 不作为正确性依据。digest 一致 → 跳过并回写缓存自愈。
+              d_digest=$(get_manifest_id "${dest_args[@]}" "$dest_img")
+              d_rc=$?
+              if [ "$d_rc" -eq 6 ]; then
+                quota_abort_dest "$tag"
+                return 0
+              fi
+              if [ "$d_rc" -ne 0 ] && [ "$d_rc" -ne 3 ]; then
+                echo "⏭️  Skip $tag (destination inspect failed, no sync)"
+                printf 'inspect_failed\t%s\n' "$tag" >> "$EVENTS"
+                check_failure_budget
+                return 0
+              fi
+              if [ "$d_rc" -eq 0 ] && [ "$src_digest" = "$d_digest" ]; then
+                echo "⏭️  Skip $tag (dest digest match; cache healed)"
+                printf 'skipped\t%s\n' "$tag" >> "$EVENTS"
+                printf '%s:%s\t%s\n' "$DEST" "$tag" "$src_digest" >> "$CACHE_UPDATES"
+                return 0
+              fi
+              # d_rc == 3（dest 无此 tag）或 digest 不同（源真变了）→ 走 copy
+            else
+              # 其它目的地：实时 inspect 比对（不依赖缓存）
+              d_digest=$(get_manifest_id "${dest_args[@]}" "$dest_img")
+              d_rc=$?
+              if [ "$d_rc" -eq 6 ]; then
+                quota_abort_dest "$tag"
+                return 0
+              fi
+              if [ "$d_rc" -ne 0 ] && [ "$d_rc" -ne 3 ]; then
+                echo "⏭️  Skip $tag (destination inspect failed, no sync)"
+                printf 'inspect_failed\t%s\n' "$tag" >> "$EVENTS"
+                check_failure_budget
+                return 0
+              fi
+              if [ "$d_rc" -eq 0 ] && [ "$src_digest" = "$d_digest" ]; then
+                echo "⏭️  Skip $tag"
+                printf 'skipped\t%s\n' "$tag" >> "$EVENTS"
+                return 0
+              fi
+              # d_rc == 3 表示 registry 明确返回 tag 不存在，继续走 copy
+            fi
+
+            echo "Syncing $tag..."
+            skopeo copy --all \
+              --retry-times 3 \
+              --retry-delay 5s \
+              "${copy_src_args[@]}" \
+              "${copy_dest_args[@]}" \
+              "$src_img" "$dest_img"
+            local copy_rc=$?
+            if [ $copy_rc -eq 0 ] || [ $copy_rc -eq 2 ]; then
+              echo "✅ Synced $tag"
+              printf 'synced\t%s\n' "$tag" >> "$EVENTS"
+              if [[ "$DEST" == docker.io/* ]] && [ -n "$src_digest" ]; then
+                printf '%s:%s\t%s\n' "$DEST" "$tag" "$src_digest" >> "$CACHE_UPDATES"
+              fi
+            else
+              echo "❌ Failed $tag (exit $copy_rc)"
+              printf 'copy_failed\t%s\n' "$tag" >> "$EVENTS"
+            fi
+          }
+
+          export -f get_manifest_id list_tags build_inspect_args build_copy_src_args build_copy_dest_args
+          export -f src_tag_worker dest_tag_worker quota_abort_dest check_failure_budget
+          export SRC SRC_CREDS SRC_MAP CACHE_FILE CACHE_UPDATES
+
+          # ---- 1) pre-pass：并行取全部源 digest（一次）----
+          echo "Pre-pass: inspecting source digests for $TAG_COUNT tags (parallelism=$TAG_PARALLELISM)..."
+          printf '%s\n' "$TAGS" | xargs -P "$TAG_PARALLELISM" -n 1 bash -c 'src_tag_worker "$1"' _ || true
+
+          # ---- 2) per-dest：tag 级并行同步 ----
           for DEST in $DESTS; do
             echo ""
             echo "--- $SRC → $DEST ---"
             DEST_CREDS=$(get_creds "$DEST")
-            build_inspect_args DEST_INSPECT_ARGS "$DEST_CREDS"
-            build_copy_dest_args DEST_COPY_ARGS "$DEST_CREDS"
+            EVENTS=$(mktemp)
+            ABORT_FILE=$(mktemp)
+            rm -f "$ABORT_FILE"
 
-            SYNCED=0; SKIPPED=0; INSPECT_FAILED=0; FAILED=0
-            SRC_FAIL_CONSEC=0; DEST_FAIL_CONSEC=0
+            export DEST DEST_CREDS EVENTS ABORT_FILE
+            printf '%s\n' "$TAGS" | xargs -P "$TAG_PARALLELISM" -n 1 bash -c 'dest_tag_worker "$1"' _ || true
 
-            for tag in $TAGS; do
-              SRC_IMG="docker://$SRC:$tag"
-              DEST_IMG="docker://$DEST:$tag"
-              echo "from=\"$SRC_IMG\" to=\"$DEST_IMG\""
-
-              set +e
-              SRC_DIGEST=$(get_manifest_id "${SRC_INSPECT_ARGS[@]}" "$SRC_IMG")
-              src_rc=$?
-              set -e
-              if [ "$src_rc" -eq 3 ]; then
-                echo "⏭️  Skip $tag (source tag not found)"
-                SKIPPED=$((SKIPPED + 1))
-                SRC_FAIL_CONSEC=0
-                continue
-              fi
-              if [ "$src_rc" -ne 0 ]; then
-                echo "⏭️  Skip $tag (source inspect failed after $INSPECT_ATTEMPTS attempts, no sync)"
-                INSPECT_FAILED=$((INSPECT_FAILED + 1))
-                SRC_FAIL_CONSEC=$((SRC_FAIL_CONSEC + 1))
-                if [ "$SRC_FAIL_CONSEC" -ge "${MAX_CONSECUTIVE_INSPECT_FAILURES:-5}" ]; then
-                  echo "::error::$SRC → $DEST: too many consecutive source inspect failures; aborting this destination"
-                  break
-                fi
-                continue
-              fi
-              SRC_FAIL_CONSEC=0
-
-              if [[ "$DEST" == docker.io/* ]]; then
-                CACHED_DIGEST=$(jq -r --arg key "$DEST:$tag" '.[$key] // empty' "$CACHE_FILE")
-                if [ -n "$CACHED_DIGEST" ] && [ "$SRC_DIGEST" = "$CACHED_DIGEST" ]; then
-                  echo "⏭️  Skip $tag (cache)"
-                  SKIPPED=$((SKIPPED + 1))
-                  DEST_FAIL_CONSEC=0
-                  # skip 时也刷新 cache，确保本次 run 的 cache 文件是完整的
-                  tmp=$(mktemp)
-                  jq --arg key "$DEST:$tag" --arg val "$SRC_DIGEST" '.[$key] = $val' "$CACHE_FILE" > "$tmp" && mv "$tmp" "$CACHE_FILE"
-                  continue
-                fi
-              else
-                set +e
-                DEST_DIGEST=$(get_manifest_id "${DEST_INSPECT_ARGS[@]}" "$DEST_IMG")
-                dest_rc=$?
-                set -e
-                if [ "$dest_rc" -ne 0 ] && [ "$dest_rc" -ne 3 ]; then
-                  echo "⏭️  Skip $tag (destination inspect failed after $INSPECT_ATTEMPTS attempts, no sync)"
-                  INSPECT_FAILED=$((INSPECT_FAILED + 1))
-                  DEST_FAIL_CONSEC=$((DEST_FAIL_CONSEC + 1))
-                  if [ "$DEST_FAIL_CONSEC" -ge "${MAX_CONSECUTIVE_INSPECT_FAILURES:-5}" ]; then
-                    echo "::error::$SRC → $DEST: too many consecutive destination inspect failures; aborting this destination"
-                    break
-                  fi
-                  continue
-                fi
-                DEST_FAIL_CONSEC=0
-                if [ "$dest_rc" -eq 0 ] && [ "$SRC_DIGEST" = "$DEST_DIGEST" ]; then
-                  echo "⏭️  Skip $tag"
-                  SKIPPED=$((SKIPPED + 1))
-                  continue
-                fi
-                # dest_rc == 3 表示 registry 明确返回 tag 不存在，继续走 copy
-              fi
-
-              echo "Syncing $tag..."
-              set +e
-              skopeo copy --all \
-                --retry-times 3 \
-                --retry-delay 5s \
-                "${SRC_COPY_ARGS[@]}" \
-                "${DEST_COPY_ARGS[@]}" \
-                "$SRC_IMG" "$DEST_IMG"
-              copy_exit=$?
-              set -e
-              if [ $copy_exit -eq 0 ] || [ $copy_exit -eq 2 ]; then
-                echo "✅ Synced $tag"
-                SYNCED=$((SYNCED + 1))
-                if [[ "$DEST" == docker.io/* ]] && [ -n "$SRC_DIGEST" ]; then
-                  tmp=$(mktemp)
-                  jq --arg key "$DEST:$tag" --arg val "$SRC_DIGEST" '.[$key] = $val' "$CACHE_FILE" > "$tmp" && mv "$tmp" "$CACHE_FILE"
-                fi
-              else
-                echo "❌ Failed $tag (exit $copy_exit)"
-                FAILED=$((FAILED + 1))
-              fi
-            done
-
+            SYNCED=$(awk -F'\t' '$1=="synced"' "$EVENTS" | wc -l)
+            SKIPPED=$(awk -F'\t' '$1=="skipped"' "$EVENTS" | wc -l)
+            INSPECT_FAILED=$(awk -F'\t' '$1=="inspect_failed"' "$EVENTS" | wc -l)
+            FAILED=$(awk -F'\t' '$1=="copy_failed"' "$EVENTS" | wc -l)
             echo "Done [$SRC → $DEST]: $SYNCED synced, $SKIPPED skipped, $INSPECT_FAILED inspect-failed, $FAILED failed"
+
+            merge_cache_updates
 
             if [[ "$DEST" == docker.io/* ]]; then
               rate_token=$(curl -sf "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" \
-                -u "${DOCKERHUB_USER}:${DOCKERHUB_PWD}" | jq -r '.token // empty')
+                -u "${DOCKERHUB_USER}:${DOCKERHUB_PWD}" 2>/dev/null | jq -r '.token // empty' 2>/dev/null || true)
               rate=$(curl -sf -I -H "Authorization: Bearer ${rate_token}" \
                 "https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest" 2>/dev/null \
                 | grep -i ratelimit-remaining | tr -d '\r' || echo "unknown")
               echo "Docker Hub rate limit remaining: $rate"
             fi
 
-            if [ $FAILED -ne 0 ] || [ $INSPECT_FAILED -ne 0 ]; then
+            rm -f "$EVENTS" "$ABORT_FILE"
+            unset EVENTS ABORT_FILE DEST DEST_CREDS
+
+            # 与旧逻辑一致：任一 dest 出现失败即中止本 job（剩余 dest 留给下一轮）。
+            if [ "$FAILED" -ne 0 ] || [ "$INSPECT_FAILED" -ne 0 ]; then
               exit 1
             fi
           done
@@ -375,4 +519,4 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: /tmp/digest-cache
-          key: digest-cache-${{ matrix.src }}-${{ github.run_id }}
+          key: digest-cache-${{ matrix.src }}#${{ github.run_id }}-${{ github.run_attempt }}

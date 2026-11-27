@@ -87,9 +87,9 @@ jobs:
     needs: prepare
     if: needs.prepare.outputs.host-matrix != '[]'
     name: scan ${{ matrix.cluster }}
-    runs-on: ${{ matrix.cluster }}
+    runs-on: ${{ matrix.runner }}
     concurrency:
-      group: ledger-scan-${{ matrix.cluster }}
+      group: ledger-scan-${{ matrix.runner }}
       cancel-in-progress: false
     strategy:
       fail-fast: false
@@ -105,6 +105,12 @@ jobs:
           tar xzf /tmp/repo.tgz -C "$GITHUB_WORKSPACE" --strip-components=1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Assert sync machine
+        run: |
+          # 本 job 必须跑在 model-sync-* 同步裸机上。防再次被"集群名撞 ARC 标签"
+          # 之类的路由事故静默劫持(首轮 run 45956441953 的 cn12-001 就落到了
+          # sgl 业务 runner pod 上假成功)。同步机标志:/etc/profile.d/model-tools.sh。
+          [ -f /etc/profile.d/model-tools.sh ] || { echo "::error::not a model-sync machine (no /etc/profile.d/model-tools.sh); runner=$(hostname)"; exit 1; }
       - name: Resolve cache env from host profile
         run: |
           SUFFIX='${{ matrix.cluster }}'; SUFFIX="${SUFFIX#model-sync-}"

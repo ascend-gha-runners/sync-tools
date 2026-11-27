@@ -37,10 +37,12 @@ build_copy_dest_args() {
 #   3 = registry 明确返回 MANIFEST_UNKNOWN / NAME_UNKNOWN（确认 tag 不存在）
 #   4 = 重试后仍然失败（网络/5xx/超时/未知），调用方禁止 copy
 #   5 = 鉴权/权限/配置错误，调用方禁止 copy，并让 job 失败
-#   6 = 限速（429 / toomanyrequests）：Docker Hub 拉取配额 200/h（实测 header
-#       200;w=3600，全仓库共享，还要留给 docker.io 源头的 tag 拉取）。配额按
-#       时间窗恢复，重试纯属浪费时间（旧逻辑每个限速 tag 磨 5×35s≈3min，
-#       一次 run 白烧几十分钟），立即返回并让调用方熔断该目的地。
+#   6 = 限速（429 / toomanyrequests）：Docker Hub 拉取配额是账号级共享。口径
+#       存在冲突：官方文档写 200/6h，线上实测 header 是 ratelimit-remaining:
+#       200;w=3600（w 官方未定义）——不押注任何一边，运行时以服务器返回的
+#       remaining 为准（见 EFFECTIVE_BUDGET 自适应预算）。配额按时间窗恢复，
+#       重试纯属浪费时间（旧逻辑每个限速 tag 磨 5×35s≈3min，一次 run 白烧
+#       几十分钟），立即返回并让调用方熔断该目的地。
 INSPECT_ATTEMPTS="${INSPECT_ATTEMPTS:-5}"
 INSPECT_DELAY="${INSPECT_DELAY:-5}"
 INSPECT_TIMEOUT="${INSPECT_TIMEOUT:-60s}"
@@ -225,6 +227,11 @@ echo "Found $TAG_COUNT tags for $SRC"
 # ≤ 并行度的轻微超额，可接受）。
 # 默认上限取保守值（40/轮）：6 小时窗口内跑 ~6 轮，40×6=240 接近 200 上限，
 # 留不出 docker.io 源头的量；真实额度以运行时读 remaining 为准（见下）。
+# ⚠️ 已知限制：预算是 per-job 的 best-effort——matrix 各 job 起跑时各自读
+# 一次 remaining，跨 job 无协调，所有 job 的预算之和可能超出账号余量
+# （如 35 个 docker.io-dest job × 40 = 1400 ≫ 200）。真正的硬兜底是 429 →
+# rc=6 熔断该 dest（job 红、下轮续跑）。正常态（缓存温暖）兜底 inspect
+# 接近零，预算只在冷恢复窗口起作用。
 DEST_INSPECT_BUDGET="${DEST_INSPECT_BUDGET:-40}"
 SAFETY_MARGIN="${SAFETY_MARGIN:-60}"
 export DEST_INSPECT_BUDGET
@@ -363,7 +370,7 @@ dest_tag_worker() {
     # 硬保证（#154）：内容未变的 tag 绝不重 PUT manifest——重推会刷新
     # Docker Hub 的 last_updated 时间戳。缓存只是省 API 调用的优化，
     # 不作为正确性依据。digest 一致 → 跳过并回写缓存自愈。
-    # 每 tag 1 次 GET（计入 200/h 拉取配额），因此有预算上限，跨轮收敛。
+    # 每 tag 1 次 GET（计入账号级拉取配额），因此有预算上限，跨轮收敛。
     local used
     used=$(wc -l < "$BUDGET_FILE")
     if [ "$used" -ge "$EFFECTIVE_BUDGET" ]; then

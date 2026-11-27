@@ -1,0 +1,20 @@
+{
+  "models": [
+    {
+      "platform": "huggingface",
+      "organization": "MiniMaxAI",
+      "model_name": "MiniMax-H3"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "OpenMOSS-Team",
+      "model_name": "MOSS-Image-Base"
+    },
+    {
+      "platform": "huggingface",
+      "organization": "Qwen",
+      "model_name": "Qwen-Image-2.1"
+    }
+  ],
+  "datasets": []
+}

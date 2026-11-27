@@ -70,5 +70,44 @@
         "dataset_name": "gsm8k-lite"
       }
     ]
+  },
+  {
+    "repo": "vllm-project/vllm-omni",
+    "runner_label": "ascend-310p",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "Qwen",
+        "model_name": "Qwen-Image-2.1"
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-omni",
+    "runner_label": "ascend-310p",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "OpenMOSS-Team",
+        "model_name": "MOSS-Image-Base"
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "vllm-project/vllm-omni",
+    "runner_label": "ascend-310p",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "MiniMaxAI",
+        "model_name": "MiniMax-H3"
+      }
+    ],
+    "datasets": []
   }
 ]

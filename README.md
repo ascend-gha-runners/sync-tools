@@ -115,7 +115,7 @@ model-library/                            # 路由数据 + 台账
 
 - `vllm-project/vllm-ascend` + `*800i*` → **cn12-001 + mind3 + aiframe**（恰好三个，绝不外溢）
 - `sgl-project/sglang` + `linux-aarch64-a3-800t-N-cn12-001` → **gy004**（chart 硬落点）；同一标签在 vllm-ascend 下是 **cn12-001 + gy004 + gy005** 三集群——所以请求里带上 `repo` 很关键
-- 未接 runner 的集群自动跳过并 WARN（目前仅 gy003）；不想推断可在请求里显式写 `"clusters": ["cn12-001","mind3"]`（可填多个，含未注册集群会直接报错）
+- 未接 runner 的集群自动跳过并 WARN；不想推断可在请求里显式写 `"clusters": ["cn12-001","mind3"]`（可填多个，含未注册集群会直接报错）
 
 请求要素：`repo（业务仓库）+ runner_label（你的 runs-on）+ models[]/datasets[]（platform/organization/model_name|dataset_name[/revision/legacy_layout]）`；可选 `clusters[]` 指定落盘；`auth_secret` 只接受 `none`（或不填）。
 
@@ -178,16 +178,17 @@ curl -sf -X POST -H "Authorization: Bearer $MODEL_SYNC_PAT" \
     }}'
 ```
 
-- 字段语义同 `requests.json` 条目；`runner_label` 直接填你们 `runs-on`（pod 名带 hash 后缀也认），路由按上文优先级（800t/800i 等查 runner-map 按 repo 消歧，a5 → sh001+sh002 走 groups 兜底）。也可跳过推断显式给 `"clusters": [...]`。`request_id` 作为并发组 key（同一请求串行、不互踩）；所有字符串字段同样过白名单校验。
+- 字段语义同 `requests.json` 条目；`runner_label` 直接填你们 `runs-on`（pod 名带 hash 后缀也认），路由按上文优先级（800t/800i 等查 runner-map 按 repo 消歧，a5 → sh001+sh002 走 groups 兜底）。也可跳过推断显式给 `"clusters": [...]`。
+- **Buildkite 仓库（非 GHA）同样可用**：没有 `runs-on` 就填你们的 Buildkite **queue 名**作 `runner_label`（runner-map 的 agent-stack-k8s 键，见 RUNNERS.md）。已接：`vllm-project/vllm-omni`——`ascend-a2b3`→{hk001}、`ascend-a3`→{cn12-001}、`ascend-a3-offload`/`ascend-a3-offload-test`→{cn12-001,aiframe,mind3}、`ascend-310p`→{gy003}、`ascend-a5`→{sh001}；下载仍由 sync-tools 侧的 ARC 池/同步机执行，落进你们 job pod 挂载的同一块共享盘，CI 端零改动。`request_id` 作为并发组 key（同一请求串行、不互踩）；所有字符串字段同样过白名单校验。
 - **完成判定**：轮询 `GET /repos/ascend-gha-runners/sync-tools/actions/runs?event=repository_dispatch`，找到包含 job 名 `<cluster> <- api#<request_id>` 的 run，其 conclusion 即结果。
 - 已落过的模型幂等秒级 done（CI 几乎不等待）；同一同步机/runner 串行排队；blob 完整性、镜像、禁 xet、台账回写全在流水线侧。
 - 需 token 的模型仍不受理（同 PR 入口规则）。
 
 ### 模型库台账
 
-`model-library/<cluster>.json` 记录每个集群已下载过的 models/datasets（自动回写，`unique_by` 去重）；`clusters.json` 是集群注册表（runner、共享盘缓存路径、endpoint、探针 share_ids）；未接 runner 的集群（目前仅 gy003）路由时自动跳过并 WARN。
+`model-library/<cluster>.json` 记录每个集群已下载过的 models/datasets（自动回写，`unique_by` 去重）；`clusters.json` 是集群注册表（runner、共享盘缓存路径、endpoint、探针 share_ids）；未接 runner 的集群路由时自动跳过并 WARN。
 
-**无同步裸机的集群走集群内下载池（不占卡）**：`clusters.json` 中 `mode: "arc"`，请求进 workflow 的 `download-arc` job（sync-tools 容器），写 job pod 的 `/root/.cache` 即业务容器可读位置。当前标签：gy001 `linux-amd64-cpu-2-gy001`（CPU 池）、wlcb001 `linux-aarch64-a2-0-wlcb001`、sh001 `linux-aarch64-a5-0-sh001`、sh002 `linux-amd64-a5-0-sh002`（0 卡池 aX-0，下载池 scale set 见 ascend-ci-deployment ADR-0022；细节见 RUNNERS.md“无同步机集群”一节）。⚠️ gy001 落盘正从 `d561f410:/ascend-ci-share`（hostPath）切换到联邦 a2 缓存盘 `b9bf4a57:/ascend-ci-share-nv-action-vllm-benchmarks`（ascend-ci-deployment ADR-0028，台账变更见 PR #131）：查历史条目注意两盘区分。
+**无同步裸机的集群走集群内下载池（不占卡）**：`clusters.json` 中 `mode: "arc"`，请求进 workflow 的 `download-arc` job（sync-tools 容器），写 job pod 的 `/root/.cache` 即业务容器可读位置。当前标签：gy001 `linux-amd64-cpu-2-gy001`（CPU 池）、wlcb001 `linux-aarch64-a2-0-wlcb001`、gy003 `linux-amd64-cpu-2-gy003`（CPU 池，落 b46afb97 nvbench 盘，与 vllm-omni Buildkite ascend-310p queue 同盘）、sh001 `linux-aarch64-a5-0-sh001`、sh002 `linux-amd64-a5-0-sh002`（0 卡池 aX-0，下载池 scale set 见 ascend-ci-deployment ADR-0022；细节见 RUNNERS.md“无同步机集群”一节）。sh001 的 `/mnt/weight` 实测为 suzblue.server:/weight 共享 NFS（全 lab 节点同内容），一次下载全集群可读。⚠️ gy001 落盘正从 `d561f410:/ascend-ci-share`（hostPath）切换到联邦 a2 缓存盘 `b9bf4a57:/ascend-ci-share-nv-action-vllm-benchmarks`（ascend-ci-deployment ADR-0028，台账变更见 PR #131）：查历史条目注意两盘区分。
 
 ### 机器 ↔ 共享盘对照
 
@@ -299,7 +300,7 @@ workflow 根据域名自动匹配认证信息，目前支持的源/目标 regist
 | `model-sync-gy004` | 贵阳 ecs (101.245.82.28) 第二实例 | `/mnt/sfs_turbo2`（1b51fb58，pkking-sglang 盘） |
 | `model-sync-gy005` | 贵阳 ecs (101.245.82.28) 第一实例 | `/mnt/sfs_turbo`（b46afb97，benchmark 盘） |
 
-无同步裸机的集群（gy001 / wlcb001 / sh001 / sh002）由集群内 CPU / 0 卡下载池承接（见「模型库台账」一节）；gy003 尚未接入 runner，路由时自动跳过并 WARN。
+无同步裸机的集群（gy001 / wlcb001 / gy003 / sh001 / sh002）由集群内 CPU / 0 卡下载池承接（见「模型库台账」一节）。
 
 [vllm](.github/workflows/config/projects/vllm.json) ·
 [sglang](.github/workflows/config/projects/sglang.json) ·

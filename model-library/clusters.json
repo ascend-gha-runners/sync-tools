@@ -153,23 +153,26 @@
     }
   },
   "gy003": {
+    "mode": "arc",
     "machine": "310p",
-    "runner": null,
-    "note": "TODO: 线下集群 runner 未接入；310p 共享盘路径待文档确认",
-    "endpoint": "https://hf-mirror.com",
+    "runner": "linux-amd64-cpu-2-gy003",
     "caches": {
-      "huggingface": "TODO",
-      "modelscope": "TODO"
+      "huggingface": "/root/.cache/huggingface",
+      "modelscope": "/root/.cache/modelscope/hub"
     },
+    "endpoint": "https://hf-mirror.com",
+    "note": "无同步裸机。集群内组级 CPU 下载池 linux-amd64-cpu-2-gy003（ascend-gha-runners 双 amd64 节点，已接 squid，ascend-ci-deployment #1741）：job pod /root/.cache <- hostPath /mnt/sfs-local/ascend-ci-share-nv-action-vllm-benchmarks，与 vllm-omni Buildkite ascend-310p queue pod 同盘（2026-11-27 实测 amd64 节点 .121 写入、310p 节点 .101 可读）。⚠️ b46afb97 同 share 还有兄弟 export ascend-ci-share-vllm-ascend-ci-dev-vllm-ascend，df 在同服务器多挂载下可能显示错源，以 /proc/mounts 为准；落位断言由 NODE_CACHE_EXPORT 兜底（同 #132 教训）",
     "match": {
       "label_regex": "(gy003|310p)",
-      "share_ids": []
+      "share_ids": [
+        "b46afb97"
+      ]
     },
-    "share": "TODO-310p",
+    "share": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks",
     "node_cache": {
       "alias": "ascend-ci-share-nv-action-vllm-benchmarks",
       "export": "b46afb97:/ascend-ci-share-nv-action-vllm-benchmarks",
-      "write": "TODO(集群侧)"
+      "write": "集群内下载池 job Pod /root/.cache（hostPath 同盘）"
     }
   },
   "gy001": {
@@ -210,10 +213,10 @@
       "modelscope": "/root/.cache/modelscope/hub"
     },
     "endpoint": "https://hf-mirror.com",
-    "note": "无同步裸机。集群内 0 卡下载池（aX-0）（不占卡，lab 节点；ascend-ci-deployment ADR-0022/PR#2763）：job pod /root/.cache <- hostPath /mnt/weight（节点权重盘，跨节点不共享）",
+    "note": "无同步裸机。集群内 0 卡下载池（aX-0）（不占卡，lab 节点；ascend-ci-deployment ADR-0022/PR#2763）：job pod /root/.cache <- hostPath /mnt/weight。/mnt/weight 实为 suzblue.server:/weight 共享 NFS（210T，2026-11-27 实测 a5-01/02/03 三节点内容一致），下载一次全集群可读，无需逐节点 fan-out",
     "node_cache": {
       "alias": "hostPath:/mnt/weight",
-      "export": "sh-001 节点 /mnt/weight",
+      "export": "suzblue.server:/weight（跨节点共享 NFS，2026-11-27 实测）",
       "write": "集群内 job Pod /root/.cache"
     }
   },

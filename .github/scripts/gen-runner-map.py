@@ -11,6 +11,9 @@
      避免 liqo 卸载部署被误记成 host 集群（二维匹配：每 (repo,label) 独立解析，
      全局 map 仅作跨 repo 并集兜底）
   4. cluster_disks 读 model-library/clusters.json 的 node_cache
+   5. agent-stack-k8s (Buildkite) charts：queue 名作为路由键（业务请求的
+      runner_label 即队列名），落点 = argocd dest + liqo NamespaceOffloading
+      providers，不做 karmada 机型推断（Buildkite 池不经 ARC/karmada）
 Output runner-map.json:
   map:            label -> [clusters]                (全局并集)
   map_by_repo:    repo -> {label -> [clusters]}
@@ -44,7 +47,9 @@ for f in glob.glob(f"{ACD}/manifests/arc-fedsched/prod-cp-*/propagation-policies
 # ---- 1: chart selectors + registered runner labels ----
 SEL = {}     # (repo, chart 目录名) -> 硬落点 clusters（nodeSelector）
 DIRSET = collections.defaultdict(set)           # repo -> {chart 目录名}
-LBLDIR = collections.defaultdict(set)           # (repo, scaleSetLabel) -> {chart 目录名}
+LBLDIR = collections.defaultdict(set)           # (repo, scaleSetLabel / Buildkite queue) -> {chart 目录名}
+QKEYS = set()                                   # (repo, key)：agent-stack-k8s（Buildkite）chart，
+                                                #   落点只走证据链（dest+queue / liqo 卸载），不做 karmada 推断
 for f in sorted(glob.glob(f"{ACD}/projects/*/*/linux-*/values.yaml") + glob.glob(f"{ACD}/other/*/*/linux-*/values.yaml")):
     rel = os.path.relpath(f, ACD).split("/")
     repo, lbl = "/".join(rel[1:3]), rel[3]
@@ -71,6 +76,15 @@ for f in sorted(glob.glob(f"{ACD}/projects/*/*/linux-*/values.yaml") + glob.glob
     for lab in sset.get("scaleSetLabels") or []:
         if isinstance(lab, str) and lab.startswith("linux-"):
             LBLDIR[(repo, lab)].add(lbl)
+    # agent-stack-k8s（Buildkite）chart：queue 名即业务侧的路由键（相当于 runs-on），
+    # 与 chart 目录名互为锚点；这类 chart 没有 scaleSetLabels，落点 = argocd dest
+    # 集群 + liqo namespace 卸载 providers，不做 karmada 组成员推断。
+    ak = (v or {}).get("agent-stack-k8s") or {}
+    queue = (ak.get("config") or {}).get("queue") or ""
+    if queue:
+        LBLDIR[(repo, queue)].add(lbl)
+        QKEYS.add((repo, queue))
+        QKEYS.add((repo, lbl))
 
 # ---- 2: fed groups by label pattern ----
 def fed_clusters(lbl):
@@ -84,8 +98,28 @@ def fed_clusters(lbl):
     else: return []
     return PLACEMENT.get(g, [])
 
+# ---- 2b: liqo namespace 卸载（consumer ns -> provider 集群），Buildkite 池的
+# job pod 经 NamespaceOffloading 溢出到 provider，落点盘要算上 provider ----
+OFFLOAD = collections.defaultdict(set)
+for f in glob.glob(f"{ACD}/manifests/liqo/consumer-*/**/namespace-offloading.yaml", recursive=True):
+    rel = os.path.relpath(f, ACD).split(os.sep)
+    if len(rel) < 5 or not rel[2].startswith("consumer-"): continue
+    cons = norm(rel[2][len("consumer-"):])
+    try: doc = yaml.safe_load(open(f))
+    except Exception: continue
+    for d in (doc if isinstance(doc, list) else [doc]):
+        if not isinstance(d, dict) or d.get("kind") != "NamespaceOffloading": continue
+        ns = (d.get("metadata") or {}).get("namespace") or rel[3]
+        spec = d.get("spec") or {}
+        for t in ((spec.get("clusterSelector") or {}).get("nodeSelectorTerms") or []):
+            for m in (t.get("matchExpressions") or []):
+                if "remote-cluster-id" in (m.get("key") or ""):
+                    for v in (m.get("values") or []):
+                        if norm(str(v)): OFFLOAD[(cons, ns)].add(norm(str(v)))
+
 # ---- 3: argocd hosts per (repo,label) ----
 HOSTS = collections.defaultdict(set)
+APPNS = collections.defaultdict(set)  # (repo, releaseName/目录名) -> {(dest 集群, dest ns)}
 ALIAS = {}  # (repo, releaseName) -> chart 目录名（两者不同时才有）
 DEST = {"ascend-cn12-001-cluster": "cn12-001", "ascend-hk-001-cluster": "hk001",
         "openmerlin-guiyang-003-cluster": "gy003", "openmerlin-guiyang-004-cluster": "gy004",
@@ -107,10 +141,13 @@ for app in glob.glob(f"{ACD}/argocd/clusters/*/*.yaml"):
             lbl = (src.get("helm") or {}).get("releaseName") or os.path.basename(path)
             if lbl.startswith("linux-"):
                 repo = "/".join(p[1:3])
+                ns = (sp.get("destination") or {}).get("namespace") or ""
                 HOSTS[(repo, lbl)].add(dst)
+                APPNS[(repo, lbl)].add((dst, ns))
                 dir_lbl = os.path.basename(path.rstrip("/"))
                 if dir_lbl.startswith("linux-"):
                     HOSTS[(repo, dir_lbl)].add(dst)
+                    APPNS[(repo, dir_lbl)].add((dst, ns))
                     if dir_lbl != lbl:
                         # 同一部署的 releaseName 与目录名别名，供无 scaleSetLabels 时打通
                         ALIAS.setdefault((repo, lbl), dir_lbl)
@@ -152,7 +189,18 @@ for repo in sorted(repos):
             | {l for (r, l) in LBLDIR if r == repo})
     for lbl in sorted(keys):
         sel, pinned, hosts = landing(repo, lbl)
-        if sel:
+        if (repo, lbl) in QKEYS:
+            # Buildkite 池（agent-stack-k8s）：queue/目录名 → 落点 = argocd dest
+            # ∪ liqo namespace 卸载 providers。Buildkite 不经过 ARC/karmada，
+            # 机型名联邦推断一律不适用（教训同 PR#145：多路由=多下一份白占盘）。
+            provs = set(hosts)
+            dirs = set(LBLDIR.get((repo, lbl), set()))
+            if ALIAS.get((repo, lbl)): dirs.add(ALIAS[(repo, lbl)])
+            for d in dirs | {lbl}:
+                for (c, n) in APPNS.get((repo, d), ()):
+                    provs |= OFFLOAD.get((c, n), set())
+            cl = sel or sorted(provs)
+        elif sel:
             # chart nodeSelector 硬落点（liqo 跨集群卸载）优先级最高；
             # 不再误并入 host∪karmada（教训：vllm-ascend 800t-* 托管 cn12、
             # 实际落点 gy005，旧逻辑给 cn12-001/gy004 各多下一份模型，见 PR#145）
@@ -179,7 +227,7 @@ for repo in sorted(repos):
         for c in cl: gmap[lbl].add(c)
     if labels: map_by_repo[repo] = labels
 
-out = {"_generated_by": "gen-runner-map.py (chart nodeSelector + karmada placement + argocd dest)",
+out = {"_generated_by": "gen-runner-map.py (chart nodeSelector + karmada placement + argocd dest + agent-stack-k8s buildkite queues + liqo offload)",
        "map": {k: sorted(v) for k, v in sorted(gmap.items())},
        "map_by_repo": map_by_repo,
        "cluster_disks": {c: disk[c] for c in sorted(disk)}}

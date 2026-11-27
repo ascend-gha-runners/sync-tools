@@ -37,13 +37,47 @@ export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
 #    safetensors 却 0 退出。故一律禁用 xet，走经典 LFS + sha256 校验。
 export HF_HUB_DISABLE_XET=1
 
-# CI 日志节流（不牺牲可观测性）：进度条保留，但 tqdm 在 CI 非 TTY 下每个刷新
-# 都是一行日志，大仓库动辄数千行，会把真正的错误挤出 annotation 的 "Last
-# output"。throttle() 把 stderr 的 \r 进度帧聚合成最多每 PROGRESS_INTERVAL 秒
-# 一行（默认 30，3 小时的大文件下载 ≈ 360 行）；非进度行原样直通。
-# PROGRESS_INTERVAL=0 关闭节流看全量；想彻底静默进度可自行导出
-# HF_HUB_DISABLE_PROGRESS_BARS=1。
+# CI 日志节流（不牺牲可观测性）：进度帧（\r 或 \n 分帧，取最新）最多每
+# PROGRESS_INTERVAL 秒放行一行，非进度行（ERROR/traceback/结果行）立即透传。
+# 旧 bash `read -d $'\r'` 实现对 \n 分帧流（多文件并发 bar、modelscope 逐行进度）
+# 会把多行攒成一个 blob 在开闸时整段吐出，"一行/间隔"的承诺不兑现（2026-11-27
+# 用户反馈日志仍偏多）。PROGRESS_INTERVAL=0 关闭节流看全量；想彻底静默进度可
+# 自行导出 HF_HUB_DISABLE_PROGRESS_BARS=1。
 export PROGRESS_INTERVAL="${PROGRESS_INTERVAL:-30}"
+
+throttle() {  # 全局限频进度输出(stdin 即进度流;脚本走 -c,不占 stdin)
+  python3 -u -c '
+import sys, time
+iv = float(sys.argv[1] or 0)
+due = 0.0
+buf = b""
+def emit(b):
+    global due
+    s = b.decode("utf-8", "replace").strip()
+    if not s:
+        return
+    if "%" in s and iv > 0:
+        t = time.time()
+        if t < due:
+            return
+        sys.stdout.write(s + "\n"); sys.stdout.flush(); due = t + iv
+    else:
+        sys.stdout.write(s + "\n"); sys.stdout.flush()
+while True:
+    ch = sys.stdin.buffer.read(1)
+    if not ch:
+        break
+    if ch in (b"\r", b"\n"):
+        emit(buf); buf = b""
+    else:
+        buf += ch
+emit(buf)
+' "${PROGRESS_INTERVAL:-30}"
+}
+
+failures=0
+successes=0
+rows=""
 
 # 瞬时故障自动重试：镜像站 429/503、网络超时等按指数退避重试（默认 3 次尝试，
 # 间隔 60s/120s/240s）；永久性错误（仓库不存在/无权限，401/404）一次即失败，
@@ -52,27 +86,6 @@ export PROGRESS_INTERVAL="${PROGRESS_INTERVAL:-30}"
 export DL_ATTEMPTS="${DL_ATTEMPTS:-3}"
 export DL_BACKOFF_BASE="${DL_BACKOFF_BASE:-60}"
 DL_TRANSIENT_RE='429|50[0-4]|Too Many|Service Unavailable|Bad Gateway|Gateway Tim|timed out|timeout|Temporary failure|Connection|RemoteDisconnected|Network is unreachable|getaddrinfo|SSL|Max retries'
-
-throttle() {  # 聚合 \r 进度帧：含 % 的行按间隔放行最新一帧，其余立即透传
-  local iv="${PROGRESS_INTERVAL:-30}" line frame="" due=0
-  while IFS= read -r -d $'\r' line || [ -n "$line" ]; do
-    line="${line%$'\n'}"
-    case "$line" in
-      *%*)
-        frame="${line##*$'\r'}"
-        if [ "$iv" -le 0 ] || [ "$SECONDS" -ge "$due" ]; then
-          printf '%s\n' "$frame"; due=$((SECONDS + iv))
-        fi ;;
-      *)
-        if [ -n "$frame" ]; then printf '%s\n' "$frame"; frame=""; due=$((SECONDS + iv)); fi
-        printf '%s\n' "$line" ;;
-    esac
-  done
-  [ -n "$frame" ] && printf '%s\n' "$frame"
-}
-
-failures=0
-rows=""
 
 report() {  # repo platform result landed
   rows="${rows}| ${TYPE} | $1 | $2 | $3 | $4 |
@@ -220,6 +233,7 @@ PY
   if [ "$ok" = 1 ]; then
     echo "OK $TYPE $repo${landed:+ -> $landed}"
     report "$repo" "$platform" "✅ ok" "${landed:--}"
+    successes=$((successes + 1))
   else
     echo "FAILURE $TYPE $repo (attempts: $attempt/$DL_ATTEMPTS)"
     echo "::error::$TYPE $repo ($platform) failed after $attempt attempt(s); one-line reason on stderr above, traceback: ${RUNNER_TEMP:-/tmp}/dl-tracebacks/"
@@ -233,6 +247,8 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   {
     echo "#### model/dataset sync ($TYPE batch)"
     echo
+    echo "**本批合计:✅ ${successes} 成功 / ❌ ${failures} 失败**"
+    echo
     echo "| type | repo | platform | result | landed |"
     echo "|--|--|--|--|--|"
     printf '%s' "$rows"
@@ -240,5 +256,8 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   } >> "$GITHUB_STEP_SUMMARY"
 fi
 
-echo "Completed downloading $TYPE entries from $CONFIG_FILE (failures: $failures)"
+# 供 job 末尾汇总步骤统计（models/datasets 两批各写一份）
+printf 'ok=%s\nfail=%s\n' "$successes" "$failures" > "${DL_COUNTS_FILE:-/tmp/dl-counts-$TYPE.txt}"
+
+echo "Completed downloading $TYPE entries from $CONFIG_FILE (successes: $successes, failures: $failures)"
 [ "$failures" -eq 0 ]

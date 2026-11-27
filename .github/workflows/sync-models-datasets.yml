@@ -85,6 +85,8 @@ jobs:
     if: needs.prepare.result == 'success' && needs.prepare.outputs.arc-matrix != '[]'
     name: sync ${{ matrix.project }} to ${{ matrix.cluster }}
     runs-on: ${{ matrix.cluster }}
+    # 大模型下载不设 6h 默认上限（#151 教训；self-hosted 上限 3 天）
+    timeout-minutes: 4320
     # 同 runner 串行，避免并发写同一持久缓存
     concurrency:
       group: sync-dl-${{ matrix.cluster }}
@@ -128,6 +130,21 @@ jobs:
         if: github.event_name == 'push'
         run: bash .github/scripts/audit-landed.sh
 
+      - name: Download summary
+        if: always()
+        run: |
+          ok=0 fail=0
+          for f in /tmp/dl-counts-model.txt /tmp/dl-counts-dataset.txt; do
+            [ -f "$f" ] || continue
+            o=$(sed -n 's/^ok=//p' "$f" | head -1); fa=$(sed -n 's/^fail=//p' "$f" | head -1)
+            ok=$((ok + ${o:-0})); fail=$((fail + ${fa:-0}))
+          done
+          {
+            echo "### 下载总结:✅ ${ok} 成功 / ❌ ${fail} 失败"
+            echo
+            echo "明细见上方各批表格;有失败时重跑本 job 即幂等续传(已下 blob 秒过)。"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   # model-sync-* labels are dedicated rsync/sync ECS machines (no docker, no
   # cluster network contention). Jobs run directly on the host; per-machine
   # cache locations come from /etc/profile.d/model-tools.sh on each box.
@@ -136,6 +153,8 @@ jobs:
     if: needs.prepare.result == 'success' && needs.prepare.outputs.host-matrix != '[]'
     name: sync ${{ matrix.project }} on ${{ matrix.cluster }}
     runs-on: ${{ matrix.cluster }}
+    # 大模型下载不设 6h 默认上限（#151 教训）
+    timeout-minutes: 4320
     # 同 runner 串行，避免并发写同一共享盘
     concurrency:
       group: sync-dl-${{ matrix.cluster }}
@@ -205,3 +224,18 @@ jobs:
       - name: Audit landed models (push = verify only, never re-download)
         if: github.event_name == 'push'
         run: bash .github/scripts/audit-landed.sh
+
+      - name: Download summary
+        if: always()
+        run: |
+          ok=0 fail=0
+          for f in /tmp/dl-counts-model.txt /tmp/dl-counts-dataset.txt; do
+            [ -f "$f" ] || continue
+            o=$(sed -n 's/^ok=//p' "$f" | head -1); fa=$(sed -n 's/^fail=//p' "$f" | head -1)
+            ok=$((ok + ${o:-0})); fail=$((fail + ${fa:-0}))
+          done
+          {
+            echo "### 下载总结:✅ ${ok} 成功 / ❌ ${fail} 失败"
+            echo
+            echo "明细见上方各批表格;有失败时重跑本 job 即幂等续传(已下 blob 秒过)。"
+          } >> "$GITHUB_STEP_SUMMARY"

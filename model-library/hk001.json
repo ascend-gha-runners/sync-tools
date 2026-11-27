@@ -12,6 +12,11 @@
     },
     {
       "platform": "huggingface",
+      "organization": "OpenOneRec",
+      "model_name": "OneRec-1.7B"
+    },
+    {
+      "platform": "huggingface",
       "organization": "Qwen",
       "model_name": "Qwen-Image-2.1-Turbo"
     },

@@ -22,6 +22,12 @@
       "legacy_layout": true
     },
     {
+      "platform": "modelscope",
+      "organization": "Eco-Tech",
+      "model_name": "Qwen3.5-27B-w8a8-mtp",
+      "legacy_layout": true
+    },
+    {
       "model_name": "Qwen3.5-9B",
       "organization": "Qwen",
       "platform": "modelscope"

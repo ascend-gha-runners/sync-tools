@@ -52,5 +52,11 @@
       "platform": "modelscope"
     }
   ],
-  "datasets": []
+  "datasets": [
+    {
+      "platform": "huggingface",
+      "organization": "OpenOneRec",
+      "dataset_name": "OpenOneRec-RecIF"
+    }
+  ]
 }

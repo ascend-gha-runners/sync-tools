@@ -234,6 +234,21 @@ PY
     echo "OK $TYPE $repo${landed:+ -> $landed}"
     report "$repo" "$platform" "✅ ok" "${landed:--}"
     successes=$((successes + 1))
+    # modelscope 把模型名里的 "." 转义成 "___" 落缓存目录，业务按原名直引路径会
+    # 找不到（gy001 Eco-Tech/Qwen3.5-27B-w8a8-mtp 实例）。在转义目录旁自动补一个
+    # 原名相对软链（任意挂载视角都成立，幂等；原名处已有非软链实体则只 WARN 不覆盖）。
+    if [ "$platform" = "modelscope" ] && [ -z "$local_dir" ] && [ "$name" != "${name//./___}" ]; then
+      san=${name//./___}
+      cache=${MODELSCOPE_CACHE:-$HOME/.cache/modelscope}
+      while IFS= read -r d; do
+        parent=${d%/$san}
+        if [ -e "$parent/$name" ] && [ ! -L "$parent/$name" ]; then
+          echo "dot-symlink WARN: $parent/$name exists and is not a symlink, skip"
+          continue
+        fi
+        ln -sfn "$san" "$parent/$name" && echo "dot-symlink: $parent/$name -> $san"
+      done < <(find "$cache" -maxdepth 4 -type d -name "$san" 2>/dev/null)
+    fi
   else
     echo "FAILURE $TYPE $repo (attempts: $attempt/$DL_ATTEMPTS)"
     echo "::error::$TYPE $repo ($platform) failed after $attempt attempt(s); one-line reason on stderr above, traceback: ${RUNNER_TEMP:-/tmp}/dl-tracebacks/"

@@ -102,6 +102,9 @@ jobs:
     if: needs.plan.result == 'success' && needs.plan.outputs.matrix_host != '[]'
     name: ${{ matrix.cluster }} <- ${{ matrix.request }}
     runs-on: ${{ matrix.runner }}
+    # 大模型下载不设 6h 默认上限（#151：数百 GB 的 aiframe/mind3 job 被 360min
+    # 默认值掐死；self-hosted 上限 3 天）
+    timeout-minutes: 4320
     # 同一台同步机上的下载串行排队（共享盘 cache/blobs 不可并发写），不同机器并行
     concurrency:
       group: model-lib-dl-${{ matrix.runner }}
@@ -185,6 +188,21 @@ jobs:
           path: /tmp/models.json
           if-no-files-found: ignore
 
+      - name: Download summary
+        if: always()
+        run: |
+          ok=0 fail=0
+          for f in /tmp/dl-counts-model.txt /tmp/dl-counts-dataset.txt; do
+            [ -f "$f" ] || continue
+            o=$(sed -n 's/^ok=//p' "$f" | head -1); fa=$(sed -n 's/^fail=//p' "$f" | head -1)
+            ok=$((ok + ${o:-0})); fail=$((fail + ${fa:-0}))
+          done
+          {
+            echo "### 下载总结:✅ ${ok} 成功 / ❌ ${fail} 失败"
+            echo
+            echo "明细见上方各批表格;有失败时重跑本 job 即幂等续传(已下 blob 秒过)。"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   # O 卡集群（无同步裸机的 gy001/wlcb001/sh001/sh002）：下载跑在集群内
   # ascend-gha-runners org 级 ARC runner 的 sync-tools 容器里，job pod 已把
   # 本集群共享盘挂成 /root/.cache，写入即落业务容器可读的位置。
@@ -195,6 +213,8 @@ jobs:
     container:
       image: swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/sync-tools:latest
     runs-on: ${{ matrix.runner }}
+    # 同 download job：大模型不设 6h 默认上限（#151 教训）
+    timeout-minutes: 4320
     # 同一台同步机上的下载串行排队（共享盘 cache/blobs 不可并发写），不同机器并行
     concurrency:
       group: model-lib-dl-${{ matrix.runner }}
@@ -278,6 +298,21 @@ jobs:
           name: ledger-patch-${{ strategy.job-index }}-${{ matrix.cluster }}
           path: /tmp/models.json
           if-no-files-found: ignore
+
+      - name: Download summary
+        if: always()
+        run: |
+          ok=0 fail=0
+          for f in /tmp/dl-counts-model.txt /tmp/dl-counts-dataset.txt; do
+            [ -f "$f" ] || continue
+            o=$(sed -n 's/^ok=//p' "$f" | head -1); fa=$(sed -n 's/^fail=//p' "$f" | head -1)
+            ok=$((ok + ${o:-0})); fail=$((fail + ${fa:-0}))
+          done
+          {
+            echo "### 下载总结:✅ ${ok} 成功 / ❌ ${fail} 失败"
+            echo
+            echo "明细见上方各批表格;有失败时重跑本 job 即幂等续传(已下 blob 秒过)。"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # Single writer: merges every downloaded entry into model-library/<cluster>.json.
   # dispatch -> pushes to the workflow branch (main); PR -> pushes onto the PR

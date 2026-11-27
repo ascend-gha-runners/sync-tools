@@ -158,6 +158,8 @@ model-library/                            # 路由数据 + 台账
 
 **常见错误**（AI 提 PR 高发）：把请求写进 `.github/workflows/config/projects/*.json` 或 `projects-clusters.json`（那是“按项目”常驻清单机制，不是这里）；手改 `model-library/*.json` 台账（bot 的事）；误以为 fork PR 无效而在主仓库开分支或来要权限（不需要）。
 
+**可观测性与超时**：下载 job 的进度日志全局限频——最多每 `PROGRESS_INTERVAL` 秒一行（默认 30；设 `0` 看全量），错误与结果行不受限、即时输出。job 末尾 `Download summary` 步骤在 checks 页汇总 **✅ X 成功 / ❌ Y 失败**。下载不设 6 小时默认上限（`timeout-minutes: 4320`，self-hosted 允许的最大 3 天）；个别条目失败重跑本 job 即幂等续传，已下 blob 秒过。
+
 ### 入口二：手动触发（Actions → model library → Run workflow）
 
 填表单即完成一次请求下载（单模型：repo + runner_label + platform/org/name[/revision/legacy_layout]；需要数据集或多条目请走入口一/三）。**权限**：仅 write（committer）及以上可触发（plan 显式校验）。
@@ -392,6 +394,7 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 - [镜像地址指引（按项目分类）](IMAGE_SYNC_GUIDE.md) – 详细列出各项目镜像的存放地址，方便快速查找。
 
 ## 更新记录
+- 2026-11-27: 下载 job 可观测性与超时调整：进度日志**全局限频**（旧实现遇 `\n` 分帧流会把多行攒成 blob 整段吐出，现按 `\r`/`\n` 双分帧聚合，最多每 `PROGRESS_INTERVAL` 秒一行，默认 30，`0` 直通；错误/结果行不受限）；download job 末尾新增 **`Download summary` 步骤**输出 `✅ X 成功 / ❌ Y 失败`；下载 job `timeout-minutes: 4320`（此前默认 360min 掐死 #151 的数百 GB 下载，重跑幂等续传）。
 - 2026-11-24: model library 新增 **workflow 全绿自动合入**（`merge` job）：带 `model-download` 标签的请求 PR，在 plan/download/ledger 全部成功后由 bot 自动 squash-merge（fork 的配套台账 PR 一并合入）；存在失败检查、与 main 冲突或等待超时则保留人工处理。管理员介入点收敛为“打标签”一处。
 - 2026-11-24: 模型下载 README 刷新（对齐 main 实际行为）：项目结构补 model library（`model-library.yml` + `model-requests/` + `model-library/`）；按项目同步明确 **PR 需 `model-download` 标签、无定时全量、push 到 main 只审计不重下**；同步裸机 4→6 台（新增 model-sync-gy004/gy005，model-sync-mind3 修正为独立机器 113.46.31.157）；路由示例修正（sglang `*800t*` 实为仅落 gy004，repo 参与消歧；a5 走 groups 兜底）；补充 fork PR 受理（pull_request_target + 字段白名单 + 台账辅助分支 PR）与纯数据集请求；下载池标签写实（gy001 为 CPU 池；gy001 落盘 ADR-0028 切换中，见 PR #131）。**结构调整**：「模型下载（model library）」整节前置（紧随项目结构），“提 PR 追加 `model-requests/requests.json`”改为**入口一**并醒目标注 **fork PR 生效**，且改写为六步端到端流程（fork→追加→开 PR→打标签 plan/download/ledger→checks→合入后离线读取），附“常见错误”清单；节首加“先看清要改哪个文件”提示框，防止把下载请求误改到 `config/projects/*.json` 或台账文件。
 - 2026-05-18: 模型/数据集同步重构为单一通用工作流 `sync-models-datasets.yml`，每个项目一份合并配置 `config/projects/<name>.json`（含 `models` / `datasets`，可选 `local_dir`，留空走 SDK 默认 cache）；新增双架构同步镜像 `sync-tools` 与构建 workflow；删除 hk001，新增 ms-swift / llamafactory（共用 `linux-aarch64-sync-hk001` runner）；新增项目只需 2 个文件改动，无需新建 workflow。

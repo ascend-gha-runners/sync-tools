@@ -394,6 +394,8 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 - [镜像地址指引（按项目分类）](IMAGE_SYNC_GUIDE.md) – 详细列出各项目镜像的存放地址，方便快速查找。
 
 ## 更新记录
+- 2026-11-27: **fork 请求 PR 的辅助台账分支/PR 机制退役**（#151 三轮 push race + Actions 无建 PR 权限，是最脆一环）：fork PR 的 ledger job 改为只写 summary 说明，台账由每日扫盘补录；非 fork 请求 PR 的即时回写保留。
+- 2026-11-27: 新增 **`ledger-scan.yml` 每日扫盘对账**（02:37Z）：按 `clusters.json` 全集群矩阵只读扫描共享盘（HF hub / modelscope 经典+新布局，>1MB 实体过滤 stub/xet 壳），与 `model-library/<cluster>.json` 做**只增不删**并集，有差异则推 `ledger/scan-<date>-<run>` 分支、开 PR、checks 全绿自动 squash-merge（同 model-library merge job 设计；仓库未开启 Actions 建 PR 权限时降级为推分支+warning 留人工）。兜住台账回写链路的已知脆点（fork 辅助分支重跑 race、bot 无建 PR 权限、人工落盘未登记）。
 - 2026-11-27: 下载 job 可观测性与超时调整：进度日志**全局限频**（旧实现遇 `\n` 分帧流会把多行攒成 blob 整段吐出，现按 `\r`/`\n` 双分帧聚合，最多每 `PROGRESS_INTERVAL` 秒一行，默认 30，`0` 直通；错误/结果行不受限）；download job 末尾新增 **`Download summary` 步骤**输出 `✅ X 成功 / ❌ Y 失败`；下载 job `timeout-minutes: 4320`（此前默认 360min 掐死 #151 的数百 GB 下载，重跑幂等续传）。
 - 2026-11-27: modelscope 名字含 `.` 的模型（SDK 落盘转义为 `___`）下载成功后**自动补原名相对软链**（`dot-symlink`，幂等；原名处已有实体目录则 WARN 不覆盖），业务按原名直引 `/root/.cache/modelscope/hub/models/<org>/<原名>` 即可命中；存量补链见 RUNNERS.md gy001 实例。
 - 2026-11-24: model library 新增 **workflow 全绿自动合入**（`merge` job）：带 `model-download` 标签的请求 PR，在 plan/download/ledger 全部成功后由 bot 自动 squash-merge（fork 的配套台账 PR 一并合入）；存在失败检查、与 main 冲突或等待超时则保留人工处理。管理员介入点收敛为“打标签”一处。

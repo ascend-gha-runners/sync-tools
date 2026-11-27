@@ -1,0 +1,228 @@
+name: ledger scan (disk -> ledger reconcile PR)
+
+# 每日扫盘对账：台账是"请求即下载"时由 bot 回写的，但回写链路有已知脆点
+# （fork 辅助分支重跑 push race、Actions 无建 PR 权限、人工落盘未登记——#151/#163 即此）。
+# 本 workflow 以盘为准做并集对账：只补录"盘上有、台账无"的条目，绝不删除
+# （清理是 model-cache-cleanup 的职责），产物是一个 PR，checks 全绿自动 squash-merge
+# （与 model-library.yml 的 merge job 同设计：人工介入点在配置，不在合入）。
+#
+# 运行模式=半自动（组织未开放 Actions 建 PR 权限，仓库级设置不可见）：
+# 每日扫描后推 ledger/scan-<date>-<run> 分支并在 run summary 输出开 PR 命令，
+# 由维护者（或会话 agent）一键执行；PR 开出后本 workflow 的 merge job 仍会自动
+# squash 合入。若未来组织开启该权限，PR 创建步骤直接生效，升级为全自动。
+
+on:
+  schedule:
+    - cron: "37 2 * * *"  # 每日 02:37Z（北京 10:37），错峰避开整点（PR#146）
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ledger-scan
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      arc-matrix: ${{ steps.m.outputs.arc-matrix }}
+      host-matrix: ${{ steps.m.outputs.host-matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: m
+        run: |
+          jq -c '[to_entries[] | select(.value.runner != null)
+                  | select((.value.mode // "host") == "arc")
+                  | {cluster: .key, runner: .value.runner,
+                     hf: .value.caches.huggingface, ms: .value.caches.modelscope}]' \
+            model-library/clusters.json > /tmp/arc.json
+          jq -c '[to_entries[] | select(.value.runner != null)
+                  | select((.value.mode // "host") != "arc")
+                  | {cluster: .key, runner: .value.runner}]' \
+            model-library/clusters.json > /tmp/host.json
+          echo "arc-matrix=$(cat /tmp/arc.json)" >> "$GITHUB_OUTPUT"
+          echo "host-matrix=$(cat /tmp/host.json)" >> "$GITHUB_OUTPUT"
+          echo "arc=$(jq -r '.[].cluster' /tmp/arc.json | paste -sd, -)"
+          echo "host=$(jq -r '.[].cluster' /tmp/host.json | paste -sd, -)"
+
+  scan-arc:
+    needs: prepare
+    if: needs.prepare.outputs.arc-matrix != '[]'
+    name: scan ${{ matrix.cluster }}
+    runs-on: ${{ matrix.runner }}
+    # 扫描只读，但仍与下载同组排队，避免和正在写盘的 job 抢 IO
+    concurrency:
+      group: ledger-scan-${{ matrix.runner }}
+      cancel-in-progress: false
+    container:
+      image: swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/sync-tools:latest
+    env:
+      MODELSCOPE_CACHE: ${{ matrix.ms }}
+      HF_HOME: ${{ matrix.hf }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare.outputs.arc-matrix) }}
+    steps:
+      - name: Fetch repo snapshot via codeload (mainland-safe, no github.com git)
+        run: |
+          curl -fsSL --retry 4 --retry-delay 5 -m 600 \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -o /tmp/repo.tgz "https://codeload.github.com/${{ github.repository }}/tar.gz/${{ github.sha }}"
+          mkdir -p "$GITHUB_WORKSPACE"
+          tar xzf /tmp/repo.tgz -C "$GITHUB_WORKSPACE" --strip-components=1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Scan disk
+        run: bash .github/scripts/scan-landed-ledger.sh '${{ matrix.cluster }}' "/tmp/scan-${{ matrix.cluster }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scan-${{ matrix.cluster }}
+          path: /tmp/scan-${{ matrix.cluster }}.json
+
+  scan-host:
+    needs: prepare
+    if: needs.prepare.outputs.host-matrix != '[]'
+    name: scan ${{ matrix.cluster }}
+    runs-on: ${{ matrix.cluster }}
+    concurrency:
+      group: ledger-scan-${{ matrix.cluster }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare.outputs.host-matrix) }}
+    steps:
+      - name: Fetch repo snapshot via codeload (mainland-safe, no github.com git)
+        run: |
+          curl -fsSL --retry 4 --retry-delay 5 -m 600 \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -o /tmp/repo.tgz "https://codeload.github.com/${{ github.repository }}/tar.gz/${{ github.sha }}"
+          mkdir -p "$GITHUB_WORKSPACE"
+          tar xzf /tmp/repo.tgz -C "$GITHUB_WORKSPACE" --strip-components=1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve cache env from host profile
+        run: |
+          SUFFIX='${{ matrix.cluster }}'; SUFFIX="${SUFFIX#model-sync-}"
+          bash -lc ". /etc/profile.d/model-tools.sh 2>/dev/null; [ -f /etc/profile.d/model-tools-$SUFFIX.sh ] && . /etc/profile.d/model-tools-$SUFFIX.sh; env | grep -E '^(HF_|HUGGINGFACE_|MODELSCOPE_)'" | tee -a "$GITHUB_ENV"
+      - name: Scan disk
+        run: bash .github/scripts/scan-landed-ledger.sh '${{ matrix.cluster }}' "/tmp/scan-${{ matrix.cluster }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scan-${{ matrix.cluster }}
+          path: /tmp/scan-${{ matrix.cluster }}.json
+
+  ledger-pr:
+    needs: [prepare, scan-arc, scan-host]
+    if: >-
+      always() && needs.prepare.result == 'success' &&
+      (needs.scan-arc.result == 'success' || needs.scan-host.result == 'success')
+    runs-on: ubuntu-latest
+    outputs:
+      pr: ${{ steps.open.outputs.pr }}
+      branch: ${{ steps.commit.outputs.branch }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "scan-*"
+          path: /tmp/scans
+      - name: Reconcile ledgers (add-only union)
+        id: commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          BR="ledger/scan-$(date -u +%Y%m%d)-${GITHUB_RUN_ID}"
+          git config user.name "model-library-bot"
+          git config user.email "model-library-bot@users.noreply.github.com"
+          git checkout -qb "$BR"
+          summary=""
+          changed=0
+          for d in /tmp/scans/scan-*; do
+            cluster=$(basename "$d" | sed 's/^scan-//')
+            LIB="model-library/$cluster.json"
+            mkdir -p "$(dirname "$LIB")"
+            [ -f "$LIB" ] || printf '{"models": [], "datasets": []}\n' > "$LIB"
+            res=$(jq -n --slurpfile s $d/scan-*.json --slurpfile l "$LIB" '
+              def mkey: (.platform + "/" + .organization + "/" + .model_name);
+              def dkey: (.platform + "/" + .organization + "/" + .dataset_name);
+              { added_m: ($s[0].models | map(select(mkey as $k | ($l[0].models | map(mkey) | index($k)) | not))),
+                added_d: ($s[0].datasets | map(select(dkey as $k | ($l[0].datasets | map(dkey) | index($k)) | not))) } |
+              .merged = { models: (($l[0].models + $s[0].models) | unique_by(mkey)),
+                          datasets: (($l[0].datasets + $s[0].datasets) | unique_by(dkey)) }')
+            am=$(jq -r '.added_m | length' <<<"$res"); ad=$(jq -r '.added_d | length' <<<"$res")
+            if [ "$am" != 0 ] || [ "$ad" != 0 ]; then
+              jq '.merged' <<<"$res" > /tmp/lib.json && mv /tmp/lib.json "$LIB"
+              git add "$LIB"
+              changed=1
+              summary="${summary}| ${cluster} | +${am} models / +${ad} datasets |\n"
+            fi
+          done
+          if [ "$changed" = 0 ]; then echo "ledger already in sync with disks"; exit 0; fi
+          git commit -qm "library: ledger scan $(date -u +%F) (add-only disk reconcile)"
+          git push -q --force origin "HEAD:refs/heads/$BR"
+          echo "branch=$BR" >> "$GITHUB_OUTPUT"
+          printf '%s' "$summary" > /tmp/scan-summary.md
+      - name: Open PR
+        id: open
+        if: steps.commit.outputs.branch != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BR='${{ steps.commit.outputs.branch }}'
+          body=$(printf '每日扫盘对账（run %s）：以盘为准补录台账缺失条目，只增不删。\n\n| 集群 | 新增 |\n|--|--|\n' "$GITHUB_RUN_ID")
+          body="$body$(cat /tmp/scan-summary.md)"
+          body="$body$(printf '\n\nresolve https://github.com/opensourceways/backlog/issues/2647\n')"
+          if url=$(gh pr create --base main --head "$BR" --title "library: ledger scan $(date -u +%F)" --body "$body" 2>&1); then
+            echo "pr=$url" >> "$GITHUB_OUTPUT"
+            echo "$url"
+          else
+            echo "::warning::建 PR 失败（Actions 无建 PR 权限，半自动模式）；分支 $BR 已推送"
+            {
+              echo "### 半自动：分支已就绪，一键开 PR"
+              echo '```bash'
+              echo "gh pr create --repo ${{ github.repository }} --base main --head $BR \\"
+              echo "  --title \"library: ledger scan $(date -u +%F)\" --body-file <(echo 'resolve https://github.com/opensourceways/backlog/issues/2647')"
+              echo '```'
+              echo "PR 开出后本 run 的 merge job 不会再触发；由该 PR 自身 checks 决定合入（或人工点）。"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  merge:
+    needs: ledger-pr
+    if: needs.ledger-pr.outputs.pr != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Squash-merge when checks are green
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ needs.ledger-pr.outputs.pr }}
+        run: |
+          set -uo pipefail
+          PR_NUM=$(echo "$PR" | grep -oE '[0-9]+$')
+          t=0
+          while [ "$t" -lt 900 ]; do
+            info=$(gh api "repos/$REPO/pulls/$PR_NUM" --jq '[.merged,.state,.head.sha,.mergeable_state]|@tsv')
+            merged=${info%%$'\t'*}; rest=${info#*$'\t'}
+            state=${rest%%$'\t'*}; rest=${rest#*$'\t'}
+            sha=${rest%%$'\t'*}; ms=${rest#*$'\t'}
+            if [ "$merged" = "true" ]; then echo "already merged"; exit 0; fi
+            if [ "$state" != "open" ]; then echo "PR closed?"; exit 1; fi
+            if [ "$ms" = "dirty" ]; then echo "::error::与 base 冲突，留人工"; exit 1; fi
+            fails=$(gh api "repos/$REPO/commits/$sha/check-runs?per_page=100" --paginate \
+              --jq '.check_runs[] | select(.status=="completed" and .conclusion!="" and .conclusion!="success" and .conclusion!="skipped" and .conclusion!="neutral") | .name' | sort -u | paste -sd, -)
+            if [ -n "$fails" ]; then echo "::error::head $sha 存在失败检查: $fails"; exit 1; fi
+            if [ "$ms" = "clean" ]; then
+              if gh pr merge "$PR_NUM" --repo "$REPO" --squash; then echo "merged PR #$PR_NUM"; exit 0; fi
+              if [ "$(gh api "repos/$REPO/pulls/$PR_NUM" --jq .merged)" = "true" ]; then echo "concurrently merged"; exit 0; fi
+            fi
+            sleep 15; t=$((t+15))
+          done
+          echo "::warning::15 分钟内未自动合入（mergeable 未就绪或超时），留人工"
+          exit 1

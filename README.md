@@ -119,6 +119,15 @@ model-library/                            # 路由数据 + 台账
 
 请求要素：`repo（业务仓库）+ runner_label（你的 runs-on）+ models[]/datasets[]（platform/organization/model_name|dataset_name[/revision/legacy_layout]）`；可选 `clusters[]` 指定落盘；`auth_secret` 只接受 `none`（或不填）。
 
+### 去哪里找自己的 runner_label？
+
+- **GitHub Actions 业务**：打开任意 job 的 **Set up job** 日志，把 `Runner name: '...'` 那一行照抄即可——pod 名的 hash 后缀（如 `-1vbzb-runner-8mzsv`）也认，路由按最长前缀匹配：
+
+  ![Set up job 日志中的 Runner name](docs/images/runner-name.png)
+
+- **Buildkite 业务（agent-stack-k8s）**：没有 runs-on，就用 job 实际跑的 **queue** 作 `runner_label`（pipeline step 的 `agents.queue`，或 Buildkite job 页面右侧信息栏的 Queue），如 vllm-omni 填 `ascend-a3` / `ascend-310p` / `ascend-a5`；queue→集群的账本见 RUNNERS.md。
+- 还拿不准：跳过推断，在请求里显式写 `"clusters": [...]`（含未注册集群会直接报错，不会静默下错盘）。
+
 ### 入口一：业务提 PR（推荐）——**fork PR 一样生效**，管理员打标签放行
 
 完整流程六步，**全程只需要改一个文件**：`model-requests/requests.json`。

@@ -319,8 +319,6 @@ jobs:
   # head branch so the ledger lands together with the merge.
   ledger:
     needs: [plan, download, download-arc]
-    outputs:
-      ledger_pr: ${{ steps.apply.outputs.ledger_pr }}
     # 注意 always()：needs 里有 skipped 任务时（纯 host 请求会 skip download-arc，反之亦然），
     # 不带 always() 的 if 会被 GitHub 无条件 skip。
     if: >-
@@ -364,18 +362,14 @@ jobs:
 
           IS_FORK='${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository }}'
           if [ "$IS_FORK" = "true" ]; then
-            # fork PR 无法回写其分支：推主仓库辅助分支并开台账 PR（失败则降级 warning）
-            BR="ledger/pr-${{ github.event.pull_request.number }}-${GITHUB_RUN_ID}"
-            git checkout -qb "$BR"
-            git push -q origin "HEAD:refs/heads/$BR"
-            resp=$(curl -s -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Content-Type: application/json" \
-              "https://api.github.com/repos/${{ github.repository }}/pulls" \
-              -d "{\"title\":\"library: ledger entries from PR #${{ github.event.pull_request.number }}\",\"head\":\"$BR\",\"base\":\"main\",\"body\":\"机器人补记 fork PR 的台账（下载已在该 PR 的 check 中完成），与其一起合入。\"}")
-            url=$(echo "$resp" | jq -r '.html_url // empty')
-            if [ -n "$url" ]; then echo "ledger PR: $url"; echo "ledger_pr=$url" >> "$GITHUB_OUTPUT"; else
-              echo "::warning::辅助台账 PR 创建失败($(echo "$resp" | jq -r '.message // "unknown" | .[0:120]'))；分支 $BR 已推送，请手动开 PR"
-            fi
+            # fork PR 无法回写其分支。旧方案（推辅助分支+开辅助台账 PR）已退役：
+            # 辅助分支重跑 push race（#151 连挂三轮）+ Actions 无建 PR 权限（半自动
+            # 设置不可用）使它成为最脆的一环。台账改由每日 ledger-scan 扫盘补录
+            # （add-only，≤24h 滞后；"下载完整"的权威记录仍是本 PR 的 download checks）。
+            echo "### fork 请求 PR：台账由每日 ledger-scan 补录" >> "$GITHUB_STEP_SUMMARY"
+            echo "下载记录见上方 download job；不再推辅助分支/辅助台账 PR。" >> "$GITHUB_STEP_SUMMARY"
             exit 0
+          fi
           fi
 
           TARGET_REF='${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.ref_name }}'
@@ -419,7 +413,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
-          LEDGER_PR: ${{ needs.ledger.outputs.ledger_pr }}
         run: |
           set -uo pipefail
           merge_when_ready() { # $1=PR号  $2=最长等待秒
@@ -462,9 +455,4 @@ jobs:
           }
           rc=0
           merge_when_ready "$PR" 900 || rc=1
-          if [ -n "$LEDGER_PR" ]; then
-            lpr=${LEDGER_PR##*/}
-            echo "配套台账 PR（fork 回写）：$LEDGER_PR"
-            merge_when_ready "$lpr" 600 || rc=1
-          fi
           exit $rc

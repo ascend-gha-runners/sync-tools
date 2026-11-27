@@ -12,6 +12,8 @@
 #  - 只收实体目录（find 默认不追软链）：原名软链不会与转义目录重复计数；
 #  - 目录内无任何 >1MB 文件即视为 stub/xet 壳跳过（#151 gy001 的 8K 空壳、#138 的
 #    13M 指针壳都挡得住；du 全量遍历在 NFS 上太慢，改 find -size +1M 早退）;
+#  - 含 *.incomplete（hf_hub 断点续传残留）= 下载未完成，跳过——扫盘语义是
+#    "在盘"，不能把半截多文件模型记成已落（请求 PR 的 download checks 才是完整性权威）。
 #  - modelscope 目录名 "___" 反解析回 "."；反解析名与目录名不同时只收反解析名
 #    （台账按原名记，unique_by 去重）；
 #  - 新 SDK 布局 <org>--<name>/snapshots/<rev> 也识别；
@@ -30,6 +32,7 @@ hf_scan() {  # $1=models|datasets
     key=${base#${kind}--}
     org=${key%%--*}; name=${key#*--}
     { [ -z "$org" ] || [ "$org" = "$key" ] || [ -z "$name" ]; } && continue
+    find "$dir" -name "*.incomplete" -print -quit 2>/dev/null | grep -q . && continue
     find "$dir" -type f -size +1M -print -quit 2>/dev/null | grep -q . || continue
     if [ "$kind" = models ]; then
       jq -cn --arg o "$org" --arg n "$name" '{platform:"huggingface",organization:$o,model_name:$n}'
@@ -50,7 +53,8 @@ ms_flat_scan() {  # $1=容器目录(<org>/<name> 两层) $2=model|dataset
       [ -d "$mdir" ] && [ ! -L "${mdir%/}" ] || continue
       san=$(basename "$mdir")
       case "$san" in snapshots|blobs|.no_exist|*.lock|tmp) continue ;; esac
-      find "$mdir" -type f -size +1M -print -quit 2>/dev/null | grep -q . || continue
+      find "$mdir" -name "*.incomplete" -print -quit 2>/dev/null | grep -q . && continue
+    find "$mdir" -type f -size +1M -print -quit 2>/dev/null | grep -q . || continue
       name=${san//___/.}
       if [ "$t" = model ]; then
         jq -cn --arg o "$org" --arg n "$name" '{platform:"modelscope",organization:$o,model_name:$n}'
@@ -69,6 +73,7 @@ ms_new_scan() {  # 新 SDK 布局：<base>/<org>--<name>/snapshots/<rev>
     case "$b" in *--*) ;; *) continue ;; esac
     [ -d "$d/snapshots" ] || continue
     org=${b%%--*}; name=${b#*--}
+    find "$d" -name "*.incomplete" -print -quit 2>/dev/null | grep -q . && continue
     find "$d" -type f -size +1M -print -quit 2>/dev/null | grep -q . || continue
     if [ "$t" = model ]; then
       jq -cn --arg o "$org" --arg n "$name" '{platform:"modelscope",organization:$o,model_name:$n}'

@@ -6,9 +6,10 @@ name: ledger scan (disk -> ledger reconcile PR)
 # （清理是 model-cache-cleanup 的职责），产物是一个 PR，checks 全绿自动 squash-merge
 # （与 model-library.yml 的 merge job 同设计：人工介入点在配置，不在合入）。
 #
-# 前提：仓库设置需允许 Actions 建 PR（Settings→Actions→General→
-# "Allow GitHub Actions to create and approve pull requests"）。不开则降级为
-# 推分支+warning，留人工开 PR（同 ledger 的既有降级路径）。
+# 运行模式=半自动（组织未开放 Actions 建 PR 权限，仓库级设置不可见）：
+# 每日扫描后推 ledger/scan-<date>-<run> 分支并在 run summary 输出开 PR 命令，
+# 由维护者（或会话 agent）一键执行；PR 开出后本 workflow 的 merge job 仍会自动
+# squash 合入。若未来组织开启该权限，PR 创建步骤直接生效，升级为全自动。
 
 on:
   schedule:
@@ -181,7 +182,15 @@ jobs:
             echo "pr=$url" >> "$GITHUB_OUTPUT"
             echo "$url"
           else
-            echo "::warning::建 PR 失败（多半是仓库未开启 Actions 建 PR 权限）；分支 $BR 已推送，请手动开 PR。输出: $url"
+            echo "::warning::建 PR 失败（Actions 无建 PR 权限，半自动模式）；分支 $BR 已推送"
+            {
+              echo "### 半自动：分支已就绪，一键开 PR"
+              echo '```bash'
+              echo "gh pr create --repo ${{ github.repository }} --base main --head $BR \\"
+              echo "  --title \"library: ledger scan $(date -u +%F)\" --body-file <(echo 'resolve https://github.com/opensourceways/backlog/issues/2647')"
+              echo '```'
+              echo "PR 开出后本 run 的 merge job 不会再触发；由该 PR 自身 checks 决定合入（或人工点）。"
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
   merge:

@@ -157,6 +157,7 @@
   {
     "repo": "sgl-project/sglang",
     "runner_label": "linux-aarch64-a3-800t-2",
+    "clusters": ["gy004", "gy005"],
     "auth_secret": "none",
     "models": [
       {

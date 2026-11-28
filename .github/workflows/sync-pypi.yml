@@ -1,0 +1,42 @@
+name: sync pypi packages
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/config/pypi-sync.json"
+      - ".github/workflows/sync-pypi.yml"
+      - ".github/scripts/sync-pypi.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-pypi-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync PyPI packages to Ascend mirror
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
+        run: pip install esdk-obs-python
+
+      - name: Sync packages
+        env:
+          OBS_VLLM_ASCEND_READ_AK: ${{ secrets.OBS_VLLM_ASCEND_READ_AK }}
+          OBS_VLLM_ASCEND_READ_SK: ${{ secrets.OBS_VLLM_ASCEND_READ_SK }}
+          OBS_MIRROR_PUSH_AK: ${{ secrets.OBS_MIRROR_PUSH_AK }}
+          OBS_MIRROR_PUSH_SK: ${{ secrets.OBS_MIRROR_PUSH_SK }}
+        run: python .github/scripts/sync-pypi.py

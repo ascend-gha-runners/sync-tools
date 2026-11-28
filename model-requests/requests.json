@@ -153,5 +153,18 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "sgl-project/sglang",
+    "runner_label": "linux-aarch64-a3-800t-2",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen-Image-2.1"
+      }
+    ],
+    "datasets": []
   }
 ]

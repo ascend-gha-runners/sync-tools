@@ -1,0 +1,122 @@
+name: Sync Ticker (hourly chain)
+
+# 为什么存在：GitHub 的 schedule 事件对本仓库严重不可靠（公共仓库 + 平台高负载，
+# 事件在调度队列里被延迟甚至丢弃，官方文档明说 best-effort）。实测（2026-11）：
+#   - sync-images.yml 的每小时 cron（23 * * * *）落地率 ~10%（每天 1~4 次，
+#     期望 24 次），且每次实际触发比 :23 晚 8~59 分钟；
+#   - sync-readmes.yml 的每日 cron（17 6 * * *）实测延迟 7~12 小时才落地；
+#   - 85851900（cron 挪离整点）、3328cc5c（timeout 防上轮未结束时 schedule
+#     不再建新 run）两次补救都只是缓解，未根治。
+# workflow_dispatch 走 API 直达、不经过 schedule 事件队列，因此本 workflow 用
+# 「tick 自链式触发」提供可靠的每小时节奏，取代 schedule 作为主时钟。
+#
+# 结构（两个 job，事件互斥）：
+#   tick      (workflow_dispatch)：睡到下一个整点 :23 → 触发 sync-images.yml →
+#             自触发下一个 tick → 退出。任意时刻至多一条链：tick job 并发组
+#             保证「1 running + 1 pending」，多余的 dispatch 只会顶掉 pending
+#             （被顶掉的 run 以 cancelled 收场，正常替换非失败——与 sync-images
+#             的 per-src 并发同一语义）。链上每个 run ≈ 60 分钟，大部分在 sleep。
+#   watchdog  (schedule, 每 2h)：schedule 触发本身也会被延迟/丢弃，所以只做兜底：
+#             检查最近一个 tick run 是否 queued/in_progress/刚结束，链死了就
+#             重新 bootstrap。tick 自触发失败会重试 3 次并显式失败（红 run 可见）。
+#
+# 运维：
+#   - 启动/重启链：Actions → Run workflow（或 gh workflow run sync-ticker.yml）。
+#     请从 main 启动——链会在启动分支上自延续（GITHUB_REF_NAME 语义）。
+#   - 停链：禁用本 workflow（Actions 页 → ... → Disable workflow）。只 cancel
+#     正在 sleep 的 tick run 没用，watchdog 数小时内会把链拉起来。
+#   - 由本链触发的 sync-images run：event=workflow_dispatch、actor=github-actions[bot]。
+#     sync-images.yml 自身的 cron 保留不动（能落地多少算多少，链死时的免费冗余，
+#     per-src 并发组保证两种触发来源互斥不重入）。对 cancelled run 的告警需排除
+#     并发顶掉的情况，以免误报。
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "47 */2 * * *"   # watchdog 兜底，错峰分钟；主链不依赖它
+
+permissions:
+  actions: write
+
+jobs:
+  tick:
+    name: Tick (fire sync-images, chain next)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    # sleep ≤60min + dispatch 秒级；超时只是掐病理挂死（正常远到不了 75min）
+    timeout-minutes: 75
+    concurrency:
+      group: sync-ticker-tick
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Sleep until next :23 UTC
+        run: |
+          m=$(( (23 - 10#$(date -u +%M) + 60) % 60 ))
+          if [ "$m" -eq 0 ]; then m=60; fi
+          s=$(( m * 60 - 10#$(date -u +%S) ))
+          echo "tick starts $(date -u +%H:%M:%S)Z, sleep ${s}s → fire at $(date -u -d "@$(( $(date -u +%s) + s ))" +%H:%M)Z"
+          sleep "$s"
+
+      - name: Dispatch sync-images.yml
+        run: |
+          for i in 1 2 3; do
+            if gh workflow run sync-images.yml -R "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"; then
+              echo "fired sync-images at $(date -u +%H:%M:%S)Z"
+              exit 0
+            fi
+            echo "::warning::dispatch sync-images failed (attempt $i), retry in 10s"
+            sleep 10
+          done
+          echo "::error::dispatch sync-images failed 3 times, skip this hour (next tick retries)"
+          exit 1
+
+      - name: Chain next tick
+        # 即便 sync dispatch 失败也要续链；本步只在续链最终失败时让 job 变红
+        if: always()
+        run: |
+          for i in 1 2 3; do
+            if gh workflow run sync-ticker.yml -R "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"; then
+              echo "chained next tick"
+              exit 0
+            fi
+            echo "::warning::self-dispatch failed (attempt $i), retry in 10s"
+            sleep 10
+          done
+          echo "::error::cannot chain next tick, chain is broken, waiting for watchdog"
+          exit 1
+
+  watchdog:
+    name: Watchdog (bootstrap if chain stalled)
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check chain liveness, bootstrap if dead
+        run: |
+          set -euo pipefail
+          latest=$(gh run list -R "$GITHUB_REPOSITORY" --workflow sync-ticker.yml \
+                     --event workflow_dispatch -L 1 --json status,updatedAt --jq '.[0]')
+          dead=0
+          if [ -z "$latest" ] || [ "$latest" = "null" ]; then
+            echo "no tick run ever, treating chain as dead"
+            dead=1
+          else
+            status=$(jq -r .status <<< "$latest")
+            updated=$(jq -r .updatedAt <<< "$latest")
+            age=$(( $(date -u +%s) - $(date -u -d "$updated" +%s) ))
+            echo "latest tick: status=${status}, updated ${age}s ago"
+            # 健康 = 有 tick 在 queued/in_progress，或刚结束 <5min（正在交接给下一个）
+            if [ "$status" = "queued" ] || [ "$status" = "in_progress" ] || [ "$age" -lt 300 ]; then
+              echo "chain healthy"
+            else
+              dead=1
+            fi
+          fi
+          if [ "$dead" = 1 ]; then
+            echo "chain dead → bootstrap new tick"
+            gh workflow run sync-ticker.yml -R "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"
+          fi

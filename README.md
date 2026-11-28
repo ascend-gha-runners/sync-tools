@@ -89,6 +89,7 @@
     ├── model-library.yml                 # 【按请求】model library：三入口（dispatch / PR 标签 / repository_dispatch）
     ├── build-sync-tools-image.yml        # 构建/推送 sync-tools 同步镜像（手动触发）
     ├── sync-images.yml                   # 镜像同步工作流
+    ├── sync-ticker.yml                   # 每小时触发器（workflow_dispatch 自链，绕过 GitHub schedule 事件的延迟/丢弃）
     ├── sync-readmes.yml                  # README 同步工作流
     └── test.yml                          # 配置验证工作流
 
@@ -242,7 +243,7 @@ workflow 根据域名自动匹配认证信息，目前支持的源/目标 regist
 | `swr.ap-southeast-1.myhuaweicloud.com` | 华为云 SWR 香港 |
 | `ascendhub.huawei.com` | AscendHub（认证待补充） |
 
-同步每小时自动执行一次，每个 tag 在 push 前会比对源和目标的 manifest digest，内容未变则跳过，不会刷新目标 registry 的更新时间。
+同步每小时自动执行一次（由 [sync-ticker.yml](.github/workflows/sync-ticker.yml) 链式触发——GitHub 的 schedule 事件在高负载下会大量延迟/丢弃，实测落地率仅 ~10%，故改用 workflow_dispatch 自链式触发作为主时钟；sync-images.yml 自身的 cron 保留作免费冗余，watchdog 定时兜底断链）。每个 tag 在 push 前会比对源和目标的 manifest digest，内容未变则跳过，不会刷新目标 registry 的更新时间。
 
 ### 模型/数据集同步（按项目，self-serve）
 
@@ -394,6 +395,7 @@ Dockerfile 改动后需要重跑构建 workflow 才能让新内容生效。
 - [镜像地址指引（按项目分类）](IMAGE_SYNC_GUIDE.md) – 详细列出各项目镜像的存放地址，方便快速查找。
 
 ## 更新记录
+- 2026-11-28: 新增 **`sync-ticker.yml` 每小时触发器**：GitHub schedule 事件对公共仓库是 best-effort，实测本仓库每小时 cron（`23 * * * *`）落地率仅 ~10%（每天 1~4 次，期望 24 次）、每次延迟 8~59 分钟，每日 cron 也要延迟 7~12 小时才落地（此前 85851900 错峰、3328cc5c timeout 两次补救只是缓解）。改用 `workflow_dispatch` 自链式触发（tick 睡到整点 :23 → 触发 sync-images → 自触发下一个 tick）作为主时钟，API 直达不经过 schedule 队列；`每 2h watchdog` 定时兜底断链（schedule 触发自身也不可靠，仅兜底）。sync-images.yml 的 cron 保留（免费冗余），per-src 并发组保证两种触发来源互斥不重入；被链顶掉的 run 以 cancelled 收场属正常替换，告警需排除。
 - 2026-11-27: **fork 请求 PR 的辅助台账分支/PR 机制退役**（#151 三轮 push race + Actions 无建 PR 权限，是最脆一环）：fork PR 的 ledger job 改为只写 summary 说明，台账由每日扫盘补录；非 fork 请求 PR 的即时回写保留。
 - 2026-11-27: 新增 **`ledger-scan.yml` 每日扫盘对账**（02:37Z）：按 `clusters.json` 全集群矩阵只读扫描共享盘（HF hub / modelscope 经典+新布局，>1MB 实体过滤 stub/xet 壳），与 `model-library/<cluster>.json` 做**只增不删**并集，有差异则推 `ledger/scan-<date>-<run>` 分支、开 PR、checks 全绿自动 squash-merge（同 model-library merge job 设计；仓库未开启 Actions 建 PR 权限时降级为推分支+warning 留人工）。兜住台账回写链路的已知脆点（fork 辅助分支重跑 race、bot 无建 PR 权限、人工落盘未登记）。
 - 2026-11-27: 下载 job 可观测性与超时调整：进度日志**全局限频**（旧实现遇 `\n` 分帧流会把多行攒成 blob 整段吐出，现按 `\r`/`\n` 双分帧聚合，最多每 `PROGRESS_INTERVAL` 秒一行，默认 30，`0` 直通；错误/结果行不受限）；download job 末尾新增 **`Download summary` 步骤**输出 `✅ X 成功 / ❌ Y 失败`；下载 job `timeout-minutes: 4320`（此前默认 360min 掐死 #151 的数百 GB 下载，重跑幂等续传）。

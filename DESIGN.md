@@ -115,7 +115,7 @@ manifest list → 取所有 .manifests[].digest，排序后 join
 
 ### 3.6 触发
 
-每小时定时 + 手动 `workflow_dispatch`。`copy` 退出码 0 或 2 视为成功；任一 dest 有失败 tag，则该 job 以失败结束（保留其他 dest 已完成的进度）。
+每小时节奏由 `sync-ticker.yml` 链式提供（tick 睡到整点 :23 → `workflow_dispatch` 触发本 workflow → 自触发下一个 tick）：GitHub 的 schedule 事件是 best-effort，实测本仓库每小时 cron 落地率仅 ~10%、每日 cron 延迟 7~12 小时，`workflow_dispatch` 走 API 直达不受影响。本 workflow 自身的 cron（`23 * * * *`）保留作冗余（落地多少算多少），per-src 并发组保证两种来源互斥不重入；每 2h 的 watchdog 定时兜底断链。另有手动 `workflow_dispatch`。`copy` 退出码 0 或 2 视为成功；任一 dest 有失败 tag，则该 job 以失败结束（保留其他 dest 已完成的进度）。
 
 ## 4. 模型 / 数据集同步子系统（sync-models-datasets.yml）
 

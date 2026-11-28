@@ -153,5 +153,186 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "sgl-project/sglang",
+    "runner_label": "linux-aarch64-a3-800t-2",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "inclusionAI",
+        "model_name": "LLaDA-Image"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "HiDream-ai",
+        "model_name": "HiDream-O1-Image"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "HiDream-ai",
+        "model_name": "HiDream-O1-Image-Dev"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen-Image-2.1"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "black-forest-labs",
+        "model_name": "FLUX.1-dev"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "circlestone-labs",
+        "model_name": "Anima-Base-v1.0-Diffusers"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "sensenova",
+        "model_name": "SenseNova-U1.5-8B-MoT"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "black-forest-labs",
+        "model_name": "FLUX.2-klein-9B"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "black-forest-labs",
+        "model_name": "FLUX.2-klein-base-9B"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "meituan-longcat",
+        "model_name": "LongCat-Image"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "openmoss",
+        "model_name": "MOSS-Image-Base"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "openmoss",
+        "model_name": "MOSS-Image-SFT"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Efficient-Large-Model",
+        "model_name": "Sana_600M_512px_diffusers"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Efficient-Large-Model",
+        "model_name": "Sana_600M_1024px_diffusers"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Efficient-Large-Model",
+        "model_name": "Sana_1600M_512px_diffusers"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Efficient-Large-Model",
+        "model_name": "Sana_1600M_1024px_diffusers"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Efficient-Large-Model",
+        "model_name": "SANA1.5_1.6B_1024px_diffusers"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Efficient-Large-Model",
+        "model_name": "SANA1.5_4.8B_1024px_diffusers"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "stabilityai",
+        "model_name": "stable-diffusion-3-medium-diffusers"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "stabilityai",
+        "model_name": "stable-diffusion-3.5-large"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "stabilityai",
+        "model_name": "stable-diffusion-3.5-medium"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "FireRedTeam",
+        "model_name": "FireRed-Image-Edit-1.0"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "FireRedTeam",
+        "model_name": "FireRed-Image-Edit-1.1"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Wan-AI",
+        "model_name": "Wan2.1-I2V-14B-480P-Diffusers"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Wan-AI",
+        "model_name": "Wan2.2-TI2V-5B-Diffusers"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "FastVideo",
+        "model_name": "FastWan2.2-TI2V-5B-FullAttn-Diffusers"
+      }
+    ],
+    "datasets": []
+  },
+  {
+    "repo": "sgl-project/sglang",
+    "runner_label": "linux-aarch64-a3-800t-4",
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "huggingface",
+        "organization": "tencent",
+        "model_name": "HunyuanImage-3.0-Instruct"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen-Image-2.1"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Tongyi-MAI",
+        "model_name": "Z-Image-Turbo"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "nvidia",
+        "model_name": "Cosmos3-Nano"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen-Image-Edit-2511"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Qwen",
+        "model_name": "Qwen-Image-Layered"
+      },
+      {
+        "platform": "modelscope",
+        "organization": "Lightricks",
+        "model_name": "LTX-2.5-Diffusers"
+      }
+    ],
+    "datasets": []
   }
 ]

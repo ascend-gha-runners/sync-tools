@@ -160,9 +160,10 @@
     "auth_secret": "none",
     "models": [
       {
-        "platform": "huggingface",
+        "platform": "modelscope",
         "organization": "Qwen",
-        "model_name": "Qwen3-8B"
+        "model_name": "Qwen3-VL-8B-Instruct",
+        "legacy_layout": true
       }
     ],
     "datasets": []

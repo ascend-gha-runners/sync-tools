@@ -86,7 +86,7 @@ docker pull swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/verl/verl:
 
 ## 同步状态
 
-所有上述镜像的同步由 [sync-images.yml](.github/workflows/sync-images.yml) 工作流管理，同步频率为每小时一次。如需手动触发，请在 GitHub Actions 页面运行 "Sync Images Between Registries" 工作流。
+所有上述镜像的同步由 [sync-images.yml](.github/workflows/sync-images.yml) 工作流管理，同步频率为每小时一次（由 [sync-ticker.yml](.github/workflows/sync-ticker.yml) 链式触发保证节奏，绕过 GitHub schedule 事件的延迟/丢弃）。如需手动触发，请在 GitHub Actions 页面运行 "Sync Images Between Registries" 工作流。
 
 ## 如何查找标签？
 

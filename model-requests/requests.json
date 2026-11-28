@@ -153,5 +153,24 @@
       }
     ],
     "datasets": []
+  },
+  {
+    "repo": "Ascend/sglang",
+    "clusters": [
+      "aiframe",
+      "mind3",
+      "gy004",
+      "gy005"
+    ],
+    "auth_secret": "none",
+    "models": [
+      {
+        "platform": "modelscope",
+        "organization": "solinliu",
+        "model_name": "MiMo-V2.5-W8A8",
+        "legacy_layout": true
+      }
+    ],
+    "datasets": []
   }
 ]

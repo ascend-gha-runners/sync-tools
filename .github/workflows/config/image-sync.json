@@ -127,5 +127,11 @@
   { "src": "ghcr.io/actions/actions-runner", "dest": "swr.cn-southwest-2.myhuaweicloud.com/base_image/actions/actions-runner", "tag_filter": "^latest$|^2\\.33" },
 
   { "src": "swr.cn-north-12.myhuaweicloud.com/atlas_inference/cann", "dest": "swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/atlas_inference/cann" },
-  { "src": "quay.io/ascend-ci/vllm-ascend", "dest": "swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend", "tag_filter": "^lint$" }
+  { "src": "quay.io/ascend-ci/vllm-ascend", "dest": "swr.ap-southeast-1.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend/vllm-ascend", "tag_filter": "^lint$" },
+
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/fsdpturbo",   "dest": "quay.io/ascend/fsdpturbo" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/fsdpturbo",   "dest": "docker.io/ascendai/fsdpturbo" },
+
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/ma_tenpu_mindspeed-core",   "dest": "quay.io/ascend/ma_tenpu_mindspeed-core" },
+  { "src": "swr.cn-south-1.myhuaweicloud.com/ascendhub/ma_tenpu_mindspeed-core",   "dest": "docker.io/ascendai/ma_tenpu_mindspeed-core" }
 ]
